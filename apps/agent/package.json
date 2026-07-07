@@ -1,0 +1,26 @@
+{
+  "name": "@helix/agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "eve dev --no-ui",
+    "start": "eve start",
+    "build": "eve build",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.86",
+    "@ai-sdk/openai": "^3.0.74",
+    "@supabase/supabase-js": "^2.45.4",
+    "@workflow/world-postgres": "5.0.0-beta.19",
+    "ai": "7.0.0-canary.171",
+    "eve": "0.15.0",
+    "workflow": "^4.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "typescript": "^5.6.3"
+  }
+}

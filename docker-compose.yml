@@ -1,0 +1,82 @@
+# Helix — one-command local stack.
+#   docker compose up --build            → postgres + api (mock) + web
+#   docker compose --profile agent up    → also runs the eve agent (needs keys)
+#
+# The API starts in MOCK mode (zero keys, in-memory store, seeded) so the whole
+# dashboard + pipeline works out of the box. Flip to Supabase for persistence
+# (see README). The eve agent is opt-in via a profile because it needs a model key.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: helix
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "${HELIX_PG_PORT:-5432}:5432"
+    volumes:
+      - ./.postgres-data:/var/lib/postgresql/data
+      - ./supabase/migrations/0001_init.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d helix"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      HELIX_MODE: mock
+      API_PORT: "4000"
+      HELIX_ORG_ID: "00000000-0000-0000-0000-000000000001"
+      # Point at the agent service when you enable the `agent` profile.
+      EVE_API_URL: "http://agent:3040"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "${HELIX_API_PORT:-4000}:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NODE_ENV: production
+      # Read by the browser (client-side fetch) → host port, not the internal name.
+      NEXT_PUBLIC_API_URL: "http://localhost:${HELIX_API_PORT:-4000}/api"
+      NEXT_PUBLIC_ORG_ID: "00000000-0000-0000-0000-000000000001"
+    ports:
+      - "${HELIX_WEB_PORT:-3000}:3000"
+    depends_on:
+      - api
+
+  agent:
+    profiles: ["agent"]
+    build:
+      context: .
+      dockerfile: apps/agent/Dockerfile
+    environment:
+      NODE_ENV: production
+      HELIX_API_URL: "http://api:4000"
+      HELIX_ORG_ID: "00000000-0000-0000-0000-000000000001"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      WORKFLOW_POSTGRES_URL: "postgresql://postgres:postgres@postgres:5432/helix"
+      WORKFLOW_TARGET_WORLD: "@workflow/world-postgres"
+      WORKFLOW_QUEUE_NAMESPACE: "eve"
+      AGENT_PORT: "3040"
+    ports:
+      - "${HELIX_AGENT_PORT:-3040}:3040"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started

@@ -1,0 +1,31 @@
+{
+  "name": "helix-content-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Helix — AI Content Midplatform for crypto exchange operations & GEO content.",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "pnpm --filter @helix/shared build",
+    "dev": "pnpm -r --parallel --stream run dev",
+    "dev:api": "pnpm --filter @helix/api dev",
+    "dev:web": "pnpm --filter @helix/web dev",
+    "dev:agent": "pnpm --filter @helix/agent dev",
+    "build": "pnpm -r run build",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck",
+    "db:local": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > packages/shared/src/supabase-generated.ts",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "typescript": "^5.6.3"
+  }
+}
