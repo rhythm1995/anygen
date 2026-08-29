@@ -21,3 +21,9 @@ dreamina-clone/RECON/dyn-missing.txt
 dreamina-clone/site/
 dreamina-clone/assets/
 dreamina-clone/RECON/css/
+
+# vendored OpenMontage：运行时产物不入库（源码入）
+vendor/openmontage/.venv/
+vendor/openmontage/projects/
+vendor/openmontage/__pycache__/
+vendor/openmontage/**/__pycache__/
