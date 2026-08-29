@@ -150,3 +150,86 @@ OpenAI 官方 agents 框架（handoffs/guardrails/tracing）。
 1. 路线选定：B / C / B→C 混合？
 2. Agent 模式 v1 范围：只做短链路（意图→单次生成）还是直接上长链路（多分镜编排）？建议 v1 短链路 + 官方技能模板，长链路 v2。
 3. LLM 供应商：走 admin 的 models 表（creation_type=llm），推荐先接 GLM（你现有 zai 通道）+ 豆包（同 Ark key），双通道互备。
+
+---
+
+# 业内实践调研（2026-08-30 补充 · 回答"业内怎么做这类 Agent"）
+
+## A. 产品界怎么做创作 Agent（三类代表）
+
+### A1. Runway Agent（闭源产品标杆，行为可逆向）
+官方帮助文档披露的完整产品形态：
+- **会话式 agent + 内置时间线编辑器**：New chat（从零创作）/ New timeline（剪辑已有素材）双入口
+- **计划-确认门**：Agent 先出 plan（含模型/prompt/预估 credit 成本）→「Ask before generating」或自动生成两种模式
+- **模型选择偏好**：用户设 Speed/Cost/Quality，agent 在每步自动挑模型（Gen-4.5/Seedance 2.0/Kling/Veo…**Runway 也是多供应商聚合**，与即梦同构）
+- **产物聚合**：会话内全部产物进 Generations 页网格；多镜头视频自动拼进 Final Cut 时间线
+- **Agent Skills**：`/` 触发的预制工作流（Ad Campaign、Mood Board）——与即梦「技能」完全同概念
+- **计费**：按模型+输出类型扣 credit，分辨率 480p→4K 分档
+
+**对我们的启示**：计划确认门（预算内暂停问用户）、Speed/Cost/Quality 三档偏好、Final Cut 式产物聚合，都应进 AGENT.md 设计。
+
+### A2. OpenMontage（开源界最完整的 agentic 视频生产系统，AGPLv3）
+"agent-first 架构——没有代码编排器，AI 编码助手就是编排器"：
+```
+research → proposal → script → scene_plan → assets → edit → compose
+```
+- **三层知识架构**：tools/(100+ 注册工具) + pipeline_defs/(YAML 流程清单) + skills/(Markdown 阶段导演技能)——**流程与知识全是声明式文件**，代码只提供工具与持久化
+- **7 维供应商打分选择器**（task fit 30%/质量20%/控制15%/可靠性15%/成本10%/延迟5%/连续性5%），每次选择带决策日志
+- **预算治理**：执行前估价 → 预留 → 事后对账；observe/warn/cap 三模式；单动作超 $0.50 暂停审批；总预算帽默认 $10
+- **质量门**：人工审批门（proposal/script/scene plan/assets/publish 五道）+ 预合成校验（防"PPT式"视频）+ 渲染后自检（ffprobe/抽帧/音频分析）
+- **Checkpoint JSON**：每阶段可恢复、含决策日志与成本快照
+
+**对我们的启示**：声明式 pipeline + 审批门 + 预算治理三件套是业内共识，可直接映射到我们的 agent_steps + ledger + SSE。
+
+### A3. 其他代表
+- **UniVA**（开源视频通用 Agent）：Plan-Act 双智体架构（规划器拆任务 + 执行器调工具）
+- **LibTV**（智源）：Skill 接口打包创作能力给 agent 调用——"产品同时为人和 agent 设计"
+- **即梦自己**（上轮侦察实证）：agent 的生成能力全部包成 **MCP 工具对**（text2image/image2image），libra abtest 按场景切换工具集——**工具粒度 = 生成能力原子化**
+
+## B. 编排框架界的实践（生产级 durable 路线）
+
+### B1. LangGraph 官方 vs Temporal 对比（LangChain 官方文档）
+业界对"agent 编排选 durable 引擎还是 agent 框架"的正式答案：
+- **分层共识**："For most production agents the answer is **both, layered**: LangChain for reasoning and tools, Temporal for durable orchestration"（cordum.io 总结）——**推理层 + 持久化层分开选型**
+- Temporal 的坑：无 SSE 流式、HITL 要自己拿 signal 拼、**2MB payload 上限**（媒体任务必须外置存储只传 ID——我们恰好这么设计了）、无 LLM 观测
+- LangGraph 的强项：checkpointer 落 Postgres、interrupt() 一行做 HITL、token/cost 自动采集
+- Reddit 生产实践帖："agent 进程跑在 Temporal 外部长驻容器——**不把整个对话建模成一个 workflow**"
+
+### B2. eve 官方执行模型（Vercel 出品，比 Helix 时代成熟了）
+- 三层嵌套：**session（天级持久对话）→ turn（一次用户消息的全部工作）→ step（step 边界自动 checkpoint）**
+- "Crash the process, hit a timeout, or redeploy mid-turn, and the run picks up from the last completed step. **Completed steps never re-run; eve replays the recorded result**"
+- 自托管：`@workflow/world-postgres`（graphile-worker 驱动），或本地磁盘 world——**不绑 Vercel 平台**
+- 明确告诫：被打断的 step 会重跑 → **非幂等副作用（扣费！）必须自己做幂等**——我们 ledger 的幂等 refund 设计正好接上
+- 生态信号：Platformatic 写了 K8s 部署指南、vercel-labs/steve 自托管 PoC、Eve vs Flue 对比文——框架活跃度真实
+
+### B3. Restate + Vercel AI SDK
+"用 Restate 给 AI SDK agent 加 durable"的官方合作范式——印证了「**AI SDK loop + 外挂持久化层**」正是 B 路线的行业标配玩法（Restate 是 durable 引擎，eve/Temporal 同位竞品）。
+
+## C. 业内共识总结（直接回答你的问题）
+
+| 共识 | 出处 | 对应我们的设计 |
+|---|---|---|
+| 1. 推理层与持久化层**分层选型**，不找全能框架 | LangChain官方/cordium/Reddit | 混合形态：eStep内 AI SDK 推理 + 外层 durable 编排 |
+| 2. **Completed steps never re-run** + 非幂等副作用自己做幂等 | eve 官方 | ledger 幂等扣退（已 TDD）+ step 状态机 |
+| 3. 媒体大 payload **外置存储只传 ID** | Temporal 2MB 限制 | 产物全走 S3，步骤只存 asset_id（已如此） |
+| 4. **计划-确认门 + 预算治理**（估价/预留/对账/cap） | Runway/OpenMontage | agent_sessions.budget_cents + 每步预扣 + 超预算暂停 |
+| 5. 生成能力**原子化为工具**（MCP 化） | 即梦 MCP 工具对/LibTV Skill | 工具集 = submit_image/video/music + check_task |
+| 6. 供应商**打分选择**而非硬编码 | Runway Speed/Cost/Quality、OpenMontage 7维 | admin models 表 price+cost 字段天然支持 |
+| 7. 技能 = **预制工作流模板**（YAML/Markdown 声明式） | OpenMontage pipelines/即梦官方技能 | agent_skills.plan_template jsonb |
+| 8. 人机同构产品（同一能力人能用 agent 也能用） | LibTV | 创作面板与 agent 工具共用同一 API |
+
+## D. 调研后的最终推荐（更新）
+
+业内证据把之前的推荐进一步坐实并微调：
+
+**推荐：AI SDK loop（推理）+ 自建 steps 状态机（持久化），即"纯 B"，但吸收 OpenMontage 的声明式 pipeline 与审批门。**
+
+理由修正（相比上版"混合 C"）：
+1. 业内分层共识（B1）说明 eve/Temporal 的角色是"durable 引擎"，而 eve 当前绑定自家 agent 目录约定（channels/agent.ts 形态），**嵌入我们的 NestJS 业务进程不如自建 steps 表直接**（我们有 generation_tasks 状态机 + TDD 的成熟先例）
+2. Restate+AI SDK 范式证明 B 路线配持久化是标准玩法；我们的持久化层就是 agent_steps 表 + 幂等 ledger，不需要再引第三个引擎
+3. OpenMontage 的"声明式 pipeline_defs + skills"直接抄：官方技能 = plan_template JSON（步骤序列+参数模板），执行器读模板跑——比纯 LLM 自由决策可控，比 eve workflow 轻量
+4. 计费/审批/产物聚合照 Runway 的产品形态设计（Speed/Cost/Quality 偏好、计划确认门）
+
+（若未来多用户高并发长链路成为主力负载，届时把执行器迁移到 eve/Temporal 是局部替换——steps 表的 schema 不变。）
+
+Sources: [LangGraph vs Temporal (LangChain官方)](https://www.langchain.com/resources/langgraph-vs-temporal) · [Temporal vs LangChain 分层共识](https://cordum.io/blog/temporal-vs-langchain) · [eve 执行模型与持久化](https://eve.dev/docs/concepts/execution-model-and-durability) · [Restate + Vercel AI SDK durable agents](https://www.restate.dev/blog/building-durable-agents-with-vercel-and-restate) · [Runway Agent 官方文档](https://help.runwayml.com/hc/en-us/articles/51601639579667-Creating-with-Runway-Agent) · [OpenMontage (GitHub)](https://github.com/calesthio/OpenMontage) · [Vercel AI SDK Agents](https://ai-sdk.dev/docs/agents/overview) · [eve K8s 自托管 (Platformatic)](https://blog.platformatic.dev/run-durable-eve-agents-on-kubernetes-with-platformatic)
