@@ -1,28 +1,16 @@
-import 'reflect-metadata';
-import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ConfigService } from './config/config.service';
-import { AllExceptionsFilter } from './common/exceptions.filter';
-import { ZodValidationPipe } from './common/zod.pipe';
+import "dotenv/config";
+import "reflect-metadata";
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { ConfigService } from "./config/config.service";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { cors: true });
-  const cfg = app.get(ConfigService);
-
-  app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ZodValidationPipe());
-  app.useGlobalFilters(new AllExceptionsFilter());
-
-  await app.listen(cfg.port);
-  // eslint-disable-next-line no-console
-  console.log(
-    `[helix-api] 🚀 mode=${cfg.mode}  supabase=${cfg.useSupabase}  eve=${cfg.useEve}  → http://localhost:${cfg.port}/api`,
-  );
+  const app = await NestFactory.create(AppModule);
+  const config = app.get(ConfigService);
+  app.setGlobalPrefix("api");
+  app.enableCors({ origin: true, credentials: true });
+  await app.listen(config.apiPort);
+  console.log(`[api] listening on http://127.0.0.1:${config.apiPort}/api`);
 }
 
-bootstrap().catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error('[helix-api] fatal', err);
-  process.exit(1);
-});
+void bootstrap();

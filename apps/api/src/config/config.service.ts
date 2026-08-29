@@ -1,68 +1,82 @@
-import { Injectable } from '@nestjs/common';
-import type { RunMode } from '@helix/shared';
+import { Injectable } from "@nestjs/common";
 
-/**
- * Central, read-only configuration sourced from env.
- * The two computed flags drive the whole app's behaviour:
- *   - useSupabase → real Supabase repositories, else in-memory mock store
- *   - useEve      → call the eve agent over HTTP, else a local stub generator
- * Both flags fall back gracefully so the platform runs end-to-end with zero keys.
- */
 @Injectable()
 export class ConfigService {
-  readonly mode: RunMode;
-  readonly port: number;
-  readonly defaultOrgId: string;
-  readonly webOrigin: string;
+  private readonly env = process.env;
 
-  readonly supabaseUrl?: string;
-  readonly supabaseAnonKey?: string;
-  readonly supabaseServiceKey?: string;
-  readonly databaseUrl?: string;
+  get apiPort(): number {
+    return Number(this.env.API_PORT ?? 3001);
+  }
 
-  readonly eveApiUrl?: string;
-  readonly openaiKey?: string;
-  readonly anthropicKey?: string;
-  readonly draftModel?: string;
-  readonly qualityModel?: string;
+  get supabaseUrl(): string | undefined {
+    return this.env.SUPABASE_URL;
+  }
 
-  constructor() {
-    this.mode = (process.env.HELIX_MODE as RunMode) || 'mock';
-    this.port = Number(process.env.API_PORT || 4000);
-    this.defaultOrgId =
-      process.env.HELIX_ORG_ID || '00000000-0000-0000-0000-000000000001';
-    this.webOrigin = process.env.WEB_ORIGIN || 'http://localhost:3000';
+  get supabaseServiceRoleKey(): string | undefined {
+    return this.env.SUPABASE_SERVICE_ROLE_KEY;
+  }
 
-    this.supabaseUrl = process.env.SUPABASE_URL;
-    this.supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-    this.supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    this.databaseUrl = process.env.DATABASE_URL;
-
-    this.eveApiUrl = process.env.EVE_API_URL;
-    this.openaiKey = process.env.OPENAI_API_KEY;
-    this.anthropicKey = process.env.ANTHROPIC_API_KEY;
-    this.draftModel = process.env.HELIX_MODEL_DRAFT;
-    this.qualityModel = process.env.HELIX_MODEL_QUALITY;
+  get supabaseAnonKey(): string | undefined {
+    return this.env.SUPABASE_ANON_KEY;
   }
 
   get useSupabase(): boolean {
-    return this.mode === 'supabase' && !!this.supabaseUrl && !!this.supabaseServiceKey;
+    return Boolean(this.supabaseUrl && this.supabaseServiceRoleKey);
   }
 
-  get useEve(): boolean {
-    return !!this.eveApiUrl && (!!this.openaiKey || !!this.anthropicKey);
+  get s3Endpoint(): string | undefined {
+    return this.env.S3_ENDPOINT;
   }
 
-  /** Human-readable summary for the health endpoint + boot log. */
-  get summary() {
-    return {
-      mode: this.mode,
-      supabase: this.useSupabase,
-      eve: this.useEve,
-      hasOpenaiKey: !!this.openaiKey,
-      hasAnthropicKey: !!this.anthropicKey,
-      draftModel: this.draftModel ?? null,
-      qualityModel: this.qualityModel ?? null,
-    };
+  get s3Region(): string {
+    return this.env.S3_REGION ?? "us-east-1";
+  }
+
+  get s3Bucket(): string | undefined {
+    return this.env.S3_BUCKET;
+  }
+
+  get s3AccessKey(): string | undefined {
+    return this.env.S3_ACCESS_KEY;
+  }
+
+  get s3SecretKey(): string | undefined {
+    return this.env.S3_SECRET_KEY;
+  }
+
+  get cdnBaseUrl(): string | undefined {
+    return this.env.CDN_BASE_URL;
+  }
+
+  get useS3(): boolean {
+    return Boolean(this.s3Endpoint && this.s3Bucket && this.s3AccessKey && this.s3SecretKey && this.cdnBaseUrl);
+  }
+
+  get arkBaseUrl(): string | undefined {
+    return this.env.ARK_BASE_URL;
+  }
+
+  get arkApiKey(): string | undefined {
+    return this.env.ARK_API_KEY || undefined;
+  }
+
+  get arkImageModel(): string | undefined {
+    return this.env.ARK_IMAGE_MODEL;
+  }
+
+  get arkVideoModel(): string | undefined {
+    return this.env.ARK_VIDEO_MODEL;
+  }
+
+  get useArk(): boolean {
+    return Boolean(this.arkBaseUrl && this.arkApiKey);
+  }
+
+  get generationTimeoutMs(): number {
+    return Number(this.env.GENERATION_TIMEOUT_MS ?? 600_000);
+  }
+
+  get signupBonusCredits(): number {
+    return Number(this.env.CREDITS_SIGNUP_BONUS ?? 150);
   }
 }

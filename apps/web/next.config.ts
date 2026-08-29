@@ -1,8 +1,8 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from "next";
 
-const config: NextConfig = {
-  transpilePackages: ['@helix/shared'],
-  reactStrictMode: true,
+const nextConfig: NextConfig = {
+  /* config options here */
+  reactCompiler: true,
 };
 
-export default config;
+export default nextConfig;

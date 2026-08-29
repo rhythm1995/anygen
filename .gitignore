@@ -1,35 +1,23 @@
-# dependencies
 node_modules/
-.pnpm-store/
-
-# builds
-dist/
-build/
 .next/
-out/
-*.tsbuildinfo
-
-# env / secrets
+dist/
+coverage/
+.turbo/
+supabase/.branches/
+supabase/.temp/
 .env
 .env.local
-.env.*.local
-!.env.example
-
-# supabase
-supabase/.branches
-supabase/.temp
-
-# logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# os / editor
 .DS_Store
-.idea/
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
+minio-data/
 
-# docker volumes
-.postgres-data/
+# 侦察凭据（dreamina-clone 内）
+dreamina-clone/RECON/user-cookies.txt
+dreamina-clone/RECON/dyn-missing.txt
+
+# 本地工具状态
+.zcode/
+
+# dreamina-clone 只保留轻量证据（快照 HTML/fixtures/脚本/NOTES），大体积镜像不进 git
+dreamina-clone/site/
+dreamina-clone/assets/
+dreamina-clone/RECON/css/

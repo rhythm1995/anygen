@@ -1,0 +1,37 @@
+@font-face { font-display: swap; font-family: Montserrat; font-weight: 400; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/Montserrat-Regular.20250416.subset-f41f151a9a.ttf"); }
+
+@font-face { font-display: swap; font-family: Montserrat; font-weight: 500; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/Montserrat-Medium.20250416.subset-2b35e896df.ttf"); }
+
+@font-face { font-display: swap; font-family: Montserrat; font-weight: 600; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/Montserrat-SemiBold.20250416.subset-4f35fdf685.ttf"); }
+
+@font-face { font-display: swap; font-family: Inter; font-weight: 600; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/Inter-Regular.subset-c813f0abb3.ttf"); }
+
+@font-face { font-display: swap; font-family: "Albert Sans ExtraBold"; font-weight: 800; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/AlbertSans-ExtraBold-164921a655.ttf"); }
+
+@font-face { font-display: swap; font-family: "Albert Sans SemiBold"; font-weight: 600; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/AlbertSans-SemiBold-d6b6b28d08.ttf"); }
+
+@font-face { font-display: swap; font-family: "Albert Sans Medium"; font-weight: 500; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/AlbertSans-Medium-764a38d4b9.ttf"); }
+
+@font-face { font-display: swap; font-family: "Albert Sans Regular"; font-weight: 400; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/AlbertSans-Regular-71bd023f1c.ttf"); }
+
+@font-face { font-display: swap; font-family: "CapCut Sans"; font-weight: 400; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/CapCutSansText-Regular-37da1a0085.woff2") format("woff2"); }
+
+@font-face { font-display: swap; font-family: "CapCut Sans"; font-weight: 500; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/CapCutSansText-Medium-da8962d4ab.woff2") format("woff2"); }
+
+@font-face { font-display: swap; font-family: "CapCut Sans"; font-weight: 700; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/CapCutSansText-Bold-41a3c02b7f.woff2") format("woff2"); }
+
+@font-face { font-display: block; font-family: Floane; font-weight: 700; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/Floane-Bold-7ba004d0c0.woff2") format("woff2"); }
+
+@font-face { font-display: block; font-family: Floane; font-weight: 700; src: url("/fonts/families/sf16-web-tos-buz.capcutstatic.com/Floane-BoldItalic-2123cb20e2.woff2") format("woff2"); }
+
+@font-face { font-family: tiktok-display-bold; src: url("sf16-website-login.neutral.ttwstatic.com/TikTokDisplayFont-Bold-150bc78ddd.woff2"); font-display: swap; }
+
+@font-face { font-family: tiktok-display-regular; src: url("sf16-website-login.neutral.ttwstatic.com/TikTokDisplayFont-Regular-a0839b5c1f.woff2"); font-display: swap; }
+
+@font-face { font-family: tiktok-display-medium; src: url("sf16-website-login.neutral.ttwstatic.com/TikTokDisplayFont-Semibold-e05fa34498.woff2"); font-display: swap; }
+
+@font-face { font-family: tiktok-text-bold; src: url("sf16-website-login.neutral.ttwstatic.com/TikTokFont-Bold-47cef08d98.woff2"); font-display: swap; }
+
+@font-face { font-family: tiktok-text-regular; src: url("sf16-website-login.neutral.ttwstatic.com/TikTokFont-Regular-462d164fcb.woff2"); font-display: swap; }
+
+@font-face { font-family: tiktok-text-medium; src: url("sf16-website-login.neutral.ttwstatic.com/TikTokFont-SEMIBOLD-a31b3923fc.woff2"); font-display: swap; }
