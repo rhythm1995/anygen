@@ -8,7 +8,7 @@ function runGuard(guard: CanActivate, headers: Record<string, string>) {
   const ctx = {
     switchToHttp: () => ({ getRequest: () => req }),
   } as unknown as ExecutionContext;
-  return guard.canActivate(ctx).then((r) => ({ result: r, req }));
+  return Promise.resolve(guard.canActivate(ctx)).then((r) => ({ result: r, req }));
 }
 
 /** verifier() 返回同步对象（真实 supabase.auth），getUser 为异步 */

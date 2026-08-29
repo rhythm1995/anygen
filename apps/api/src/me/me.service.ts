@@ -2,10 +2,16 @@ import { Injectable } from "@nestjs/common";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { SupabaseClientFactory } from "../auth/supabase.client";
+import { ConfigService } from "../config/config.service";
+import { CreditsService } from "../credits/credits.service";
 
 @Injectable()
 export class MeService {
-  constructor(private readonly factory: SupabaseClientFactory) {}
+  constructor(
+    private readonly factory: SupabaseClientFactory,
+    private readonly config: ConfigService,
+    private readonly credits: CreditsService,
+  ) {}
 
   private get db(): SupabaseClient {
     return this.factory.serviceClient;
@@ -22,6 +28,8 @@ export class MeService {
       .select()
       .single();
     if (error) throw new Error(error.message);
+    // 注册奖励（CREDITS_SIGNUP_BONUS，默认 150）
+    await this.credits.grant(user.id, this.config.signupBonusCredits, "signup_bonus").catch(() => undefined);
     return data;
   }
 

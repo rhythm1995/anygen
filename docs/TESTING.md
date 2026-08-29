@@ -77,3 +77,9 @@ supertest e2e（测试库 seed 25 条）：
 ## 已知不测
 - 原站像素级还原本身（用截图对照，非单测）
 - Supabase/Ark/MinIO 真服务的可用性（集成测试手动标记跑）
+
+## 执行结果（2026-08-30）
+- shared 契约 14 ✅ · api 单元 27 ✅ · api e2e 15 ✅ —— `turbo run typecheck test` 6/6 任务全绿
+- UI e2e（tools/e2e-ui.mjs，真实浏览器 + CDP 真实输入）：注册→首页 feed→生成提交→画布建项目→节点增删→自动保存落库，page errors 0
+- 截图：docs/verify/{home-anon,home-authed,generate-submit,canvas-entry,canvas-editor}.png
+- 修复记录：Next 16 dev origin 保护拦 127.0.0.1（allowedDevOrigins）；xyflow 容器需显式 height（h-[calc] 类在 flex 容器下塌陷为 0）；tsx 不支持 emitDecoratorMetadata（dev 改 nest start --watch）；supertest v7 interop 问题改用原生 fetch

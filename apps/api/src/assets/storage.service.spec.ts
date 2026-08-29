@@ -65,7 +65,7 @@ describe("StorageService", () => {
         },
       }),
     };
-    const svc = new StorageService(fakeConfig(), {} as any);
+    const svc = StorageService.withClient(fakeConfig(), null);
     const first = await svc.register(supabase as any, {
       userId: "u-1",
       key: "image/u-1/abc.jpg",

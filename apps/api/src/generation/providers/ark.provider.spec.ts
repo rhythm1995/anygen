@@ -1,4 +1,3 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "@jest/globals";
 import { createServer, type IncomingMessage, type Server } from "node:http";
 
 import { ArkProvider } from "./ark.provider";
@@ -68,12 +67,12 @@ describe("ArkProvider.submit", () => {
     const result = await provider().submit({ type: "video", prompt: "a cat", params: { ratio: "16:9", duration: 5 } });
     expect(result.remoteId).toBe("cgt-20260830-123");
     expect(requests).toHaveLength(1);
-    expect(requests[0].method).toBe("POST");
-    expect(requests[0].url).toBe("/api/v3/contents/generations/tasks");
-    expect(requests[0].headers.authorization).toBe("Bearer test-key");
-    expect(requests[0].body.model).toBe("doubao-seedance-test");
-    expect(JSON.stringify(requests[0].body.content)).toContain("a cat");
-    expect(JSON.stringify(requests[0].body.content)).toContain("--ratio 16:9");
+    expect(requests[0]!.method).toBe("POST");
+    expect(requests[0]!.url).toBe("/api/v3/contents/generations/tasks");
+    expect(requests[0]!.headers.authorization).toBe("Bearer test-key");
+    expect(requests[0]!.body.model).toBe("doubao-seedance-test");
+    expect(JSON.stringify(requests[0]!.body.content)).toContain("a cat");
+    expect(JSON.stringify(requests[0]!.body.content)).toContain("--ratio 16:9");
   });
 
   it("文生图：同步接口立即返回产物 URL（submit 即完成）", async () => {
@@ -81,10 +80,10 @@ describe("ArkProvider.submit", () => {
 
     const result = await provider().submit({ type: "image", prompt: "a dog", params: { size: "1024x1024" } });
     expect(result.immediateUrls).toEqual(["https://img.example.com/out-0.jpg"]);
-    expect(requests[0].url).toBe("/api/v3/images/generations");
-    expect(requests[0].body.model).toBe("doubao-seedream-test");
-    expect(requests[0].body.prompt).toBe("a dog");
-    expect(requests[0].body.size).toBe("1024x1024");
+    expect(requests[0]!.url).toBe("/api/v3/images/generations");
+    expect(requests[0]!.body.model).toBe("doubao-seedream-test");
+    expect(requests[0]!.body.prompt).toBe("a dog");
+    expect(requests[0]!.body.size).toBe("1024x1024");
   });
 
   it("5xx → ProviderError", async () => {
@@ -104,7 +103,7 @@ describe("ArkProvider.poll", () => {
     responder = (_req, res) => json(res, 200, { id: "cgt-1", status: "running" });
     const result = await provider().poll("cgt-1");
     expect(result.status).toBe("running");
-    expect(requests[0].url).toBe("/api/v3/contents/generations/tasks/cgt-1");
+    expect(requests[0]!.url).toBe("/api/v3/contents/generations/tasks/cgt-1");
   });
 
   it("成功态解析产物 URL 列表", async () => {
