@@ -1,7 +1,8 @@
 # ADMIN — 管理后台与美元计费设计
 
 > 状态：**设计稿，待用户确认后才进代码**。
-> 决策依据（用户已拍板）：三件套合并设计；**计费=美元制**；内容审核纳入本期（schema + 队列）。
+> 决策依据（用户已拍板）：三件套合并设计；**计费=美元制（内部使用，无赠金、无积分概念）**；审核不做；Agent 一次性按 v2 规模做（B/C 对比后定）。
+> 内部使用 = 不接支付、无注册赠金、无兑换码；账本只为核算与限额。
 
 ## 1. 入口与权限
 
@@ -17,7 +18,7 @@
 | 供应商 Providers | /admin/providers | 供应商 CRUD：名称、协议类型（ark / openai-compat / …）、base_url、启停 |
 | API Keys | /admin/providers/:id/keys | 密钥管理（见 §5 安全设计） |
 | 模型 Models | /admin/models | 模型 CRUD + 定价 + 上下架 + 徽标（New/VIP/Pro）+ 成本单价 |
-| 计费 Pricing | /admin/pricing | 三类口径单价表 + 分辨率系数 + 赠金策略（注册赠 $X） |
+| 计费 Pricing | /admin/pricing | 三类口径单价表 + 分辨率系数 + 用户余额初始值策略（admin 手动设定，无赠金） |
 | 用量报表 | /admin/usage | 按日/用户/模型聚合：调用次数、用户扣费、供应商成本、**毛利**；CSV 导出 |
 | 内容审核 | /admin/moderation | 待复审队列（见 MODERATION.md）、通过/驳回/封禁 |
 | 用户管理 | /admin/users | 搜索、余额调整（走 ledger）、封禁、提权（双向，留审计） |
@@ -64,7 +65,7 @@ ledger (
   id bigserial PK,
   user_id uuid FK,
   cents integer not null,              -- 正=入账/退款，负=消耗
-  reason text check in ('signup_bonus','generation','generation_refund','topup','admin_adjust','agent_step'),
+  reason text check in ('initial_grant','generation','generation_refund','admin_adjust','agent_step'),  -- 内部使用：无 topup/赠金
   task_id uuid null,                   -- generation_tasks / agent_steps 关联
   balance_after_cents integer not null,
   created_at
@@ -93,8 +94,8 @@ admin_audit_log (
 ## 4. 美元计费口径（用户已拍板：美元制）
 
 - **记账单位 = 美分（integer cents）**，全站展示 `$x.xx`；永不存浮点
-- 现有积分迁移：一次性 `credit_ledger → ledger`（积分 × 平台汇率折美分，汇率入 config）；`profiles.credit_balance` → `balance_cents`
-- 注册赠金：**$1.50**（对应原 150 积分语义）
+- **无历史迁移**：credit_ledger/credit_balance 直接废弃删除，新建 ledger/balance_cents（内部工具，无历史包袱）
+- **无赠金、无积分**：内部使用。新用户由 admin 创建时一次性 `initial_grant`（金额 admin 定，默认 $5.00）；历史积分数据直接废弃（无迁移价值）
 - 三类单价口径（admin/pricing 可改，改价写审计）：
 
 | unit_type | 计费式 | 示例 |
@@ -122,10 +123,10 @@ admin_audit_log (
 | generation.service TASK_COST 常量 | 读 models 表按 model+params 实时算价（§4 公式），提交前展示预估 |
 | /api/me credit 字段 | 改 cents + `$x.xx` 格式化；前端全局换文案 |
 | ArkProvider | 从 api_keys 解密取 key；按 models.code 路由而非 env 常量 |
-| 注册赠金 | $1.50 写 ledger(signup_bonus) |
+| 用户开通 | admin 建用户时 initial_grant $5.00 写 ledger |
 
 ## 7. TDD 要点（实现时）
-- ledger cents RPC：并发扣减/不足拒绝/幂等退款（沿用现有测试结构改 cents）
+- ledger cents RPC：并发扣减/不足拒绝/幂等退款（新写，无历史迁移测试）
 - 定价计算器：三类口径纯函数 + 分辨率系数矩阵（边界：4K×4 张 不超过单笔上限）
 - AdminGuard：非 admin 404；审计写入断言
 - key 加解密 round-trip + hint 生成

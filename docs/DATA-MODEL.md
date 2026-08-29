@@ -148,7 +148,7 @@ agent_skills / agent_models（agent 配置，seed 静态）
 | providers | 生成供应商 | name, protocol(ark/openai-compat), base_url, enabled |
 | api_keys | 供应商密钥（pgcrypto 加密） | secret_encrypted bytea, secret_hint(尾4位), enabled |
 | models | 模型配置 = 创作面板数据源 | provider_id, creation_type(7类), code, display_name, badge, unit_type(per_image/per_second/per_token/per_request), price_cents, provider_cost_cents, resolution_factor jsonb, enabled, sort |
-| ledger | 美分账本（替代 credit_ledger） | cents int, reason(signup_bonus/generation/generation_refund/topup/admin_adjust/agent_step), task_id, balance_after_cents |
+| ledger | 美分账本（替代 credit_ledger，后者废弃） | cents int, reason(initial_grant/generation/generation_refund/admin_adjust/agent_step), task_id, balance_after_cents |
 | creation_modes | 创作类型面板配置 | key(agent/image/video/music/dubbing/digital_human/motion_mimic), label, icon, enabled, sort |
 | agent_skills 扩展 | 官方技能 | + official bool, plan_template jsonb, description |
 | agent_sessions | Agent 会话 | user_id, prompt, plan jsonb, status(planning/running/succeeded/failed), budget_cents, spent_cents, summary |
@@ -170,7 +170,7 @@ agent_skills / agent_models（agent 配置，seed 静态）
 
 ```
 0005_admin_billing:  providers/api_keys/models/ledger/creation_modes + profiles.role/balance_cents
-                     + data migration: credit_ledger → ledger（积分×汇率折美分）
+                     （内部使用：无历史积分迁移，credit_ledger/credit_balance 直接废弃）
 0006_agent:          agent_sessions/agent_steps + agent_skills 扩展(official/plan_template)
 0007_moderation:     moderation_events/user_reports + 三表 moderation_status
 0008_cn_seed:        models 灌即梦截图的真实模型清单（图片 5.0 Pro…/Seedance 2.5…）+
