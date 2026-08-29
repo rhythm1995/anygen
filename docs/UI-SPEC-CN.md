@@ -114,3 +114,97 @@ chip：`🔧 技能`。点击弹层（宽 ~640px）：
 - 面板渲染契约：models 表数据 → 工具条/弹层快照测试（含 badge/选中态/空态）
 - 参数校验：比例×分辨率×模型的合法组合矩阵（非法组合禁选）
 - 参数回显 chip 的格式化纯函数
+
+---
+
+# §6 补全：2026-08-30 实测侦察（用户 cookie 直接可用，全部真实数据）
+
+> 侦察产物：`dreamina-clone/RECON/jimeng-cn/`（SSR 内嵌 JSON 已抽出：image/video/imitator 模型配置、agent_config、skill_list、libra abtest、explore feed）。
+> 方法论验证：截图面板数据与 SSR `window.__image/video/imitator_generate_model_config__` 完全一致——**面板 = 配置渲染**，证实「admin 配置表驱动面板」架构正确。
+
+## 6.1 URL 类型映射（实测）
+| 创作类型 | URL 参数 |
+|---|---|
+| Agent 模式 | （默认 / ?type=agent） |
+| 图片生成 | ?type=image |
+| 视频生成 | ?type=video |
+| 音乐生成 | ?type=music |
+| 配音生成 | ?type=audio |
+| 数字人 | ?type=digitalHuman |
+| 动作模仿 | ?type=imitator |
+
+## 6.2 图片生成（实测 9 个模型，配置含完整参数矩阵）
+| 模型 | model_req_key | New |
+|---|---|---|
+| 图片 5.0 Pro | high_aes_general_v50p_large | ✓ |
+| 图片 5.0 Lite | high_aes_general_v50 | |
+| 图片 4.7 | high_aes_general_v43 | ✓ |
+| 图片 4.6 | high_aes_general_v42 | |
+| 图片 4.5 | high_aes_general_v40l | |
+| 图片 4.1 | high_aes_general_v41 | |
+| 图片 4.0 | high_aes_general_v40 | |
+| 图片 3.1 | high_aes_general_v30l_art_fangzhou:general_v3.0_18b | |
+| 图片 3.0 | high_aes_general_v30l:general_v3.0_18b | |
+
+参数矩阵（每模型自带）：
+- **分辨率**：1.5k / 2k / 4k（名称 标清1.5K·高清2K·超清4K），每档带 8 种 ratio_type 的精确 W×H（如 2k: 1:1=2048², 3:4=1728×2304…）+ min/max/max_pixel_num 约束
+- **数量**：generate_count_options=[1,2,3,4]，默认 2
+- 默认模型：default_model_index；step 范围 sample_steps（10-41，默认16）
+
+## 6.3 视频生成（实测 11 个模型）
+| 模型 | model_req_key |
+|---|---|
+| 即梦 Seedance 2.5 | dreamina_seedance_45_pro |
+| 即梦 Seedance 2.0 mini | dreamina_seedance_40_mini |
+| 即梦 Seedance 2.0 Fast VIP | dreamina_seedance_40_vision |
+| 即梦 Seedance 2.0 VIP | dreamina_seedance_40_pro_vision |
+| 即梦 Seedance 2.0 Fast | dreamina_seedance_40 |
+| 即梦 Seedance 2.0 | dreamina_seedance_40_pro |
+| 即梦 Seedance 1.5 Pro | dreamina_ic_generate_video_model_vgfm_3.5_pro |
+| 即梦 Seedance 1.0 | dreamina_ic_generate_video_model_vgfm_3.0_pro |
+| 即梦 Seedance 1.0 Fast | dreamina_ic_generate_video_model_vgfm_3.0_fast |
+| MiniMax H3 | dreamina_minimax_h3 |
+| HappyHorse 1.1 | dreamina_happyhorse_v1_1 |
+
+参数（Seedance 2.5 options 实测）：
+- 比例 enum：21:9 / 16:9(默认) / 4:3 / 1:1 / 3:4 / 9:16
+- 分辨率 enum：480p / 720p / 1080p（UI 显示 720P/1080P✦）
+- 时长：duration_ms 4000-15000（全局 video_duration_display_range）
+- 长视频模式（超长视频Beta）：30s-180s step 1s；帧数 frames enum 96-504+；fps 24
+- 参考模式 options：first_frame/end_frame（首尾帧）、extend（视频续写）、edit（智能编辑）、unified_edit（全能参考，素材上限 30 图/10 视频）、input_media_type enum
+- 第三方模型（MiniMax H3 / HappyHorse 1.1）也在下拉里——**供应商聚合入口**，佐证 admin 多供应商设计
+
+## 6.4 音乐生成（实测）
+- URL ?type=music；模型下拉：**SeedMusic 1.0 Preview**（唯一）；按钮：**智能时长**
+- 配置 API 未在 SSR；切换类型时按需加载（实现时抓 network 补）
+
+## 6.5 配音生成（实测）
+- URL ?type=audio；无模型下拉；按钮：**克隆声音**
+- 配置线索（SSR）：`audio_generate_ab: {default_model_req_key: "tts_model_v3", tts_generate_switch: true}`；TTS 域名 `wss://sami.bytedance.com`（SAMI websocket）
+- 参考资源约束（reference_resource_config）：max_audio_count=10, max_audio_duration=30.2s, min_audio_duration=1.8s
+
+## 6.6 数字人（实测）
+- URL ?type=digitalHuman
+- 模式下拉：**快速模式**（另有选项待抓，通常有 精细模式）
+- 按钮：**上传音频**
+- textarea 双段 placeholder：「说话内容\n\n请输入你希望角色说出的内容\n动作描述\n\n(可选) 添加动作描述和镜头语言，如：镜头推进，他摘下眼镜，对着镜头…」
+
+## 6.7 动作模仿（实测，SSR imitator 配置）
+- URL ?type=imitator；模型下拉来自 imitator config：**大师**（效果最佳，画质超清，icon_tag=new）等；风格 combobox「生动」
+- 模型 icon 为数字人形象图（actor_m15-pro 等）
+
+## 6.8 Agent 配置与技能（实测 API）
+- `POST /mweb/v1/creation_agent/v2/get_agent_config`：image_data(9 模型) + video_data(11 模型) + skill_data + reference_resource_config + user_custom_skills_config
+- `POST /mweb/v1/creation_agent/v2/skill/list`：official_skills 实测 4 个：
+  - web_agent_skill_story **影视故事短片**「帮你自动生成故事大纲、分镜脚本并产出短片」market_tag=film_short
+  - web_agent_skill_ecommerce **电商套图**
+  - web_agent_skill_poster **海报设计**
+  - web_agent_skill_brand **Logo设计**（截图里叫"品牌设计"，以 API name 为准）
+  - 字段含 showcase_media（案例图）、market_enabled、default_desc/default_title
+- Agent 的 MCP 工具配置（libra abtest）：text2image/image2image 端点对（bytedance.mcp.creation_*40 / agent31 / agentic_gen_image_ppe）——即梦把 agent 的生成能力包成 MCP 工具，**与我们 AGENT-RESEARCH 的工具集设计同构**，工具粒度参照
+- reference_resource_config：max_image_count 30 / max_video_count 10 / max_audio_count 10 / max_video_file_size_mb 200 / min_duration 1.8s
+
+## 6.9 seed 数据结论
+- models 表 seed 直接从 `RECON/jimeng-cn/*.json` 生成（不再手抄截图）：image 9 + video 11 + imitator N + music 1 + tts 1，含 badge/description/默认值/参数矩阵原样入库
+- creation_modes seed：7 类型（含 URL type 值）
+- agent_skills seed：4 官方技能（含 showcase 链接——注意签名过期，需转存本地图）
