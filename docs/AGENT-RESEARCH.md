@@ -233,3 +233,52 @@ research → proposal → script → scene_plan → assets → edit → compose
 （若未来多用户高并发长链路成为主力负载，届时把执行器迁移到 eve/Temporal 是局部替换——steps 表的 schema 不变。）
 
 Sources: [LangGraph vs Temporal (LangChain官方)](https://www.langchain.com/resources/langgraph-vs-temporal) · [Temporal vs LangChain 分层共识](https://cordum.io/blog/temporal-vs-langchain) · [eve 执行模型与持久化](https://eve.dev/docs/concepts/execution-model-and-durability) · [Restate + Vercel AI SDK durable agents](https://www.restate.dev/blog/building-durable-agents-with-vercel-and-restate) · [Runway Agent 官方文档](https://help.runwayml.com/hc/en-us/articles/51601639579667-Creating-with-Runway-Agent) · [OpenMontage (GitHub)](https://github.com/calesthio/OpenMontage) · [Vercel AI SDK Agents](https://ai-sdk.dev/docs/agents/overview) · [eve K8s 自托管 (Platformatic)](https://blog.platformatic.dev/run-durable-eve-agents-on-kubernetes-with-platformatic)
+
+---
+
+# E. OpenMontage 直接复用评估（2026-08-30 · 回答"能不能直接拿来用"）
+
+## 结论先行：能"用"，但不是"嵌进产品"，而是三条路径选一条
+
+OpenMontage 的本质：**没有运行时编排器**——它是"一堆 Python 工具 + YAML 流程清单 + Markdown 技能 + 检查点文件系统"，**大脑是你的 coding agent**（Claude Code/Cursor/Codex），它在**你的本地终端**里跑。它从不在运行时调用 LLM API；也没有 HTTP/SDK 形式的"流水线执行服务"可供你的 NestJS 调用（Backlot 只是一个只读监控 Web 面板）。
+
+## 三条复用路径
+
+### 路径一：直接拿来用（个人工具形态）——今天就能跑 ✅
+```bash
+git clone calesthio/OpenMontage && make setup
+# 在 Claude Code/Codex 里说 "Make a 60-second explainer about X"
+```
+- **定位**：你自己的本地视频生产 CLI 工具，与 anygen 产品**并行存在**，互不干扰
+- 适合：你个人快速出片、验证各家模型效果、给 anygen 选型攒经验
+- 成本：零集成工作；AGPLv3 仅约束分发/网络服务，个人本地用无任何问题
+- 局限：没有用户体系/计费/多租户——它不是产品后端
+
+### 路径二：把 OpenMontage 当"执行引擎"嵌进 anygen ❌ 不建议
+设想：NestJS 生成任务 → 起一个 headless coding-agent 进程驱动 OpenMontage → 回收产物。
+问题：
+1. **回到 pi 云端内嵌的老路**：每任务一个 LLM agent 进程，贵、慢、隔离复杂——正是调研 A 里已否决的形态
+2. **编排不可编程**：它的"编排"是 Markdown 指令给 coding agent 读的，不是 API；你无法从代码里确定性地说"跑 cinematic pipeline 第 3 阶段"
+3. **AGPLv3 传染**：通过网络提供服务 = 分发，你的整个 anygen 后端将被要求开源（内部使用可豁免，但产品化即触发）
+4. 检查点在本地文件系统，多用户并发/多机都自己搞
+
+### 路径三：抄设计不抄代码（推荐）✅✅
+把 OpenMontage 验证过的**模式**移植进我们的纯 B 路线，零 license 风险：
+| OpenMontage 的资产 | 移植方式 |
+|---|---|
+| pipeline_defs/*.yaml（12 条流水线阶段定义） | 语义翻译进 agent_skills.plan_template（jsonb）：research→proposal→script→scene_plan→assets→edit→compose 七阶段即我们的步骤模板 |
+| skills/ 阶段导演技能（Markdown） | 变成我们 agent 每 stage 的 system prompt 片段（存库、版本化）|
+| 7 维供应商打分选择器 | 简化为 3 维（cost/quality/speed，即 Runway 的用户偏好），数据源=admin models 表的 price/cost 字段 |
+| 质量门 + 审批门（proposal/script/assets/publish） | agent_steps 状态机加 `awaiting_approval` 态 + SSE 通知（对齐 Runway 计划确认门）|
+| 预算治理（estimate→reserve→reconcile + cap） | 直接映射我们 ledger 的预扣/结算/预算帽——设计已就位 |
+| 渲染后自检（ffprobe/抽帧/音频分析） | 后置到 compose 步骤（FFmpeg 我们本来就要用）|
+| Backlot 只读监控板 | 我们的 SSE 会话流 + 任务卡已有同位能力 |
+
+另可直接复用的**零风险部件**（AGPL 不传染数据/接口/思路）：
+- 它的 `docs/PROVIDERS.md`（60+ 供应商接入要点/价格）作为 admin 配置参考手册
+- 供应商提示词约定（如 Seedance 8 组件提示词结构）——纯知识，写进我们的模型 skills
+
+## 建议
+1. **本周就 clone 下来当个人工具玩**（路径一），用它实测 Ark/Kling 的真实出片质量与成本——为 anygen 的 models 定价提供实测数据
+2. **产品内走路径三**：纯 B + plan_template，吸收它的阶段划分/质量门/预算治理设计
+3. 路径二永久排除（AGPL + 形态错配）
