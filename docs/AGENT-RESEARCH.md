@@ -282,3 +282,64 @@ git clone calesthio/OpenMontage && make setup
 1. **本周就 clone 下来当个人工具玩**（路径一），用它实测 Ark/Kling 的真实出片质量与成本——为 anygen 的 models 定价提供实测数据
 2. **产品内走路径三**：纯 B + plan_template，吸收它的阶段划分/质量门/预算治理设计
 3. 路径二永久排除（AGPL + 形态错配）
+
+---
+
+# F. OpenMontage 实测研究报告（2026-08-30 · clone 到 ~/openmontage-study 深读源码+跑通 preflight）
+
+> 本节修正 §E 的纸面结论。clone 170MB，venv + requirements.txt 装完直接跑通 `registry.discover()` 与 provider_menu_summary()。
+
+## F1. 实测确认的事实
+
+**工具层完全是普通 Python 库，可编程直调（重大修正）**：
+```python
+from tools.video.seedance_ark import SeedanceArkVideo
+t = SeedanceArkVideo()
+t.estimate_cost({'model_variant':'standard','resolution':'720p','duration_seconds':5})  # → $0.69
+t.execute(inputs)  # create/query/cancel/generate 四合一同步入口
+```
+- **121 个工具全部继承 BaseTool**，统一契约：`execute(inputs)->ToolResult / estimate_cost / dry_run / estimate_runtime / estimate_token_usage / check_dependencies / get_info / idempotency_key`
+- 元数据齐全：`tier(generate/edit/analysis…) / capability / provider / stability / execution_mode(async) / determinism / runtime`——**这就是我们 admin models 表想要的形状，且是现成参照**
+- 无 LLM 依赖：工具直接打各家 API（fal/Ark/Runway/Kling/Suno/ElevenLabs…）；"大脑"只在编排层
+
+**实测成本矩阵（Seedance Ark，官方 2026-07 定价内置）**：
+| 变体 | 480p/5s | 720p/5s | 1080p/5s |
+|---|---|---|---|
+| standard | $0.32 | $0.69 | $1.72 |
+| fast | $0.26 | $0.56 | – |
+| mini | $0.16 | $0.35 | – |
+（带视频参考再降 ~40%："with_video" 价；estimate_cost 内置 CNY/USD 换算）→ **我们 admin 定价 seed 的第一手数据源**
+
+**编排=纯指令，无运行时引擎**（确认 §E）：
+- `AGENT_GUIDE.md`(720行) 是写给 coding agent 的硬契约：Rule Zero（一切经 pipeline）、决策沟通契约（付费调用前必须播报 provider/model/理由）、双渲染引擎必须同时呈现给用户选（HARD RULE）、禁止未经批准换供应商、decision_log 只追加
+- `pipeline_defs/cinematic.yaml`：12 流水线声明 stage/skill/tools/审批门/review_focus/success_criteria + EP 编排模式（budget_default_usd、max_revisions、wall_time 上限）
+- `skills/pipelines/cinematic/` 10 个"导演"技能共 1421 行 Markdown；`skills/meta/` 含 checkpoint-protocol（写检查点前必须过 reviewer）、reviewer（CHAI 批评协议）
+- **三层知识**：tools(121) → skills(项目约定) → `.agents/skills/`(90 个供应商级技术包，如 seedance-2-5 的提示词契约/参考上限/各路由差异)
+
+**checkpoint 与预算治理是可独立复用的 Python 库**（此前低估）：
+- `lib/checkpoint.py`：init_project/write_checkpoint/get_next_stage；**门禁在写入时强制**——manifest 要求审批的 stage，没带 human_approved=True 就写不进 completed（GI-4 门禁硬化，社区 issue 修复过"检查点是建议性"漏洞）
+- `tools/cost_tracker.py`：estimate→reserve→reconcile + observe/warn/cap 三模式 + 单动作审批阈值($0.50) + BudgetExceededError——**与我们 ledger 预扣设计同构，接口可直接抄**
+
+**Backlot**：只读磁盘的监控面板（fs 监听 + "永不阻塞"降级渲染 + run 回放），agent 唯一职责是开工时 `python -m backlot open <id>`
+
+## F2. 对 §E 结论的修正
+
+| §E 纸面结论 | 实测修正 |
+|---|---|
+| "不可编程调用" | **半错**：编排层确实是指令非 API；但**工具层/checkpoint/cost_tracker 都是干净 Python 库，可直接 import** |
+| 三路径建议 | 路径三升级：不只抄"设计"，**可以直接以 AGPL 之外的方式复用其接口形状与数据**（成本矩阵、参考上限、提示词契约都是事实数据，不受版权传染） |
+
+**新增路径 1.5（实测后发现的最优解）：把它当"供应商 SDK + 定价数据库"用**
+- 121 个 provider 适配器 = 免费的供应商接入调研库：接新供应商前先读它的实现（限流/轮询/重试/价格），我们的 ArkProvider/后续 KlingProvider 照它的 battle-tested 形状写
+- `estimate_cost` 内置的**官方价格表**（按模型×分辨率×时长×是否带参考）直接抄进 admin models 的 price_cents/provider_cost_cents seed
+- `.agents/skills/` 90 个供应商技能 = prompt 工程知识库（如 Seedance 2.5 的多镜头 "Hard cut" 分解法、角色一致性 named locks、30图/10视频/10音频参考上限）→ 进我们 agent 的工具使用说明
+
+## F3. 最终定论（替代 §E 建议）
+
+1. **个人工具**（路径一）：照旧，`make setup` 后在 Claude Code 里用；我们实测已装好 venv
+2. **产品集成**（最终形态）：纯 B 路线不变，但把 OpenMontage 当**外部参考实现**分四级取用：
+   - L1 接口形状：BaseTool 契约（execute/estimate_cost/dry_run/idempotency_key）→ 我们的 GenerationProvider 接口对齐
+   - L2 事实数据：官方价格矩阵/参考上限/分辨率支持 → admin models seed + 参数校验
+   - L3 流程模式：七阶段+审批门+预算治理 → plan_template 与 agent_steps 状态机（已定）
+   - L4 供应商实现参考：接 Kling/Runway/fal 时读它的源码（不复制代码，AGPL）
+3. 路径二（嵌进程）维持排除：AGPL 传染 + 每任务一个 agent 进程的形态缺陷
