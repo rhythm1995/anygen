@@ -3,7 +3,7 @@
 > 📌 **结论以 [CONCLUSIONS.md](./CONCLUSIONS.md) 为准，本文为过程档案。**
 
 
-> 状态：**调研稿，等你选定路线后才进架构/代码**。
+> 状态：**已定稿**——最终路线「纯 B（AI SDK loop + 自建 steps）+ 技能模板执行器优先 + OpenMontage 四级取用」，见 [CONCLUSIONS.md](./CONCLUSIONS.md) D5/D6 与 §C/§D/§F。
 > 问题：即梦「Agent 模式」需要一个跑在云端的编排 agent——理解意图 → 拆解任务 → 调用平台生成能力（图/视频/音乐）→ 汇总交付。选哪条技术路线？
 > **范围决策（2026-08-30）**：一次性按 v2 规模设计实现（短链路 + 长链路多分镜编排都在范围内）；B 与 C 进行正式对比后定夺。
 
@@ -113,7 +113,7 @@ OpenAI 官方 agents 框架（handoffs/guardrails/tracing）。
 | 4 | A：pi 云端内嵌 | 不推荐（定位错配） |
 | 5 | E：OpenAI Agents SDK | 供应商锁定，排除 |
 
-**v2 基线下的裁决要点**（等你拍板）：
+**v2 基线下的裁决要点**（已裁决 2026-08-30：经业内调研修正为「纯 B + 声明式模板」，见 §C/§D；eve/Temporal 留作未来局部替换）：
 - 若「剧情短片」这类任务以**官方技能模板**（固定流程：大纲→分镜→逐镜→合成）为主 → **选 C**：框架免费拿到断点恢复，省下的正是 v2 最贵的部分
 - 若「自由对话式创作」（用户意图发散，LLM 每步自己决定调什么工具）为主 → **选 B**：C 会把动态性磨没
 - **混合现实解**：C 做骨架（会话=workflow，步骤持久化/恢复/并行交给框架）+ 每个 step 内部用 AI SDK 的 `generateText` 做 LLM 决策（tool calling 仍可用）——这其实是两路线优点合并，代价是同时引入两套依赖
@@ -149,7 +149,10 @@ OpenAI 官方 agents 框架（handoffs/guardrails/tracing）。
 - 技能 = 预置 plan 模板：`skill_data` 表已有，挂 `plan_template jsonb`，LLM 只填参数
 - 计费：LLM token（per_token）+ 每步生成费（per_image/per_second）双轨，预算护栏在会话级
 
-## 4. 等你拍板的三个子问题
+## 4. 原三个待决问题（均已解决，留档）
+> ✅ 路线：纯 B + OpenMontage 四级取用（业内调研后修正，见 §C/§D/§F）
+> ✅ 范围：v1=技能模板执行器，v2=自由 agent loop（用户拍板"一次性 v2"后按业内共识折中为模板优先）
+> ✅ LLM 供应商：走 admin models 表（creation_type=llm），GLM + 豆包双通道
 1. 路线选定：B / C / B→C 混合？
 2. Agent 模式 v1 范围：只做短链路（意图→单次生成）还是直接上长链路（多分镜编排）？建议 v1 短链路 + 官方技能模板，长链路 v2。
 3. LLM 供应商：走 admin 的 models 表（creation_type=llm），推荐先接 GLM（你现有 zai 通道）+ 豆包（同 Ark key），双通道互备。
@@ -169,7 +172,7 @@ OpenAI 官方 agents 框架（handoffs/guardrails/tracing）。
 - **Agent Skills**：`/` 触发的预制工作流（Ad Campaign、Mood Board）——与即梦「技能」完全同概念
 - **计费**：按模型+输出类型扣 credit，分辨率 480p→4K 分档
 
-**对我们的启示**：计划确认门（预算内暂停问用户）、Speed/Cost/Quality 三档偏好、Final Cut 式产物聚合，都应进 AGENT.md 设计。
+**对我们的启示**：计划确认门（预算内暂停问用户）、Speed/Cost/Quality 三档偏好、Final Cut 式产物聚合，都应进 Agent 模块设计（见 CONCLUSIONS D5）。
 
 ### A2. OpenMontage（开源界最完整的 agentic 视频生产系统，AGPLv3）
 "agent-first 架构——没有代码编排器，AI 编码助手就是编排器"：

@@ -1,5 +1,7 @@
 # Dreamina 全栈复刻 · 总计划
 
+> 📌 **现状与里程碑以 [CONCLUSIONS.md](./CONCLUSIONS.md) §5 为准**；本文 §上半部为 M1（国际版三页）历史规划，§末"三件套里程碑"已被 CONCLUSIONS §5 取代。
+
 > 目标：以 dreamina.capcut.com 的 /ai-tool/home、/ai-tool/generate、/ai-tool/assets-canvas 三页为蓝本，
 > 用 React(Next.js 最新) + Tailwind v4 + shadcn/ui + NestJS + Supabase + S3 兼容 CDN + Turborepo
 > 重建一个**可运行的全栈项目**。UI 逐像素对齐原站；数据模型对齐原站真实 API 形状；生成能力接真模型。
@@ -62,13 +64,13 @@ anygen/
 
 ---
 
-# 三件套里程碑（2026-08-30 增补 · 等用户确认文档后开工）
+# 三件套里程碑（2026-08-30 增补 · 已全部拍板；**权威版本见 CONCLUSIONS §5**）
 
 > 决策记录：范围=Admin+Agent+即梦CN 三件套合并；计费=**美元制**；审核=纳入本期；Agent=先调研报告后定路线。
 
 | 里程碑 | 内容 | 前置 |
 |---|---|---|
-| M1 文档定稿 | ADMIN / AGENT-RESEARCH / UI-SPEC-CN / MODERATION / DATA-MODEL 增量 / 本文件 | **等用户逐份确认** ← 当前 |
+| M1 文档定稿 | ADMIN / AGENT-RESEARCH / UI-SPEC-CN / MODERATION / DATA-MODEL 增量 / 本文件 | ✅ 已定稿（用户已拍板全部决策，见 CONCLUSIONS D1-D7） |
 | M2 Admin + 美元计费 | providers/api_keys/models/ledger 迁移 + AdminGuard + 8 个 admin 页 + 定价计算器 + cents RPC（TDD） | M1 |
 | M3 即梦 CN 创作面板 | creation_modes + models seed + 7 类型工具条/弹层（UI-SPEC-CN）+ zh-Hans 全站 + 提交参数贯通计费 | M2（面板吃 models 配置） |
 | ~~M4 审核管线~~ | **暂缓（用户决策 2026-08-30）**——设计储备保留在 MODERATION.md，顺延为 M6+ | — |

@@ -1,5 +1,7 @@
 # DATA-MODEL
 
+> 📌 本文上半部（§1-§6）为 **M1 已实现 schema**（含 credit_ledger/credit_balance——**M2 起废弃**，替换为下方"增量设计"节的 ledger/balance_cents）；冲突处以"增量设计"节 + [CONCLUSIONS.md](./CONCLUSIONS.md) D2 为准。
+
 > 表结构以原站真实 API 响应形状为基准（证据：`dreamina-clone/RECON/auth/generate-api/`、
 > `dreamina-clone/RECON/network/fixtures/`）。snake_case，全部表 `created_at timestamptz default now()`。
 

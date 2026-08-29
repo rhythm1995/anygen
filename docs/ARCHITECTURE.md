@@ -1,5 +1,7 @@
 # ARCHITECTURE
 
+> 📌 **本文为 M1（国际版三页）交付时的架构快照。** 计费（积分→美分 ledger）、模型配置（env→admin models 表）、后续 Agent 模块的现状与目标态以 [CONCLUSIONS.md](./CONCLUSIONS.md) + [ADMIN.md](./ADMIN.md) + [DATA-MODEL.md](./DATA-MODEL.md) 增量节为准。
+
 ## 总览
 
 ```
@@ -26,7 +28,7 @@
 
 - `turbo.json`：tasks = build / dev / test / typecheck / lint；`test` 依赖 `^build`（shared 先建）
 - `pnpm-workspace.yaml`：`apps/*` `packages/*`
-- 根 `package.json`：`dev` = `turbo run dev`（api:3001 / web:3000 并行）；`postinstall` 先 build shared
+- 根 `package.json`：`dev` = `turbo run dev`（api:3101 / web:3100 并行）；`postinstall` 先 build shared
 - TS：`tsconfig.base.json` 严格模式，各 app extends
 
 ## NestJS 模块划分

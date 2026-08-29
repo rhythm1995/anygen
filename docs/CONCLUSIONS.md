@@ -3,6 +3,21 @@
 > 本项目所有调研的**最终结论以本文为准**；过程档案见各专题文档（AGENT-RESEARCH.md / ADMIN.md / UI-SPEC-CN.md / MODERATION.md / VENDOR-OPENMONTAGE.md）。
 > 更新纪律：任何决策变更必须同步改本文并注明日期。
 
+## 0. 文档地图与治理（防漂移）
+
+| 层 | 文档 | 性质 | 权威范围 |
+|---|---|---|---|
+| 决策层 | **CONCLUSIONS.md** | **唯一权威** | 全部决策（D1-D7）、事实速查、里程碑现状 |
+| 契约层 | ADMIN · UI-SPEC-CN · VENDOR-OPENMONTAGE · DATA-MODEL 增量节 | 已定稿规格 | 各自领域实现规格；与 CONCLUSIONS 冲突时以 CONCLUSIONS 为准 |
+| 过程层 | AGENT-RESEARCH · MODERATION（搁置储备） | 调研档案 | 仅作依据追溯，不含"现状" |
+| 历史层 | ARCHITECTURE · UI-SPEC · PLAN · TESTING（M1 部分） · dreamina-clone/NOTES | M1 快照 | 记录已交付状态，不描述未来 |
+
+**治理纪律**（对所有 agent 与人生效，AGENTS.md 同步）：
+1. 决策变更：**先改本文（含日期）**，再动规格文档，最后才写代码
+2. 每份文档首行必须携带状态横幅（已定稿/待实施/已搁置/历史快照），状态变化只改横幅
+3. 历史层文档**不更新内容**，只允许加横幅指向权威文档
+4. 端口/命令/价格等易变事实只允许出现在一个权威处：端口→AGENTS.md，价格→vendor 数据+CONCLUSIONS §3.2
+
 ## 1. 项目定位
 
 **anygen = 即梦（国内版 jimeng.jianying.com）的内部复刻平台**。内部使用、不对外服务、无支付。

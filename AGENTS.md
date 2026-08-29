@@ -40,6 +40,7 @@ node tools/e2e-ui.mjs     # 真实浏览器 UI 全流程（注册→feed→生�
 ## 工作纪律（重要）
 
 1. **文档先行**：动代码前确认 docs/CONCLUSIONS.md 对应决策存在且最新；新决策先落 CONCLUSIONS.md 再实现。
+1.5 **文档分层**：改文档前先看 CONCLUSIONS.md §0 文档地图——决策只进 CONCLUSIONS，历史层文档只加横幅不改内容；每份文档首行必须带状态横幅。
 2. **TDD 核心功能**：计费/状态机/权限/契约类改动先写失败测试（现有 42 个测试的模式照抄：fixtures round-trip → 红 → 绿）。
 3. **不动 vendor/**：定制一律进 `vendor-overlay/`；对上游的调用只走 `vendor-overlay/bridge/run.py`（JSON stdin/stdout）。
 4. **UI 还原纪律**：颜色/字体/尺寸以 `dreamina-clone/RECON/` 的计算值为准（token 已在 apps/web globals.css），禁止目测；面板数据一律来自 admin models 表，禁止前端硬编码模型清单。
