@@ -73,12 +73,16 @@ const imageSize = (localPath) => {
 const pool = [...new Set(urlMap.values())].filter((p) => /\.(jpe?g|png|webp)$/i.test(p) && p.includes("ibyteimg"));
 const pickByAspect = (targetRatio, used) => {
   let best = null, bestDiff = Infinity;
-  for (const p of pool) {
-    if (used.has(p)) continue;
-    const { w, h } = imageSize(p);
-    const diff = Math.abs(w / h - targetRatio);
-    if (diff < bestDiff) { bestDiff = diff; best = p; }
-  }
+  const tryPick = () => {
+    for (const p of pool) {
+      if (used.has(p)) continue;
+      const { w, h } = imageSize(p);
+      const diff = Number.isFinite(w / h - targetRatio) ? Math.abs(w / h - targetRatio) : Infinity;
+      if (diff < bestDiff) { bestDiff = diff; best = p; }
+    }
+  };
+  tryPick();
+  if (!best) { used.clear(); tryPick(); }  // 池用尽则重置（feed 内容允许重复）
   if (best) used.add(best);
   return best;
 };
@@ -109,8 +113,8 @@ for (const it of items) {
   if (local) {
     url = copySeed(local, `${id}.jpg`);
   } else {
-    const w = c.cover_width ?? it?.image?.large_images?.[0]?.width ?? 640;
-    const h = c.cover_height ?? it?.image?.large_images?.[0]?.height ?? 640;
+    const w = c.cover_width || it?.image?.large_images?.[0]?.width || 640;
+    const h = c.cover_height || it?.image?.large_images?.[0]?.height || 640;
     const standIn = pickByAspect(w / h, usedPool);
     fallbacks++;
     if (standIn) {
