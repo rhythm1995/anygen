@@ -67,13 +67,16 @@ Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
 
 | 里程碑 | 内容 | 状态 |
 |---|---|---|
-| M1 | 三页全栈复刻（国际版）+ TDD 42 测试 | ✅ 已交付(1ade47c) |
-| M1.5 | CN 侦察（7 类型/模型矩阵/技能） | ✅ 已交付(8498add) |
-| **M2** | **Admin 后台 + 美元计费迁移**（providers/keys/models/ledger/pricing/usage，TDD） | ⬅ 下一步 |
-| M3 | 即梦 CN 创作面板（吃 models 表）+ zh-Hans | 排队 |
+| M1 | 三页全栈复刻（国际版）+ TDD 42 测试 | ✅ 1ade47c |
+| M1.5 | CN 侦察（7 类型/模型矩阵/技能） | ✅ 8498add |
+| M2 | Admin 核心（AdminGuard/models 管理 API+审计+美分账本 RPC/初始赠金 $5）| ✅ 本轮 |
+| M3 | **即梦 CN 创作面板**：7 类型工具条 + 图片模式（9 模型/分辨率矩阵/数量）+ 视频模式（11 模型/参考模式/时长）+ zh-Hans + 实时计价 | ✅ 本轮 |
+| M2.5 剩余 | admin 二级页完整版（pricing/usage/用户管理页 UI；API 已就绪） | 排队 |
 | M4 | Agent v1：技能模板执行器（plan_template + steps 状态机 + 审批门 + 预算护栏 + JSON 桥接 vendor 工具） | 排队 |
 | M5 | Agent v2：自由 agent loop（AI SDK）+ SSE | 排队 |
-| M6+ | 审核管线（如解封）、产品化剥离（AGPL） | 储备 |
+| M6+ | 审核管线（储备）、产品化剥离（AGPL） | 储备 |
+
+> 本轮交付（2026-08-30）：迁移 0005/0006 + 26 模型入库（RECON 真实配置）+ 美分 RPC + config/admin API + 七类型面板。测试 63 绿（shared 26 + api 单元 20 + e2e 17）。UI 实测：7 类型切换/图片模型下拉/参数弹层/视频工具条/实时计价/画布编辑 全通过（docs/verify/）。
 
 ## 6. 风险登记
 

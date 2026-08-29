@@ -92,7 +92,7 @@ function ProjectList() {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-dm-surface-2 text-dm-text-2">
             <Plus size={18} />
           </span>
-          <span className="mt-2 text-xs text-dm-text-3">New project</span>
+          <span className="mt-2 text-xs text-dm-text-3">新建项目</span>
         </button>
         {isLoading
           ? null
@@ -132,9 +132,9 @@ export default function CanvasEntryPage() {
   if (!session) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3">
-        <h1 className="font-dm-label text-xl text-dm-text">Assets & Canvas</h1>
+        <h1 className="font-dm-label text-xl text-dm-text">资产与画布</h1>
         <p className="max-w-sm text-center text-sm text-dm-text-3">
-          Sign in to manage your creative assets and infinite canvas projects.
+          登录后管理你的创作资产与无限画布项目。
         </p>
       </div>
     );
@@ -142,9 +142,9 @@ export default function CanvasEntryPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center px-8 pt-16">
-      <h1 className="mb-8 font-dm-label text-[26px] font-semibold text-dm-text">What are we creating today?</h1>
+      <h1 className="mb-8 font-dm-label text-[26px] font-semibold text-dm-text">今天想创作点什么？</h1>
       <div className="w-full max-w-[780px]">
-        <Composer compact placeholder="Start with an idea or @mention elements" />
+        <Composer compact placeholder="从想法开始，@ 引用元素" />
       </div>
       <div className="w-full">
         <IdeaCards />

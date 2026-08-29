@@ -47,7 +47,7 @@ function FeedCard({ item }: { item: FeedItem }) {
   return (
     <figure className="group relative mb-3 break-inside-avoid overflow-hidden rounded-xl bg-dm-surface" style={{ aspectRatio: `${item.width} / ${item.height || 1}` }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={item.coverUrl} alt={item.title || "AI creation"} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
+      <img src={item.coverUrl} alt={item.title || "AI 创作"} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
       <figcaption className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-2 bg-gradient-to-t from-black/80 to-transparent p-3 text-xs text-white opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
         {item.generateType === "text2video" && (
           <span className="mr-1 inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px]">
@@ -61,10 +61,10 @@ function FeedCard({ item }: { item: FeedItem }) {
 }
 
 const TABS = [
-  { key: "trends", label: "Trends", icon: null },
-  { key: "skills", label: "Skills", icon: <Flame size={13} /> },
-  { key: "shorts", label: "AI Shorts", icon: null },
-  { key: "events", label: "Events", icon: null },
+  { key: "trends", label: "发现", icon: null },
+  { key: "skills", label: "技能", icon: <Flame size={13} /> },
+  { key: "shorts", label: "AI 短片", icon: null },
+  { key: "events", label: "活动", icon: null },
 ];
 
 export default function HomePage() {
@@ -100,7 +100,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="flex flex-col items-center px-6 pt-16">
         <h1 className="mb-6 flex items-center gap-2 text-center font-dm-label text-[28px] font-bold text-dm-text">
-          Start Creating With
+          开始创作，交给
           <button className="flex items-center gap-1 text-dm-accent">
             AI Agent
             <ChevronDown size={20} />
@@ -112,10 +112,10 @@ export default function HomePage() {
 
         {/* Model cards */}
         <div className="mt-6 flex flex-wrap justify-center gap-3 pb-10">
-          <ModelCard icon={<span className="text-[#4f8dff]">▶</span>} title="AI Video" subtitle="Seedance 2.5" badge="25" />
-          <ModelCard icon={<span className="text-[#37d1e8]">✦</span>} title="AI Image" subtitle="Seedream 5.0" badge="5.0" />
-          <ModelCard icon={<span>🏺</span>} title="Clay Renderer" subtitle="Plugin for Seedance 2.5" />
-          <ModelCard icon={<Sparkles size={18} className="text-[#b9c6ff]" />} title="Smart edit ✨" subtitle="Upload your media" corner="New" />
+          <ModelCard icon={<span className="text-[#4f8dff]">▶</span>} title="AI 视频" subtitle="Seedance 2.5" badge="25" />
+          <ModelCard icon={<span className="text-[#37d1e8]">✦</span>} title="AI 图片" subtitle="Seedream 5.0" badge="5.0" />
+          <ModelCard icon={<span>🏺</span>} title="黏土渲染" subtitle="Seedance 2.5 插件" />
+          <ModelCard icon={<Sparkles size={18} className="text-[#b9c6ff]" />} title="智能编辑 ✨" subtitle="上传你的素材" corner="New" />
         </div>
       </section>
 
@@ -136,12 +136,12 @@ export default function HomePage() {
               </button>
             ))}
           </nav>
-          <span className="font-dm-label text-xs text-dm-text-3">Posted by me</span>
+          <span className="font-dm-label text-xs text-dm-text-3">我的发布</span>
         </div>
 
         {!session ? (
           <div className="flex h-64 items-center justify-center rounded-xl border border-dm-border bg-dm-surface/50 text-sm text-dm-text-3">
-            Sign in to browse the community feed
+            登录后浏览灵感社区
           </div>
         ) : query.isLoading ? (
           <div className="columns-2 gap-3 md:columns-3 xl:columns-5">

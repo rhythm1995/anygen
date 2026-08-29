@@ -42,10 +42,10 @@ export function SideRail() {
   const [busy, setBusy] = useState(false);
 
   const items: RailItem[] = [
-    { kind: "link", href: "/ai-tool/home", label: "Explore", icon: <Home size={19} strokeWidth={1.6} /> },
-    { kind: "link", href: "/ai-tool/generate", label: "Create", icon: <Plus size={19} strokeWidth={1.6} /> },
-    { kind: "link", href: "/ai-tool/assets-canvas", label: "Assets", icon: <FolderClosed size={19} strokeWidth={1.6} /> },
-    { kind: "link", href: "/ai-tool/assets-canvas", label: "Canvas", icon: <Shapes size={19} strokeWidth={1.6} /> },
+    { kind: "link", href: "/ai-tool/home", label: "灵感", icon: <Home size={19} strokeWidth={1.6} /> },
+    { kind: "link", href: "/ai-tool/generate", label: "生成", icon: <Plus size={19} strokeWidth={1.6} /> },
+    { kind: "link", href: "/ai-tool/assets-canvas", label: "资产", icon: <FolderClosed size={19} strokeWidth={1.6} /> },
+    { kind: "link", href: "/ai-tool/assets-canvas", label: "画布", icon: <Shapes size={19} strokeWidth={1.6} /> },
     ...(session
       ? ([
           { kind: "button", label: "Octo", icon: <Sparkles size={19} strokeWidth={1.6} />, onClick: () => {}, badge: "Beta" },
@@ -55,11 +55,11 @@ export function SideRail() {
 
   const bottomItems: RailItem[] = session
     ? [
-        { kind: "button", label: "Upgrade", icon: <span className="text-[10px] font-dm-label">+50</span>, onClick: () => {} },
-        { kind: "button", label: "Alerts", icon: <Bell size={19} strokeWidth={1.6} />, onClick: () => {} },
+        { kind: "button", label: "升级", icon: <span className="text-[10px] font-dm-label">+50</span>, onClick: () => {} },
+        { kind: "button", label: "通知", icon: <Bell size={19} strokeWidth={1.6} />, onClick: () => {} },
         { kind: "button", label: "API", icon: <Code2 size={19} strokeWidth={1.6} />, onClick: () => {} },
         { kind: "button", label: "3D", icon: <Box size={19} strokeWidth={1.6} />, onClick: () => {} },
-        { kind: "button", label: "Settings", icon: <Settings size={19} strokeWidth={1.6} />, onClick: () => {} },
+        { kind: "button", label: "设置", icon: <Settings size={19} strokeWidth={1.6} />, onClick: () => {} },
       ]
     : [
         { kind: "button", label: "API", icon: <Code2 size={19} strokeWidth={1.6} />, onClick: () => {} },
@@ -118,7 +118,7 @@ export function SideRail() {
             <button
               onClick={() => void signOut()}
               className="flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 text-dm-text-3 transition-colors hover:text-dm-text-2"
-              aria-label="Sign out"
+              aria-label="退出登录"
             >
               <LogOut size={19} strokeWidth={1.6} />
               <span className="font-dm-label text-[10px] leading-none">{me?.name?.slice(0, 6) ?? "You"}</span>
@@ -148,19 +148,19 @@ export function SideRail() {
         <DialogContent className="border-dm-border bg-dm-surface sm:max-w-[380px]">
           <DialogHeader>
             <DialogTitle className="font-dm-label">
-              {mode === "signin" ? "Sign in to Dreamina" : "Create your account"}
+              {mode === "signin" ? "登录即梦" : "创建账号"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <Input
-              placeholder="email"
+              placeholder="邮箱"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="border-dm-border bg-dm-surface-2 text-dm-text placeholder:text-dm-text-4"
             />
             <Input
-              placeholder="password"
+              placeholder="密码"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -172,13 +172,13 @@ export function SideRail() {
               disabled={busy || !email || !password}
               className="w-full bg-dm-accent font-dm-label text-[#04252a] hover:bg-dm-accent/90"
             >
-              {busy ? "..." : mode === "signin" ? "Sign in" : "Sign up"}
+              {busy ? "…" : mode === "signin" ? "登录" : "注册"}
             </Button>
             <button
               className="w-full text-center text-xs text-dm-text-3 hover:text-dm-text-2"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
             >
-              {mode === "signin" ? "No account? Sign up for free credits" : "Have an account? Sign in"}
+              {mode === "signin" ? "没有账号？注册即送 $5.00 创作额度" : "已有账号？直接登录"}
             </button>
           </div>
         </DialogContent>

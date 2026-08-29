@@ -38,6 +38,7 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log("[auth] effect start");
+    console.log("[auth] providers render — me:", Boolean(me));
     supabase.auth.getSession().then(({ data }) => {
       console.log("[auth] getSession resolved:", Boolean(data.session));
       setSession(data.session);

@@ -145,7 +145,7 @@ export default function ProjectCanvasPage() {
         id: `t-${Date.now()}`,
         type: "text",
         position: { x: 120 + Math.random() * 300, y: 260 + Math.random() * 160 },
-        data: { text: "New note" },
+        data: { text: "新建便签" },
       },
     ]);
   };
@@ -182,14 +182,14 @@ export default function ProjectCanvasPage() {
           aria-label="Project name"
         />
         <span className="text-[11px] text-dm-text-4">
-          {saveState === "saved" ? "All changes saved" : saveState === "saving" ? "Saving…" : "Unsaved changes"}
+          {saveState === "saved" ? "已保存" : saveState === "saving" ? "保存中…" : "未保存"}
         </span>
         <div className="flex-1" />
         <button onClick={addImageFromSeed} className="rounded-lg border border-dm-border px-3 py-1.5 font-dm-label text-xs text-dm-text-2 hover:bg-dm-surface">
-          + Image
+          + 图片
         </button>
         <button onClick={addText} className="rounded-lg border border-dm-border px-3 py-1.5 font-dm-label text-xs text-dm-text-2 hover:bg-dm-surface">
-          + Note
+          + 便签
         </button>
       </header>
 

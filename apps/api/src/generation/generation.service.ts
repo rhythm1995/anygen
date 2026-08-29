@@ -1,16 +1,13 @@
 import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { GenerationType } from "@dreamina/shared";
+import { pricing, type CreationType } from "@dreamina/shared";
 
 import { SupabaseClientFactory } from "../auth/supabase.client";
 import { CreditsService } from "../credits/credits.service";
 import { StorageService } from "../assets/storage.service";
 import { nextStatus } from "./state-machine";
-import { GENERATION_PROVIDER, type GenerationProvider } from "./providers/types";
-import { MissingProviderConfig } from "./providers/types";
-
-export const TASK_COST: Record<GenerationType, number> = { image: 4, video: 20 };
+import { GENERATION_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
 
 @Injectable()
 export class GenerationService {
@@ -25,12 +22,44 @@ export class GenerationService {
     return this.factory.serviceClient;
   }
 
-  async createTask(userId: string, input: { type: GenerationType; prompt: string; params?: Record<string, unknown> }) {
-    const cost = TASK_COST[input.type];
+  /** 从 models 表取模型（admin 配置驱动）；不存在/停用 → 404 */
+  private async resolveModel(creationType: CreationType, modelCode?: string) {
+    let q = this.db
+      .from("models")
+      .select("*")
+      .eq("creation_type", creationType)
+      .eq("enabled", true);
+    q = modelCode ? q.eq("code", modelCode) : q.eq("is_default", true);
+    const { data, error } = await q.limit(1).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new HttpException(`model not found for ${creationType}${modelCode ? `:${modelCode}` : ""}`, 404);
+    return data;
+  }
+
+  costOf(model: { unit_type: string; price_cents: number; resolution_factor: Record<string, number> }, params: Record<string, unknown>): number {
+    return pricing.costCents(model as never, params as never);
+  }
+
+  async createTask(
+    userId: string,
+    input: { type: CreationType; prompt: string; model_code?: string; params?: Record<string, unknown> },
+  ) {
+    const model = await this.resolveModel(input.type, input.model_code);
+    const params = input.params ?? {};
+    const cost = this.costOf(model, params);
+
     const taskId = randomUUID();
     const { data: task, error } = await this.db
       .from("generation_tasks")
-      .insert({ id: taskId, user_id: userId, type: input.type, prompt: input.prompt, params: input.params ?? {}, cost })
+      .insert({
+        id: taskId,
+        user_id: userId,
+        type: input.type,
+        prompt: input.prompt,
+        params: { ...params, model_code: model.code, model_name: model.display_name },
+        model_code: model.code,
+        cost_cents: cost,
+      })
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -41,14 +70,26 @@ export class GenerationService {
     });
     if (!debited) {
       await this.db.from("generation_tasks").delete().eq("id", taskId);
-      throw new HttpException("insufficient credits", 402);
+      throw new HttpException("insufficient balance", 402);
     }
 
+    // 音乐/配音/数字人/动作模仿：Provider 接口就绪但引擎未配置（CONCLUSIONS D7 无 mock）
+    if (input.type !== "image" && input.type !== "video") {
+      await this.credits.refund(userId, cost, taskId);
+      await this.db.from("generation_tasks").delete().eq("id", taskId);
+      throw new HttpException(`generation provider unavailable: no engine configured for ${input.type}`, 503);
+    }
+    const engineType: "image" | "video" = input.type;
+
     try {
-      const submitted = await this.provider.submit({ type: input.type, prompt: input.prompt, params: input.params ?? {} });
+      const submitted = await this.provider.submit({
+        type: engineType,
+        prompt: input.prompt,
+        params: { ...params, model_code: model.code },
+      });
       if (submitted.immediateUrls?.length) {
-        const updated = await this.completeTask(task, submitted.immediateUrls, input.type);
-        return updated;
+        const updated = await this.completeTask(task, submitted.immediateUrls, engineType);
+        return this.serialize(updated);
       }
       const { data: updated, error: upErr } = await this.db
         .from("generation_tasks")
@@ -57,7 +98,7 @@ export class GenerationService {
         .select()
         .single();
       if (upErr) throw new Error(upErr.message);
-      return updated;
+      return this.serialize(updated);
     } catch (e) {
       await this.credits.refund(userId, cost, taskId);
       await this.db.from("generation_tasks").delete().eq("id", taskId);
@@ -89,13 +130,13 @@ export class GenerationService {
         .from("generation_tasks")
         .update({ status: nextStatus("running", "failed"), error: poll.error, finished_at: new Date().toISOString() })
         .eq("id", task.id);
-      await this.credits.refund(userId, task.cost, task.id);
+      await this.credits.refund(userId, task.cost_cents, task.id);
       return this.serialize({ ...task, status: "failed", error: poll.error });
     }
     return this.serialize(task);
   }
 
-  private async completeTask(task: any, urls: string[], type: GenerationType) {
+  private async completeTask(task: any, urls: string[], type: "image" | "video") {
     const assetIds: string[] = [];
     for (const [i, url] of urls.entries()) {
       const key = `${type}/${task.user_id}/${randomUUID()}.${type === "image" ? "jpg" : "mp4"}`;
@@ -110,19 +151,24 @@ export class GenerationService {
         });
         assetIds.push(asset.id);
       } catch {
-        // 单个产物失败不阻塞任务成功（URL 保存在 meta 供追溯）
-        await this.storage.register(this.db, {
-          userId: task.user_id,
-          key: `failed/${task.id}/${i}`,
-          kind: type,
-          mime: "application/octet-stream",
-          meta: { sourceUrl: url, taskId: task.id },
-        }).catch(() => undefined);
+        await this.storage
+          .register(this.db, {
+            userId: task.user_id,
+            key: `failed/${task.id}/${i}`,
+            kind: type,
+            mime: "application/octet-stream",
+            meta: { sourceUrl: url, taskId: task.id },
+          })
+          .catch(() => undefined);
       }
     }
     const { data, error } = await this.db
       .from("generation_tasks")
-      .update({ status: nextStatus(task.status as "queued" | "running", "succeeded"), outputs: assetIds, finished_at: new Date().toISOString() })
+      .update({
+        status: nextStatus(task.status as "queued" | "running", "succeeded"),
+        outputs: assetIds,
+        finished_at: new Date().toISOString(),
+      })
       .eq("id", task.id)
       .select()
       .single();
@@ -154,9 +200,10 @@ export class GenerationService {
       type: task.type,
       prompt: task.prompt,
       params: task.params,
+      model_code: task.model_code,
       status: task.status,
       error: task.error,
-      cost: task.cost,
+      cost_cents: task.cost_cents,
       outputs: task.outputs ?? [],
       createdAt: task.created_at,
       finishedAt: task.finished_at,

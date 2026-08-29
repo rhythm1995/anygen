@@ -76,7 +76,7 @@ export class ConfigService {
     return Number(this.env.GENERATION_TIMEOUT_MS ?? 600_000);
   }
 
-  get signupBonusCredits(): number {
-    return Number(this.env.CREDITS_SIGNUP_BONUS ?? 150);
+  get initialGrantCents(): number {
+    return Number(this.env.INITIAL_GRANT_CENTS ?? 500);
   }
 }

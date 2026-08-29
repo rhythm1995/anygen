@@ -1,0 +1,2898 @@
+{
+ "ret": "0",
+ "errmsg": "success",
+ "systime": "1788036238",
+ "logid": "2026083004435811A85E9C15D37C651C34",
+ "data": {
+  "model_list": [
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/seedance_25.png",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/seedance_25.png~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=TDxkv5eg5GY%2BbawxH5gftwNLoL0%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 2.5 ",
+    "model_name_starling_key": "seedance_25_name",
+    "model_tip": "最强模型，支持 50个参考，新增视频编辑、超长生成",
+    "model_tip_starling_key": "seedance_25_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "first_frame_config",
+      "value_type": "first_frame_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "first_frame_config": {
+       "video_aspect_ratio_mode": "adaptive"
+      }
+     },
+     {
+      "key": "end_frame_config",
+      "value_type": "end_frame_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "end_frame_config": {
+       "video_aspect_ratio_mode": "adaptive"
+      }
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ],
+       "video_aspect_ratio_mode": "adaptive"
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ],
+       "max_prompt_length": 2000,
+       "video_aspect_ratio_mode": "adaptive",
+       "duration_mode": "adaptive",
+       "edit_min_video_duration": 4,
+       "edit_max_video_duration": 30
+      }
+     },
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "480p",
+        "720p",
+        "1080p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "long_video",
+      "value_type": "long_video",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "long_video_config": {
+       "duration_ms": {
+        "min": 30000,
+        "max": 180000,
+        "step": 1000,
+        "default": 30000
+       }
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 30,
+          "max_width": 6000,
+          "max_height": 6000,
+          "min_width": 300,
+          "min_height": 300,
+          "max_file_size": 30,
+          "min_aspect_ratio": 0.4,
+          "max_aspect_ratio": 2.5,
+          "support_formats": [
+           "jpeg",
+           "png",
+           "webp",
+           "bmp",
+           "tiff",
+           "gif",
+           "heic",
+           "heif"
+          ]
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 10,
+          "max_duration": 30.2,
+          "min_duration": 1.8,
+          "max_width": 6000,
+          "max_height": 6000,
+          "min_width": 300,
+          "min_height": 300,
+          "max_file_size": 200,
+          "min_aspect_ratio": 0.4,
+          "max_aspect_ratio": 2.5,
+          "min_fps": 24,
+          "max_fps": 60,
+          "min_total_pixels": 409600,
+          "max_total_pixels": 8295044,
+          "support_formats": [
+           "mp4",
+           "mov"
+          ]
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 10,
+          "max_duration": 30.2,
+          "min_duration": 1.8,
+          "max_file_size": 15,
+          "support_formats": [
+           "wav",
+           "mp3"
+          ]
+         }
+        }
+       ],
+       "max_total_count": 50,
+       "max_total_video_duration": 30.2,
+       "max_total_audio_duration": 30.2
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame",
+        "long_video",
+        "edit"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 720,
+       "step": 24,
+       "default": 96
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360,
+        384,
+        408,
+        432,
+        456,
+        480,
+        504,
+        528,
+        552,
+        576,
+        600,
+        624,
+        648,
+        672,
+        696,
+        720
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "seedance_25_720p_output",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": null,
+     "resolution_price_configs": [
+      {
+       "resolution": "480p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_480p_output",
+        "amount": 0
+       },
+       "long_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_long_video_480p_output",
+        "amount": 0
+       },
+       "no_input_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_480p_no_input_video_output",
+        "amount": 0
+       },
+       "no_input_video_long_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_long_video_480p_no_input_video_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "720p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_720p_output",
+        "amount": 0
+       },
+       "long_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_long_video_720p_output",
+        "amount": 0
+       },
+       "no_input_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_720p_no_input_video_output",
+        "amount": 0
+       },
+       "no_input_video_long_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_long_video_720p_no_input_video_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "1080p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_1080p_output",
+        "amount": 0
+       },
+       "long_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_long_video_1080p_output",
+        "amount": 0
+       },
+       "no_input_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_1080p_no_input_video_output",
+        "amount": 0
+       },
+       "no_input_video_long_video_price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_25_long_video_1080p_no_input_video_output",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_seedance_45_pro",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by seed",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": true,
+     "enable_task_cancel": true,
+     "max_batch_gen_count": 4,
+     "support_prompt_enhancement": true,
+     "max_prompt_length": 15000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_seedance25_policy",
+    "subject_pre_audit_policy": "video_generate_seedance25_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/2_0_fast.jpg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/2_0_fast.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=9cZjGJZIuQUv5OwITFnE%2BSVAdX8%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 2.0 mini",
+    "model_name_starling_key": "seedance_20_mini_name",
+    "model_tip": "极致性价比，相近的体验，比Fast更快的推理速度",
+    "model_tip_starling_key": "seedance_20_mini_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15.4,
+          "min_duration": 2,
+          "max_width": 2160,
+          "max_height": 2160,
+          "min_width": 200,
+          "min_height": 200,
+          "max_file_size": 50
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_file_size": 15
+         }
+        }
+       ],
+       "max_total_count": 12,
+       "max_total_video_duration": 15.4,
+       "max_total_audio_duration": 15,
+       "required_material_types": {
+        "any_of": [
+         1,
+         2
+        ],
+        "tips_starling_key": "video_seedance_2_audio_needed"
+       }
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 96
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "seedance_20_mini_720p_output",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": null,
+     "resolution_price_configs": [
+      {
+       "resolution": "720p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_mini_720p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "1080p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_mini_1080p_output",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_seedance_40_mini",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by seed",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": true,
+     "enable_task_cancel": true,
+     "max_batch_gen_count": 4,
+     "support_prompt_enhancement": true,
+     "max_prompt_length": 4000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_seedance20_mini_policy",
+    "subject_pre_audit_policy": "video_generate_seedance20_mini_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/2_0_fast.jpg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/2_0_fast.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=9cZjGJZIuQUv5OwITFnE%2BSVAdX8%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 2.0 Fast VIP",
+    "model_name_starling_key": "video_seedance20fast_vision",
+    "model_tip": "极速推理，会员专属通道，音视文图均可参考（暂不支持真人人脸）",
+    "model_tip_starling_key": "video_seedance20_fast_vision_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15.4,
+          "min_duration": 2,
+          "max_width": 2160,
+          "max_height": 2160,
+          "min_width": 200,
+          "min_height": 200,
+          "max_file_size": 50
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_file_size": 15
+         }
+        }
+       ],
+       "max_total_count": 12,
+       "max_total_video_duration": 15.4,
+       "max_total_audio_duration": 15,
+       "required_material_types": {
+        "any_of": [
+         1,
+         2
+        ],
+        "tips_starling_key": "video_seedance_2_audio_needed"
+       }
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 96
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "seedance_20_fast_720p_output",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {
+      "unified_edit_input_video": {
+       "resource_sub_type": "aigc",
+       "resource_id_type": "str",
+       "resource_id": "generate_video",
+       "benefit_type": "seedance_20_fast_720p_output",
+       "amount": 0
+      }
+     },
+     "additional_conf": null,
+     "resolution_price_configs": [
+      {
+       "resolution": "480p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_fast_480p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "720p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_fast_720p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "1080p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_fast_1080p_output",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_seedance_40_vision",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by seed",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": true,
+     "enable_task_cancel": true,
+     "max_batch_gen_count": 4,
+     "support_prompt_enhancement": true,
+     "max_prompt_length": 4000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_seedance20_policy",
+    "subject_pre_audit_policy": "video_generate_seedance20_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/2_0.jpg",
+     "image_url": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/2_0.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=2NSKIzfZnqfp1aE717ZEGsBJxVM%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 2.0 VIP",
+    "model_name_starling_key": "video_seedance20_vision",
+    "model_tip": "全模态能力，会员专属通道，音视文图均可参考（暂不支持真人人脸）",
+    "model_tip_starling_key": "video_seedance20_vision_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p",
+        "1080p",
+        "4k"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15.4,
+          "min_duration": 2,
+          "max_width": 2160,
+          "max_height": 2160,
+          "min_width": 200,
+          "min_height": 200,
+          "max_file_size": 50
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_file_size": 15
+         }
+        }
+       ],
+       "max_total_count": 12,
+       "max_total_video_duration": 15.4,
+       "max_total_audio_duration": 15,
+       "required_material_types": {
+        "any_of": [
+         1,
+         2
+        ],
+        "tips_starling_key": "video_seedance_2_audio_needed"
+       }
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 96
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "seedance_20_pro_720p_output",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": null,
+     "resolution_price_configs": [
+      {
+       "resolution": "480p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_pro_480p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "720p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_pro_720p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "1080p",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_pro_1080p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "4k",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "seedance_20_pro_4k_output",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_seedance_40_pro_vision",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by seed",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": true,
+     "enable_task_cancel": true,
+     "max_batch_gen_count": 4,
+     "support_prompt_enhancement": true,
+     "max_prompt_length": 4000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_seedance20_policy",
+    "subject_pre_audit_policy": "video_generate_seedance20_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/2_0_fast.jpg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/2_0_fast.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=9cZjGJZIuQUv5OwITFnE%2BSVAdX8%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 2.0 Fast",
+    "model_name_starling_key": "video_seedance_2_fast_name",
+    "model_tip": "高性价比，音视文图均可参考(暂不支持真人人脸)",
+    "model_tip_starling_key": "video_seedance_2_fast_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15.4,
+          "min_duration": 2,
+          "max_width": 2160,
+          "max_height": 2160,
+          "min_width": 200,
+          "min_height": 200,
+          "max_file_size": 50
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_file_size": 15
+         }
+        }
+       ],
+       "max_total_count": 12,
+       "max_total_video_duration": 15.4,
+       "max_total_audio_duration": 15,
+       "required_material_types": {
+        "any_of": [
+         1,
+         2
+        ],
+        "tips_starling_key": "video_seedance_2_audio_needed"
+       }
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 96
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "dreamina_seedance_20_fast",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {
+      "unified_edit_input_video": {
+       "resource_sub_type": "aigc",
+       "resource_id_type": "str",
+       "resource_id": "generate_video",
+       "benefit_type": "dreamina_seedance_20_fast_with_video",
+       "amount": 0
+      }
+     },
+     "additional_conf": null
+    },
+    "model_req_key": "dreamina_seedance_40",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by seed",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": true,
+     "enable_task_cancel": true,
+     "switch_guide_config": {
+      "target_model_req_key": "dreamina_seedance_40_vision",
+      "source_queue_length_threshold": 1000
+     },
+     "support_prompt_enhancement": true,
+     "max_prompt_length": 4000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_seedance20_policy",
+    "subject_pre_audit_policy": "video_generate_seedance20_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/2_0.jpg",
+     "image_url": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/2_0.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=2NSKIzfZnqfp1aE717ZEGsBJxVM%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 2.0",
+    "model_name_starling_key": "video_seedance_2_pro_name",
+    "model_tip": "全能王者，音视文图均可参考(暂不支持真人人脸)",
+    "model_tip_starling_key": "video_seedance_2_pro_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15.4,
+          "min_duration": 2,
+          "max_width": 2160,
+          "max_height": 2160,
+          "min_width": 200,
+          "min_height": 200,
+          "max_file_size": 50
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_file_size": 15
+         }
+        }
+       ],
+       "max_total_count": 12,
+       "max_total_video_duration": 15.4,
+       "max_total_audio_duration": 15,
+       "required_material_types": {
+        "any_of": [
+         1,
+         2
+        ],
+        "tips_starling_key": "video_seedance_2_audio_needed"
+       }
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 96
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "dreamina_video_seedance_20_pro",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {
+      "unified_edit_input_video": {
+       "resource_sub_type": "aigc",
+       "resource_id_type": "str",
+       "resource_id": "generate_video",
+       "benefit_type": "dreamina_video_seedance_20_video_add",
+       "amount": 0
+      }
+     },
+     "additional_conf": null
+    },
+    "model_req_key": "dreamina_seedance_40_pro",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by seed",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": true,
+     "enable_task_cancel": true,
+     "switch_guide_config": {
+      "target_model_req_key": "dreamina_seedance_40_pro_vision",
+      "source_queue_length_threshold": 1000
+     },
+     "support_prompt_enhancement": true,
+     "max_prompt_length": 4000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_seedance20_policy",
+    "subject_pre_audit_policy": "video_generate_seedance20_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/1_5_pro.jpg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/1_5_pro.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=Gi5YGNkHwF2zWCVHlzHOH2%2B1XNg%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 1.5 Pro",
+    "model_name_starling_key": "video_3_5",
+    "model_tip": "音画同出，全新体验",
+    "model_tip_starling_key": "video_3_5_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p",
+        "1080p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 120,
+       "max": 288,
+       "step": 24,
+       "default": 120
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "dreamina_video_seedance_15_pro",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": [
+      {
+       "option_key": "resolution",
+       "condition": {
+        "operation": "in",
+        "value": [
+         "1080p"
+        ]
+       },
+       "commerce_info": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "dreamina_video_seedance_15_pro_1080_add",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.5_pro",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by Seedance 1.5 Pro",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": false,
+     "enable_task_cancel": false
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": ""
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/1_0.jpg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/1_0.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=Nw3AquHuQ78xbp20rt7Ue0hn3nA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 1.0",
+    "model_name_starling_key": "video_3_0_Pro",
+    "model_tip": "效果最佳，画质超清",
+    "model_tip_starling_key": "video_3_0_Pro_illustrate",
+    "feature_key": "",
+    "icon_tag": "",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "1080p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "prompt",
+        "first_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 120,
+       "max": 240,
+       "step": 24,
+       "default": 120
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        120,
+        144,
+        168,
+        192,
+        216,
+        240
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "basic_video_operation_vgfm_v_three_pro",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": null
+    },
+    "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_pro",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by Seedance 1.0",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": false,
+     "enable_task_cancel": false
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": ""
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/1_0_fast.jpg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/1_0_fast.jpg~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=A9szDlzdqrKmJYUNnLp4tTBr7D0%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "即梦 Seedance 1.0 Fast",
+    "model_name_starling_key": "video_3_0fast",
+    "model_tip": "Pro级表现，加量不加价",
+    "model_tip_starling_key": "video_3_0fast_des",
+    "feature_key": "",
+    "icon_tag": "",
+    "options": [
+     {
+      "key": "multi_frames",
+      "value_type": "multi_frames",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "multi_frames_config": {
+       "duration_ms": {
+        "min": 0,
+        "max": 8000,
+        "step": 500,
+        "default": 5000
+       },
+       "media_config": [
+        {
+         "media_type": 1,
+         "max_video_media_duration_ms": 0
+        },
+        {
+         "media_type": 2,
+         "max_video_media_duration_ms": 10000
+        }
+       ],
+       "max_media_count": 20,
+       "min_generation_duration_ms": 2000,
+       "first_segment_generation_enabled": true,
+       "end_segment_generation_enabled": true
+      }
+     },
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720p",
+        "1080p"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "prompt",
+        "first_frame",
+        "multi_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 120,
+       "max": 240,
+       "step": 24,
+       "default": 120
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        120,
+        144,
+        168,
+        192,
+        216,
+        240
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "basic_video_operation_vgfm_v_three",
+      "amount": 0
+     },
+     "format": "{resolution}",
+     "format_conf": {
+      "1080p": {
+       "resource_sub_type": "aigc",
+       "resource_id_type": "str",
+       "resource_id": "generate_video",
+       "benefit_type": "basic_video_operation_vgfm_v_three_1080",
+       "amount": 0
+      },
+      "720p": {
+       "resource_sub_type": "aigc",
+       "resource_id_type": "str",
+       "resource_id": "generate_video",
+       "benefit_type": "basic_video_operation_vgfm_v_three",
+       "amount": 0
+      }
+     },
+     "additional_conf": [
+      {
+       "option_key": "resolution",
+       "condition": {
+        "operation": "in",
+        "value": [
+         "1080p"
+        ]
+       },
+       "commerce_info": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "basic_video_operation_vgfm_v_three_1080_add",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_ic_generate_video_model_vgfm_3.0_fast",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by Seedance 1.0 Fast",
+     "raw_model_source": "",
+     "aigc_compliance_confirmation_required": false,
+     "enable_task_cancel": false
+    },
+    "model_status": 0,
+    "mutex_conf": {
+     "mutex_list": [
+      [
+       {
+        "option_key": "frames"
+       },
+       {
+        "option_key": "input_media_type",
+        "condition": {
+         "operation": "in",
+         "value": [
+          "multi_frame"
+         ]
+        }
+       }
+      ]
+     ]
+    },
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/sd20_avg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/sd20_avg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=VNtyfuJM2dEGjf92hBq6BsbUQ%2BA%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": ""
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/minimax.png",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/minimax.png~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=NyHodcIbZbsuj9j8rk%2BM5s8acGU%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "MiniMax H3",
+    "model_name_starling_key": "minimax_h3_name",
+    "model_tip": "开源视频生成模型",
+    "model_tip_starling_key": "minimax_h3_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "768P",
+        "2K"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ],
+       "max_prompt_length": 2000,
+       "video_aspect_ratio_mode": "adaptive",
+       "duration_mode": "adaptive",
+       "edit_min_video_duration": 4,
+       "edit_max_video_duration": 30
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9,
+          "max_width": 5760,
+          "max_height": 5760,
+          "min_width": 256,
+          "min_height": 256,
+          "max_file_size": 30,
+          "min_aspect_ratio": 0.4,
+          "max_aspect_ratio": 2.5,
+          "support_formats": [
+           "jpg",
+           "jpeg",
+           "png",
+           "webp",
+           "heic",
+           "heif"
+          ]
+         }
+        },
+        {
+         "material_type": 2,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_width": 5760,
+          "max_height": 5760,
+          "min_width": 256,
+          "min_height": 256,
+          "max_file_size": 50,
+          "min_aspect_ratio": 0.4,
+          "max_aspect_ratio": 2.5,
+          "min_fps": 24,
+          "max_fps": 60,
+          "support_formats": [
+           "mp4",
+           "mov"
+          ]
+         }
+        },
+        {
+         "material_type": 3,
+         "limit": {
+          "max_count": 3,
+          "max_duration": 15,
+          "min_duration": 2,
+          "max_file_size": 15,
+          "support_formats": [
+           "wav",
+           "mp3"
+          ]
+         }
+        }
+       ],
+       "max_total_count": 12,
+       "max_total_video_duration": 15,
+       "max_total_audio_duration": 15,
+       "required_material_types": {
+        "any_of": [
+         1,
+         2
+        ],
+        "tips_starling_key": "video_seedance_2_audio_needed"
+       }
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame",
+        "end_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "duration_ms",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 4000,
+       "max": 15000,
+       "step": 1000,
+       "default": 4000
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 120
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "21:9",
+        "16:9",
+        "4:3",
+        "1:1",
+        "3:4",
+        "9:16"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "minimax_h3_768p_output",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": null,
+     "resolution_price_configs": [
+      {
+       "resolution": "768P",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "minimax_h3_768p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "2K",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "minimax_h3_2k_output",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_minimax_h3",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by MiniMax",
+     "raw_model_source": "MiniMax H3",
+     "aigc_compliance_confirmation_required": false,
+     "enable_task_cancel": true,
+     "max_batch_gen_count": 4,
+     "max_prompt_length": 7000
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/minimax40.svg",
+     "image_url": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/minimax40.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=SMZn8xd6ibPlUkIvI59pPMIKATY%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_minimaxh3_policy",
+    "subject_pre_audit_policy": "video_generate_minimaxh3_policy"
+   },
+   {
+    "icon": {
+     "image_uri": "tos-cn-i-tb4s082cfz/happy_horse.png",
+     "image_url": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/happy_horse.png~tplv-tb4s082cfz-resize:0:0.webp?lk3s=8e790bc3&x-expires=1819572238&x-signature=Md%2BKJDO%2FE10Trj9aZr%2FOtvgI3QU%3D",
+     "width": 0,
+     "height": 0,
+     "format": "webp",
+     "smart_crop_loc": null
+    },
+    "model_name": "HappyHorse 1.1",
+    "model_name_starling_key": "happyhorse_name",
+    "model_tip": "国产视频生成模型",
+    "model_tip_starling_key": "happyhorse_des",
+    "feature_key": "",
+    "icon_tag": "new",
+    "options": [
+     {
+      "key": "resolution",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "720P",
+        "1080P"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "extend_config",
+      "value_type": "extend_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "extend_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ]
+      }
+     },
+     {
+      "key": "edit_config",
+      "value_type": "edit_config",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "edit_config_val": {
+       "default_model_req_key": "dreamina_seedance_45_pro",
+       "support_model_req_key": [
+        "dreamina_seedance_45_pro"
+       ],
+       "max_prompt_length": 2000,
+       "video_aspect_ratio_mode": "adaptive",
+       "duration_mode": "adaptive",
+       "edit_min_video_duration": 4,
+       "edit_max_video_duration": 30
+      }
+     },
+     {
+      "key": "unified_edit",
+      "value_type": "unified_edit",
+      "forbidden_display": false,
+      "lens_motion_val": null,
+      "unified_edit_config": {
+       "supported_materials": [
+        {
+         "material_type": 1,
+         "limit": {
+          "max_count": 9,
+          "min_width": 400,
+          "min_height": 400,
+          "max_file_size": 20,
+          "support_formats": [
+           "jpeg",
+           "jpg",
+           "png",
+           "webp"
+          ]
+         }
+        }
+       ],
+       "max_total_count": 9
+      }
+     },
+     {
+      "key": "input_media_type",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "unified_edit",
+        "prompt",
+        "first_frame"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "duration_ms",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 4000,
+       "max": 15000,
+       "step": 1000,
+       "default": 5000
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames_slide_bar",
+      "value_type": "slide_bar",
+      "slide_bar_val": {
+       "min": 96,
+       "max": 360,
+       "step": 24,
+       "default": 120
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "frames",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        96,
+        120,
+        144,
+        168,
+        192,
+        216,
+        240,
+        264,
+        288,
+        312,
+        336,
+        360
+       ],
+       "default_val_idx": 1
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     },
+     {
+      "key": "fps",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "int",
+       "string_value": null,
+       "double_value": null,
+       "int_value": [
+        24
+       ],
+       "default_val_idx": 0
+      },
+      "forbidden_display": true,
+      "lens_motion_val": null
+     },
+     {
+      "key": "video_aspect_ratio",
+      "value_type": "enum",
+      "enum_val": {
+       "enum_type": "string",
+       "string_value": [
+        "16:9",
+        "9:16",
+        "1:1",
+        "4:3",
+        "3:4",
+        "4:5",
+        "5:4",
+        "9:21",
+        "21:9"
+       ],
+       "double_value": null,
+       "int_value": null,
+       "default_val_idx": 0
+      },
+      "forbidden_display": false,
+      "lens_motion_val": null
+     }
+    ],
+    "commercial_config": {
+     "default": {
+      "resource_sub_type": "aigc",
+      "resource_id_type": "str",
+      "resource_id": "generate_video",
+      "benefit_type": "happyhorse_11_720p_output",
+      "amount": 0
+     },
+     "format": "",
+     "format_conf": {},
+     "additional_conf": null,
+     "resolution_price_configs": [
+      {
+       "resolution": "720P",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "happyhorse_11_720p_output",
+        "amount": 0
+       }
+      },
+      {
+       "resolution": "1080P",
+       "price": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_video",
+        "benefit_type": "happyhorse_11_1080p_output",
+        "amount": 0
+       }
+      }
+     ]
+    },
+    "model_req_key": "dreamina_happyhorse_v1_1",
+    "extra": {
+     "pop_icon": null,
+     "model_source": "by Alibaba ATH",
+     "raw_model_source": "HappyHorse 1.1",
+     "aigc_compliance_confirmation_required": false,
+     "enable_task_cancel": true,
+     "max_batch_gen_count": 4,
+     "max_prompt_length": 2500
+    },
+    "model_status": 0,
+    "generation_category_name": "",
+    "generation_category_name_starling_key": "",
+    "icon_svg": {
+     "image_uri": "tos-cn-i-tb4s082cfz/happyhorse40.svg",
+     "image_url": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/happyhorse40.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=eTAKtsryFxhQnCydwNWo9mZgUBg%3D",
+     "width": 0,
+     "height": 0,
+     "format": "image",
+     "smart_crop_loc": null
+    },
+    "pre_audit_policy": "video_generate_happyhorse11_policy",
+    "subject_pre_audit_policy": "video_generate_happyhorse11_policy"
+   }
+  ],
+  "default_model_idx": 1,
+  "forbidden_display": false,
+  "feature_conf": {},
+  "model_req_key_empty_replace": "",
+  "remember_me": false,
+  "tag": {
+   "enable": true,
+   "text": "SD2.0"
+  },
+  "video_duration_display_range": {
+   "min_duration_ms": 4000,
+   "max_duration_ms": 15000
+  },
+  "video_resolution_display_list": [
+   {
+    "value": "720p",
+    "text": "720P"
+   },
+   {
+    "value": "1080p",
+    "text": "1080P"
+   }
+  ]
+ }
+}

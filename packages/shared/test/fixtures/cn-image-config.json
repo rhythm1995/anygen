@@ -1,0 +1,2628 @@
+{
+ "ret": "0",
+ "errmsg": "success",
+ "systime": "1788036238",
+ "logid": "2026083004435811A85E9C15D37C651C34",
+ "data": {
+  "model_list": [
+   {
+    "icon_url": "",
+    "model_name_starling_key": "web_image_model_name_50_large",
+    "model_tip_starling_key": "image_model_50_large_desc",
+    "model_req_key": "high_aes_general_v50p_large",
+    "is_new_model": true,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "byte_edit_2k",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject",
+     "new_model"
+    ],
+    "model_name": "图片 5.0 Pro",
+    "model_tip": "商业设计、影视、高密度图文等场景效果全面提升",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_50_large",
+    "generation_category_name": "图片 5.0 Pro",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v50_pro_1k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_1k",
+          "amount": 1
+         },
+         "resolution": [
+          "1k"
+         ],
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_15k",
+          "amount": 1
+         },
+         "resolution": [
+          "1.5k"
+         ],
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_2k",
+          "amount": 1
+         },
+         "resolution": [
+          "2k"
+         ],
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v50_pro_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_1k",
+          "amount": 1
+         },
+         "resolution": [
+          "1k"
+         ],
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_15k",
+          "amount": 1
+         },
+         "resolution": [
+          "1.5k"
+         ],
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_2k",
+          "amount": 1
+         },
+         "resolution": [
+          "2k"
+         ],
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v50_pro_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 5.0 Pro",
+     "raw_model_source": "Seedream 5.0 Pro"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "1.5k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 1536,
+        "height": 1536
+       },
+       {
+        "ratio_type": 2,
+        "width": 1296,
+        "height": 1728
+       },
+       {
+        "ratio_type": 3,
+        "width": 1920,
+        "height": 1080
+       },
+       {
+        "ratio_type": 4,
+        "width": 1728,
+        "height": 1296
+       },
+       {
+        "ratio_type": 5,
+        "width": 1080,
+        "height": 1920
+       },
+       {
+        "ratio_type": 6,
+        "width": 1248,
+        "height": 1872
+       },
+       {
+        "ratio_type": 7,
+        "width": 1872,
+        "height": 1248
+       },
+       {
+        "ratio_type": 8,
+        "width": 2268,
+        "height": 972
+       }
+      ],
+      "image_range_config": {
+       "min_length": 972,
+       "max_length": 2268,
+       "max_pixel_num": 2359296
+      },
+      "resolution_name": "标清 1.5K"
+     },
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "input_image_limit": [
+     {
+      "max_image_num": 10,
+      "ability_name": "byte_edit"
+     }
+    ],
+    "icon_url_svg": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=mYtc9Y%2BXN3fMYb2%2BOI4DS6lCt0M%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 2,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4
+    ],
+    "default_resolution_type": "2k"
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "web_image_model_name_50",
+    "model_tip_starling_key": "image_model_50_desc",
+    "model_req_key": "high_aes_general_v50",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "think_then_draw",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject"
+    ],
+    "model_name": "图片 5.0 Lite",
+    "model_tip": "指令响应更精准，生成效果更智能",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_50",
+    "generation_category_name": "5.0 Lite",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v5_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v5_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v5_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v5_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 5.0 Lite",
+     "raw_model_source": "Seedream 5.0 Lite"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "icon_url_svg": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=mYtc9Y%2BXN3fMYb2%2BOI4DS6lCt0M%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 4,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "web_image_model_name_43",
+    "model_tip_starling_key": "image_model_43_desc",
+    "model_req_key": "high_aes_general_v43",
+    "is_new_model": true,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "new_model",
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "think_then_draw",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject"
+    ],
+    "model_name": "图片 4.7",
+    "model_tip": "画质全面优化，指令响应能力再次提升",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_43",
+    "generation_category_name": "4.7",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v43_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v43_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v46_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v46_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 4.7",
+     "raw_model_source": "Seedream 4.3 Design"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "icon_url_svg": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=mYtc9Y%2BXN3fMYb2%2BOI4DS6lCt0M%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 4,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "web_image_model_name_46",
+    "model_tip_starling_key": "image_model_46_desc",
+    "model_req_key": "high_aes_general_v42",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "think_then_draw",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject"
+    ],
+    "model_name": "图片 4.6",
+    "model_tip": "人像一致性保持更好，性价比更高",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_46",
+    "generation_category_name": "4.6",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v46_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v46_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v46_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v46_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 4.6",
+     "raw_model_source": "Seedream 4.6 Design"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "icon_url_svg": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=mYtc9Y%2BXN3fMYb2%2BOI4DS6lCt0M%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 4,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "web_image_model_name_4_0_pro",
+    "model_tip_starling_key": "web_image_model_desc_4_0_pro",
+    "model_req_key": "high_aes_general_v40l",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "think_then_draw",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject"
+    ],
+    "model_name": "图片 4.5",
+    "model_tip": "强化一致性、风格与图文响应",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_4_0_pro",
+    "generation_category_name": "图片・4.5",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v4_pro_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v4_pro_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v4_pro_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_inpainting_repaint_piece",
+          "amount": 1
+         },
+         "resolution": null,
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_inpainting_eraser_piece",
+          "amount": 1
+         },
+         "resolution": null,
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_inpainting_repaint_byteedit_piece",
+          "amount": 1
+         },
+         "resolution": null,
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v4_pro_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 4.5",
+     "raw_model_source": "Seedream 4.5"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "icon_url_svg": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=%2BFOP1JcIk28%2FCubkktSwezyxo1U%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 4,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "web_image_model_name_4_1",
+    "model_tip_starling_key": "web_image_model_desc_4_1",
+    "model_req_key": "high_aes_general_v41",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "think_then_draw",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject"
+    ],
+    "model_name": "图片 4.1",
+    "model_tip": "更专业的创意、美学和一致性保持",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_4_1",
+    "generation_category_name": "图片・4.1",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v41_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v41_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_v41_2k",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_inpainting_repaint_piece",
+          "amount": 1
+         },
+         "resolution": null,
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_inpainting_eraser_piece",
+          "amount": 1
+         },
+         "resolution": null,
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_inpainting_repaint_byteedit_piece",
+          "amount": 1
+         },
+         "resolution": null,
+         "image_input_num_ranges": null
+        },
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_basic_v41_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 4.0 Design",
+     "raw_model_source": "Seedream 4.0 Design"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "icon_url_svg": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=%2BFOP1JcIk28%2FCubkktSwezyxo1U%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 4,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "dreamina_image4_title",
+    "model_tip_starling_key": "dreamina_image4_desc",
+    "model_req_key": "high_aes_general_v40",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "t2i",
+     "byte_edit",
+     "refuse_image",
+     "smart_scale",
+     "per_piece",
+     "think_then_draw",
+     "byte_edit_with_empty_prompt",
+     "byte_edit_with_custom_ratio",
+     "etta",
+     "support_subject"
+    ],
+    "model_name": "图片 4.0",
+    "model_tip": "支持多参考图、系列组图生成",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_4_0",
+    "generation_category_name": "图片・4.0",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_generate_piece",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_uhd_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_blend_piece",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_uhd_4k",
+          "amount": 1
+         },
+         "resolution": [
+          "4k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 4.0",
+     "raw_model_source": "Seedream 4.0"
+    },
+    "feats_cant_combine": [],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     },
+     "4k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 4096,
+        "height": 4096
+       },
+       {
+        "ratio_type": 2,
+        "width": 3520,
+        "height": 4693
+       },
+       {
+        "ratio_type": 3,
+        "width": 5404,
+        "height": 3040
+       },
+       {
+        "ratio_type": 4,
+        "width": 4693,
+        "height": 3520
+       },
+       {
+        "ratio_type": 5,
+        "width": 3040,
+        "height": 5404
+       },
+       {
+        "ratio_type": 6,
+        "width": 3328,
+        "height": 4992
+       },
+       {
+        "ratio_type": 7,
+        "width": 4992,
+        "height": 3328
+       },
+       {
+        "ratio_type": 8,
+        "width": 6197,
+        "height": 2656
+       }
+      ],
+      "image_range_config": {
+       "min_length": 2048,
+       "max_length": 6240,
+       "max_pixel_num": 16777216
+      },
+      "resolution_name": "超清 4K"
+     }
+    },
+    "icon_url_svg": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=mYtc9Y%2BXN3fMYb2%2BOI4DS6lCt0M%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": "",
+    "default_generate_count": 4,
+    "generate_count_options": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "dre_t2i_model_3_1",
+    "model_tip_starling_key": "dre_t2i_model_3_1_desc",
+    "model_req_key": "high_aes_general_v30l_art_fangzhou:general_v3.0_18b",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "etta",
+     "t2i",
+     "byte_edit",
+     "byte_edit_with_custom_ratio",
+     "byte_edit_with_empty_prompt"
+    ],
+    "model_name": "图片 3.1",
+    "model_tip": "丰富的美学多样性，画面更鲜明生动",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_3_1",
+    "generation_category_name": "图片・3.1 ",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_generate_plus",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_uhd",
+          "amount": 1
+         },
+         "resolution": [
+          "2k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_blend_plus",
+        "amount": 1
+       },
+       "rules": []
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 3.0",
+     "raw_model_source": "Seedream 3.0"
+    },
+    "feats_cant_combine": [
+     [
+      "byte_edit",
+      "byte_edit"
+     ]
+    ],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "1k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 1328,
+        "height": 1328
+       },
+       {
+        "ratio_type": 2,
+        "width": 1104,
+        "height": 1472
+       },
+       {
+        "ratio_type": 3,
+        "width": 1664,
+        "height": 936
+       },
+       {
+        "ratio_type": 4,
+        "width": 1472,
+        "height": 1104
+       },
+       {
+        "ratio_type": 5,
+        "width": 936,
+        "height": 1664
+       },
+       {
+        "ratio_type": 6,
+        "width": 1056,
+        "height": 1584
+       },
+       {
+        "ratio_type": 7,
+        "width": 1584,
+        "height": 1056
+       },
+       {
+        "ratio_type": 8,
+        "width": 2016,
+        "height": 864
+       }
+      ],
+      "image_range_config": {
+       "min_length": 512,
+       "max_length": 2016,
+       "max_pixel_num": 1763584
+      },
+      "resolution_name": "标清 1K"
+     },
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     }
+    },
+    "icon_url_svg": "https://p11-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=mYtc9Y%2BXN3fMYb2%2BOI4DS6lCt0M%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": ""
+   },
+   {
+    "icon_url": "",
+    "model_name_starling_key": "dre_t2i_model_3_0",
+    "model_tip_starling_key": "dre_t2i_model_3_0_desc",
+    "model_req_key": "high_aes_general_v30l:general_v3.0_18b",
+    "is_new_model": false,
+    "sample_steps": {
+     "steps": 16,
+     "min_steps": 10,
+     "max_steps": 41
+    },
+    "blend_enable": {
+     "face_swap": false,
+     "bg_paint": false,
+     "canny": false,
+     "depth": false,
+     "pose": false
+    },
+    "feats": [
+     "default_scene",
+     "etta",
+     "t2i",
+     "byte_edit",
+     "byte_edit_with_custom_ratio",
+     "byte_edit_with_empty_prompt"
+    ],
+    "model_name": "图片 3.0",
+    "model_tip": "影视质感，文字更准，直出2k高清图",
+    "feature_key": "",
+    "generation_category_name_starling_key": "dreamina_app_modalswitch_image_3",
+    "generation_category_name": "图片・3.0",
+    "duration_option": null,
+    "lens_motion_type_option": null,
+    "motion_speed_option": null,
+    "camera_strength_option": null,
+    "video_aspect_ratio_option": null,
+    "commercial_config": {
+     "commerce_info_map": null,
+     "image_model_commerce_config": {
+      "base": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_basic_generate_plus",
+        "amount": 1
+       },
+       "rules": [
+        {
+         "benefit_key": {
+          "resource_sub_type": "aigc",
+          "resource_id_type": "str",
+          "resource_id": "generate_img",
+          "benefit_type": "image_uhd",
+          "amount": 1
+         },
+         "resolution": [
+          "2k"
+         ],
+         "image_input_num_ranges": null
+        }
+       ]
+      },
+      "blend": {
+       "default": {
+        "resource_sub_type": "aigc",
+        "resource_id_type": "str",
+        "resource_id": "generate_img",
+        "benefit_type": "image_blend_plus",
+        "amount": 1
+       },
+       "rules": []
+      }
+     }
+    },
+    "fps": 0,
+    "feat_config": {
+     "canny": {
+      "strength": 0.6
+     },
+     "depth": {
+      "strength": 0.6
+     },
+     "pose": {
+      "strength": 0.6
+     },
+     "style_reference": {
+      "strength": 0.8
+     }
+    },
+    "extra": {
+     "model_source": "by Seedream 3.0",
+     "raw_model_source": "Seedream 3.0"
+    },
+    "feats_cant_combine": [
+     [
+      "byte_edit",
+      "byte_edit"
+     ]
+    ],
+    "model_bg_prompt_starling_key": "",
+    "resolution_map": {
+     "1k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 1328,
+        "height": 1328
+       },
+       {
+        "ratio_type": 2,
+        "width": 1104,
+        "height": 1472
+       },
+       {
+        "ratio_type": 3,
+        "width": 1664,
+        "height": 936
+       },
+       {
+        "ratio_type": 4,
+        "width": 1472,
+        "height": 1104
+       },
+       {
+        "ratio_type": 5,
+        "width": 936,
+        "height": 1664
+       },
+       {
+        "ratio_type": 6,
+        "width": 1056,
+        "height": 1584
+       },
+       {
+        "ratio_type": 7,
+        "width": 1584,
+        "height": 1056
+       },
+       {
+        "ratio_type": 8,
+        "width": 2016,
+        "height": 864
+       }
+      ],
+      "image_range_config": {
+       "min_length": 512,
+       "max_length": 2016,
+       "max_pixel_num": 1763584
+      },
+      "resolution_name": "标清 1K"
+     },
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     }
+    },
+    "icon_url_svg": "https://p26-dreamina-sign.byteimg.com/tos-cn-i-tb4s082cfz/model-dreamina.svg~tplv-tb4s082cfz-image.image?lk3s=8e790bc3&x-expires=1819572238&x-signature=%2BFOP1JcIk28%2FCubkktSwezyxo1U%3D",
+    "pre_audit_policy": "video_generate_normal_policy",
+    "subject_pre_audit_policy": ""
+   }
+  ],
+  "default_model_index": 0,
+  "sec_uid": "MS4wLjABAAAAU8FJ2QfrZ3Qrvza4s0Wh_mT0GFGXT_9Rj--aY-tdEhw",
+  "first_selected_model": {
+   "canvas": "high_aes_general_v30l_art_fangzhou:general_v3.0_18b",
+   "character": "high_aes_general_v30l_art_fangzhou:general_v3.0_18b",
+   "story": "high_aes_general_v30l_art_fangzhou:general_v3.0_18b",
+   "workbench": "high_aes_general_v50p_large"
+  },
+  "is_internal": false,
+  "disable_multi_model": false,
+  "image_resolution_display_map": {
+   "2k": {
+    "image_ratio_sizes": [
+     {
+      "ratio_type": 1,
+      "width": 2048,
+      "height": 2048
+     },
+     {
+      "ratio_type": 2,
+      "width": 1728,
+      "height": 2304
+     },
+     {
+      "ratio_type": 3,
+      "width": 2560,
+      "height": 1440
+     },
+     {
+      "ratio_type": 4,
+      "width": 2304,
+      "height": 1728
+     },
+     {
+      "ratio_type": 5,
+      "width": 1440,
+      "height": 2560
+     },
+     {
+      "ratio_type": 6,
+      "width": 1664,
+      "height": 2496
+     },
+     {
+      "ratio_type": 7,
+      "width": 2496,
+      "height": 1664
+     },
+     {
+      "ratio_type": 8,
+      "width": 3024,
+      "height": 1296
+     }
+    ],
+    "image_range_config": {
+     "min_length": 1296,
+     "max_length": 3024,
+     "max_pixel_num": 4194304
+    },
+    "resolution_name": "高清 2K"
+   },
+   "4k": {
+    "image_ratio_sizes": [
+     {
+      "ratio_type": 1,
+      "width": 4096,
+      "height": 4096
+     },
+     {
+      "ratio_type": 2,
+      "width": 3520,
+      "height": 4693
+     },
+     {
+      "ratio_type": 3,
+      "width": 5404,
+      "height": 3040
+     },
+     {
+      "ratio_type": 4,
+      "width": 4693,
+      "height": 3520
+     },
+     {
+      "ratio_type": 5,
+      "width": 3040,
+      "height": 5404
+     },
+     {
+      "ratio_type": 6,
+      "width": 3328,
+      "height": 4992
+     },
+     {
+      "ratio_type": 7,
+      "width": 4992,
+      "height": 3328
+     },
+     {
+      "ratio_type": 8,
+      "width": 6197,
+      "height": 2656
+     }
+    ],
+    "image_range_config": {
+     "min_length": 2048,
+     "max_length": 6240,
+     "max_pixel_num": 16777216
+    },
+    "resolution_name": "超清 4K"
+   }
+  },
+  "post_edit_param_configs": {
+   "101": {
+    "resolution_map": {
+     "1.5k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 1536,
+        "height": 1536
+       },
+       {
+        "ratio_type": 2,
+        "width": 1296,
+        "height": 1728
+       },
+       {
+        "ratio_type": 3,
+        "width": 1920,
+        "height": 1080
+       },
+       {
+        "ratio_type": 4,
+        "width": 1728,
+        "height": 1296
+       },
+       {
+        "ratio_type": 5,
+        "width": 1080,
+        "height": 1920
+       },
+       {
+        "ratio_type": 6,
+        "width": 1248,
+        "height": 1872
+       },
+       {
+        "ratio_type": 7,
+        "width": 1872,
+        "height": 1248
+       },
+       {
+        "ratio_type": 8,
+        "width": 2268,
+        "height": 972
+       }
+      ],
+      "image_range_config": {
+       "min_length": 972,
+       "max_length": 2268,
+       "max_pixel_num": 2359296
+      },
+      "resolution_name": "标清 1.5K"
+     },
+     "2k": {
+      "image_ratio_sizes": [
+       {
+        "ratio_type": 1,
+        "width": 2048,
+        "height": 2048
+       },
+       {
+        "ratio_type": 2,
+        "width": 1728,
+        "height": 2304
+       },
+       {
+        "ratio_type": 3,
+        "width": 2560,
+        "height": 1440
+       },
+       {
+        "ratio_type": 4,
+        "width": 2304,
+        "height": 1728
+       },
+       {
+        "ratio_type": 5,
+        "width": 1440,
+        "height": 2560
+       },
+       {
+        "ratio_type": 6,
+        "width": 1664,
+        "height": 2496
+       },
+       {
+        "ratio_type": 7,
+        "width": 2496,
+        "height": 1664
+       },
+       {
+        "ratio_type": 8,
+        "width": 3024,
+        "height": 1296
+       }
+      ],
+      "image_range_config": {
+       "min_length": 1296,
+       "max_length": 3024,
+       "max_pixel_num": 4194304
+      },
+      "resolution_name": "高清 2K"
+     }
+    },
+    "model_req_key": "high_aes_general_v50p_large",
+    "model_configs": [
+     {
+      "resolution_map": {
+       "1.5k": {
+        "image_ratio_sizes": [
+         {
+          "ratio_type": 1,
+          "width": 1536,
+          "height": 1536
+         },
+         {
+          "ratio_type": 2,
+          "width": 1296,
+          "height": 1728
+         },
+         {
+          "ratio_type": 3,
+          "width": 1920,
+          "height": 1080
+         },
+         {
+          "ratio_type": 4,
+          "width": 1728,
+          "height": 1296
+         },
+         {
+          "ratio_type": 5,
+          "width": 1080,
+          "height": 1920
+         },
+         {
+          "ratio_type": 6,
+          "width": 1248,
+          "height": 1872
+         },
+         {
+          "ratio_type": 7,
+          "width": 1872,
+          "height": 1248
+         },
+         {
+          "ratio_type": 8,
+          "width": 2268,
+          "height": 972
+         }
+        ],
+        "image_range_config": {
+         "min_length": 972,
+         "max_length": 2268,
+         "max_pixel_num": 2359296
+        },
+        "resolution_name": "标清 1.5K"
+       },
+       "2k": {
+        "image_ratio_sizes": [
+         {
+          "ratio_type": 1,
+          "width": 2048,
+          "height": 2048
+         },
+         {
+          "ratio_type": 2,
+          "width": 1728,
+          "height": 2304
+         },
+         {
+          "ratio_type": 3,
+          "width": 2560,
+          "height": 1440
+         },
+         {
+          "ratio_type": 4,
+          "width": 2304,
+          "height": 1728
+         },
+         {
+          "ratio_type": 5,
+          "width": 1440,
+          "height": 2560
+         },
+         {
+          "ratio_type": 6,
+          "width": 1664,
+          "height": 2496
+         },
+         {
+          "ratio_type": 7,
+          "width": 2496,
+          "height": 1664
+         },
+         {
+          "ratio_type": 8,
+          "width": 3024,
+          "height": 1296
+         }
+        ],
+        "image_range_config": {
+         "min_length": 1296,
+         "max_length": 3024,
+         "max_pixel_num": 4194304
+        },
+        "resolution_name": "高清 2K"
+       }
+      },
+      "model_req_key": "high_aes_general_v50p_large"
+     },
+     {
+      "resolution_map": {
+       "2k": {
+        "image_ratio_sizes": [
+         {
+          "ratio_type": 1,
+          "width": 2048,
+          "height": 2048
+         },
+         {
+          "ratio_type": 2,
+          "width": 1728,
+          "height": 2304
+         },
+         {
+          "ratio_type": 3,
+          "width": 2560,
+          "height": 1440
+         },
+         {
+          "ratio_type": 4,
+          "width": 2304,
+          "height": 1728
+         },
+         {
+          "ratio_type": 5,
+          "width": 1440,
+          "height": 2560
+         },
+         {
+          "ratio_type": 6,
+          "width": 1664,
+          "height": 2496
+         },
+         {
+          "ratio_type": 7,
+          "width": 2496,
+          "height": 1664
+         },
+         {
+          "ratio_type": 8,
+          "width": 3024,
+          "height": 1296
+         }
+        ],
+        "image_range_config": {
+         "min_length": 1296,
+         "max_length": 3024,
+         "max_pixel_num": 4194304
+        },
+        "resolution_name": "高清 2K"
+       }
+      },
+      "model_req_key": "high_aes_general_v50"
+     }
+    ]
+   }
+  }
+ }
+}

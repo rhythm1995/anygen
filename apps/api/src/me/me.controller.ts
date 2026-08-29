@@ -12,14 +12,14 @@ export class MeController {
   @Get()
   async getMe(@Req() req: Request) {
     await this.me.ensureProfile(req.user!);
-    const { profile, credit } = await this.me.profileWithCredits(req.user!.id);
+    const { profile } = await this.me.profileWithCredits(req.user!.id);
     return {
       id: profile.id,
       name: profile.name,
       avatarUrl: profile.avatar_url,
       description: profile.description,
-      creditBalance: profile.credit_balance,
-      credit,
+      role: profile.role ?? "user",
+      balance_cents: profile.balance_cents,
     };
   }
 }

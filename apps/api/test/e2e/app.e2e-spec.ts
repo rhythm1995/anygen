@@ -126,8 +126,9 @@ describe("Dreamina API (e2e)", () => {
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({
         id: userId,
-        creditBalance: 0,
-        credit: { vip: 0, gift: 0, purchase: 0, total: 0 },
+        role: "user",
+        // 开通赠送 $5.00（INITIAL_GRANT_CENTS，CONCLUSIONS D2：内部使用无注册赠金语义）
+        balance_cents: 500,
       });
     });
   });
@@ -223,14 +224,46 @@ describe("Dreamina API (e2e)", () => {
     });
   });
 
+  describe("GET /api/config/creation-types", () => {
+    it("返回 7 类型 + 图片 9 模型 + 视频 11 模型（admin models 表驱动）", async () => {
+      const res = await authed.get("/api/config/creation-types");
+      expect(res.status).toBe(200);
+      const body = res.body as any;
+      expect(body.modes).toHaveLength(7);
+      expect(body.modes.map((m: any) => m.label)).toEqual([
+        "Agent 模式", "图片生成", "视频生成", "音乐生成", "配音生成", "数字人", "动作模仿",
+      ]);
+      expect(body.modelsByType.image).toHaveLength(9);
+      expect(body.modelsByType.video).toHaveLength(11);
+      const pro = body.modelsByType.image.find((m: any) => m.code === "high_aes_general_v50p_large");
+      expect(pro.is_default).toBe(true);
+      expect(pro.params.resolutions["2k"].map.sizes).toHaveLength(8);
+      const s25 = body.modelsByType.video.find((m: any) => m.code === "dreamina_seedance_45_pro");
+      expect(s25.params.aspect_ratio.options).toContain("16:9");
+      expect(s25.params.resolution.options).toContain("1080p");
+      expect(s25.params.duration_ms).toEqual({ min_duration_ms: 4000, max_duration_ms: 15000 });
+    });
+  });
+
+  describe("/api/admin（AdminGuard）", () => {
+    it("普通用户访问 → 404（不暴露路由）", async () => {
+      const res = await authed.get("/api/admin/models");
+      expect(res.status).toBe(404);
+    });
+  });
+
   describe("/api/generation/tasks（无 ARK key → 503）", () => {
     it("缺 ARK_API_KEY：503 明确配置错误，任务不残留、积分不扣", async () => {
-      await admin.rpc("grant_credit", { p_user: userId, p_amount: 100, p_reason: "topup" });
-      const res = await authed.post("/api/generation/tasks", { type: "image", prompt: "a cat", params: {} });
+      await admin.rpc("grant_cents", { p_user: userId, p_amount: 100, p_reason: "admin_adjust" });
+      const res = await authed.post("/api/generation/tasks", {
+        type: "image",
+        prompt: "a cat",
+        params: { resolution: "2k", count: 2 },
+      });
       expect(res.status).toBe(503);
       expect(String((res.body as any).message)).toContain("config");
       const me = await authed.get("/api/me");
-      expect((me.body as any).creditBalance).toBe(100); // 未扣分
+      expect((me.body as any).balance_cents).toBe(600); // 500 初始 + 100 未扣分
     });
   });
 });

@@ -283,3 +283,252 @@ export const creditReasonSchema = z.enum(CREDIT_REASONS);
 export type CreditReason = (typeof CREDIT_REASONS)[number];
 
 export const DREAMINA = "dreamina" as const;
+
+// ---------- CN 创作模式契约（2026-08-30，数据源 RECON/jimeng-cn SSR 配置） ----------
+
+export const CREATION_TYPES = [
+  "agent", "image", "video", "music", "dubbing", "digital_human", "motion_mimic",
+] as const;
+export const creationTypeSchema = z.enum(CREATION_TYPES);
+export type CreationType = z.infer<typeof creationTypeSchema>;
+
+export const creationModeSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  icon: z.string().optional().default(""),
+  enabled: z.boolean().optional().default(true),
+  sort: z.number().optional().default(0),
+});
+export type CreationMode = z.infer<typeof creationModeSchema>;
+
+const creationModeModelEntry = z.object({
+  creation_type: z.string(),
+  code: z.string(),
+  display_name: z.string(),
+  description: z.string().optional().default(""),
+  badge: z.string().nullable().optional(),
+  unit_type: z.string(),
+  price_cents: z.number(),
+  params: z.unknown().optional(),
+  is_default: z.boolean().optional().default(false),
+});
+export type CreationModeModelEntry = z.output<typeof creationModeModelEntry>;
+type ModelsByType = Record<string, CreationModeModelEntry[]>;
+
+const creationModesConfigBase = z.object({
+  modes: z.array(creationModeSchema),
+  models: z.array(creationModeModelEntry),
+});
+
+export const creationModesConfigSchema = creationModesConfigBase.transform((raw): {
+  modes: CreationMode[];
+  models: CreationModeModelEntry[];
+  modelsByType: ModelsByType;
+} => {
+  const modelsByType: ModelsByType = {};
+  for (const mode of raw.modes) modelsByType[mode.key] = [];
+  for (const m of raw.models) {
+    (modelsByType[m.creation_type] ??= []).push(m);
+  }
+  for (const list of Object.values(modelsByType)) {
+    list.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0));
+  }
+  return { modes: raw.modes, models: raw.models, modelsByType };
+});
+export type CreationModesConfig = z.output<typeof creationModesConfigSchema>;
+
+const ratioSize = z.object({
+  ratio_type: z.number(),
+  width: z.number(),
+  height: z.number(),
+});
+
+export const cnModelConfigSchema = z
+  .object({
+    data: z
+      .object({
+        model_list: z.array(
+          z
+            .object({
+              model_req_key: z.string(),
+              model_name: z.string(),
+              model_tip: z.string().optional().default(""),
+              is_new_model: z.boolean().optional(),
+              icon_tag: z.string().optional(),
+              resolution_map: z
+                .record(
+                  z.string(),
+                  z.object({
+                    resolution_name: z.string().optional().default(""),
+                    image_ratio_sizes: z.array(ratioSize).optional().default([]),
+                    image_range_config: z
+                      .object({ min_length: z.number(), max_length: z.number(), max_pixel_num: z.number() })
+                      .optional(),
+                  })
+                  .partial()
+                  .optional(),
+                )
+                .optional(),
+              generate_count_options: z.array(z.number()).optional(),
+              default_generate_count: z.number().optional(),
+              options: z.array(z.unknown()).optional(),
+            })
+            .passthrough(),
+        ),
+        default_model_index: z.number().optional().default(0),
+        default_model_idx: z.number().optional().default(0),
+        video_duration_display_range: z
+          .object({ min_duration_ms: z.number(), max_duration_ms: z.number() })
+          .optional(),
+        video_resolution_display_list: z.array(z.object({ value: z.string(), text: z.string() })).optional(),
+      })
+      .passthrough(),
+  })
+  .transform((raw) => {
+    const d = raw.data;
+    const models = (d.model_list ?? []).map((m) => {
+      const enums: Record<string, { options: (string | number)[]; default: string | number | null }> = {};
+      for (const o of m.options ?? []) {
+        const oo = o as { key?: string; value_type?: string; forbidden_display?: boolean; enum_val?: { string_value?: (string)[]; int_value?: number[]; default_val_idx?: number } };
+        if (oo.value_type === "enum" && !oo.forbidden_display && oo.enum_val) {
+          const options = oo.enum_val.string_value ?? oo.enum_val.int_value ?? [];
+          if (options.length) {
+            enums[oo.key ?? ""] = { options, default: options[oo.enum_val.default_val_idx ?? 0] ?? null };
+          }
+        }
+      }
+      const resolutionMap = m.resolution_map
+        ? Object.fromEntries(
+            Object.entries(m.resolution_map).map(([res, cfg]) => [
+              res,
+              {
+                name: cfg?.resolution_name ?? res,
+                sizes: cfg?.image_ratio_sizes ?? [],
+                range: cfg?.image_range_config,
+              },
+            ]),
+          )
+        : undefined;
+      return {
+        reqKey: m.model_req_key,
+        name: m.model_name,
+        tip: m.model_tip,
+        isNew: Boolean(m.is_new_model) || m.icon_tag === "new",
+        resolutionMap,
+        generateCountOptions: m.generate_count_options,
+        enums,
+      };
+    });
+    return {
+      models,
+      defaultIndex: Math.min(d.default_model_index ?? d.default_model_idx ?? 0, Math.max(models.length - 1, 0)),
+      durationRange: d.video_duration_display_range ?? null,
+      videoResolutions: d.video_resolution_display_list ?? null,
+    };
+  });
+export type CnModelConfig = z.output<typeof cnModelConfigSchema>;
+
+// ---------- 定价计算器（美分，永远向上取整） ----------
+
+export interface PricingModel {
+  unit_type: "per_image" | "per_second" | "per_token" | "per_request";
+  price_cents: number;
+  resolution_factor: Record<string, number>;
+}
+
+export const pricing = {
+  /** 统一入口；缺参/非法分辨率抛错（不允许静默 0 费） */
+  costCents(
+    model: PricingModel,
+    p: { resolution?: string; count?: number; duration_seconds?: number; tokens_in?: number; tokens_out?: number },
+  ): number {
+    const factor = (res?: string) => {
+      if (!res) throw new Error(`pricing: resolution required for ${model.unit_type}`);
+      const f = model.resolution_factor[res];
+      if (typeof f !== "number" || !(f > 0)) throw new Error(`pricing: unknown resolution ${res}`);
+      return f;
+    };
+    switch (model.unit_type) {
+      case "per_image": {
+        const count = p.count ?? 1;
+        if (count < 1) throw new Error("pricing: count must be >= 1");
+        return Math.ceil(model.price_cents * factor(p.resolution) * count);
+      }
+      case "per_second": {
+        const secs = p.duration_seconds;
+        if (!secs || secs <= 0) throw new Error("pricing: duration_seconds required");
+        return Math.ceil(model.price_cents * factor(p.resolution) * secs);
+      }
+      case "per_request":
+        return model.price_cents;
+      case "per_token": {
+        const io = (model as PricingModel & { io_pricing?: { in_cents_per_m: number; out_cents_per_m: number } }).io_pricing;
+        if (!io) throw new Error("pricing: per_token model requires io_pricing");
+        if (!p.tokens_in && !p.tokens_out) throw new Error("pricing: token counts required");
+        const inC = ((p.tokens_in ?? 0) / 1_000_000) * io.in_cents_per_m;
+        const outC = ((p.tokens_out ?? 0) / 1_000_000) * io.out_cents_per_m;
+        return Math.ceil(inC + outC);
+      }
+      default:
+        throw new Error(`pricing: unknown unit_type`);
+    }
+  },
+};
+
+// ---------- 任务参数 schema（按创作类型） ----------
+
+const IMAGE_RATIOS = ["1:1", "21:9", "16:9", "3:2", "4:3", "3:4", "2:3", "9:16"];
+const VIDEO_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"];
+
+export function taskParamsSchema(type: CreationType) {
+  switch (type) {
+    case "image":
+      return z
+        .object({
+          resolution: z.string().min(1),
+          ratio: z.enum(IMAGE_RATIOS as [string, ...string[]]).optional(),
+          count: z.number().int().min(1).max(4).optional().default(2),
+          custom_size: z
+            .object({ width: z.number().int().min(512).max(8192), height: z.number().int().min(512).max(8192) })
+            .optional(),
+        })
+        .passthrough();
+    case "video":
+      return z
+        .object({
+          resolution: z.enum(["480p", "720p", "1080p"]),
+          ratio: z.enum(VIDEO_RATIOS as [string, ...string[]]).optional().default("16:9"),
+          duration_seconds: z.number().int().min(3).max(180),
+          reference_mode: z
+            .enum(["unified_edit", "first_end_frame", "smart_multi", "smart_edit", "long_video"])
+            .optional(),
+        })
+        .superRefine((v, ctx) => {
+          // 普通模式 4-15s；超长视频（long_video）模式 30-180s（即梦 video_duration_display_range 实测）
+          const max = v.reference_mode === "long_video" ? 180 : 15;
+          const min = v.reference_mode === "long_video" ? 30 : 3;
+          if (v.duration_seconds < min || v.duration_seconds > max) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.too_small,
+              type: "number",
+              minimum: min,
+              inclusive: true,
+              path: ["duration_seconds"],
+              message: `duration_seconds must be ${min}-${max}${v.reference_mode === "long_video" ? " (long_video)" : ""}`,
+            });
+          }
+        });
+    case "music":
+      return z.object({ duration_seconds: z.number().int().min(5).max(300).optional(), style: z.string().max(120).optional() }).passthrough();
+    case "dubbing":
+      return z.object({ voice_id: z.string().max(120).optional(), text: z.string().min(1).max(5000) }).passthrough();
+    case "digital_human":
+      return z.object({ speech: z.string().min(1).max(5000), motion: z.string().max(2000).optional() }).passthrough();
+    case "motion_mimic":
+      return z.object({ style: z.string().max(60).optional(), reference_video: z.string().max(500).optional() }).passthrough();
+    case "agent":
+      return z.object({ skill_id: z.string().max(80).optional() }).passthrough();
+  }
+}
+
+export type TaskParamsFor<T extends CreationType> = z.output<ReturnType<typeof taskParamsSchema>>;

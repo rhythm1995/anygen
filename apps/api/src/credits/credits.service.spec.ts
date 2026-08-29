@@ -1,7 +1,3 @@
-/**
- * TDD #3 积分账本 —— 集成测试（真实本地 Supabase Postgres）。
- * 覆盖 docs/TESTING.md：原子扣减 / 不足拒绝 / 并发守卫 / 退款幂等 / 一致性。
- */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { config } from "dotenv";
 import { resolve } from "node:path";
@@ -25,7 +21,7 @@ async function createTestUser(supabase: SupabaseClient): Promise<string> {
   return data!.user!.id;
 }
 
-describe("CreditsService（真实 DB）", () => {
+describe("CreditsService（美分账本，真实 DB）", () => {
   let supabase: SupabaseClient;
   let service: CreditsService;
   let userId: string;
@@ -39,61 +35,69 @@ describe("CreditsService（真实 DB）", () => {
     userId = await createTestUser(supabase);
   });
 
-  it("grant → balance 生效且 ledger 有记录", async () => {
-    const balance = await service.grant(userId, 100, "signup_bonus");
-    expect(balance).toBe(100);
-    const ledger = await service.ledger(userId);
-    expect(ledger).toHaveLength(1);
-    expect(ledger[0]).toMatchObject({ delta: 100, reason: "signup_bonus", balanceAfter: 100 });
+  afterEach(async () => {
+    await supabase.auth.admin.deleteUser(userId);
   });
 
-  it("tryDebit 成功：余额减少 + balance_after 一致", async () => {
-    await service.grant(userId, 100);
-    const ok = await service.tryDebit(userId, 30);
-    expect(ok).toBe(true);
-    expect(await service.balance(userId)).toBe(70);
-    const ledger = await service.ledger(userId);
-    const debit = ledger.find((l) => l.reason === "generation_consume");
-    expect(debit).toMatchObject({ delta: -30, balanceAfter: 70 });
+  it("initial grant → balance 与 ledger 一致", async () => {
+    const balance = await service.grantInitial(userId, 500); // $5.00
+    expect(balance).toBe(500);
+    const entries = await service.ledger(userId);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({ cents: 500, reason: "initial_grant", balanceAfterCents: 500 });
   });
 
-  it("余额不足：tryDebit 返回 false，ledger 无新记录", async () => {
-    await service.grant(userId, 10);
-    const ok = await service.tryDebit(userId, 30);
-    expect(ok).toBe(false);
+  it("tryDebit 成功：余额减少且 balance_after_cents 一致", async () => {
+    await service.grantInitial(userId, 500);
+    expect(await service.tryDebit(userId, 70)).toBe(true);
+    expect(await service.balance(userId)).toBe(430);
+    const entries = await service.ledger(userId);
+    expect(entries.find((e) => e.reason === "generation")).toMatchObject({ cents: -70, balanceAfterCents: 430 });
+  });
+
+  it("余额不足：tryDebit 返回 false，无新流水", async () => {
+    await service.grantInitial(userId, 10);
+    expect(await service.tryDebit(userId, 70)).toBe(false);
     expect(await service.balance(userId)).toBe(10);
     expect(await service.ledger(userId)).toHaveLength(1);
   });
 
-  it("并发扣减：只有余额足够的部分成功（原子守卫）", async () => {
-    await service.grant(userId, 50);
-    const results = await Promise.all(
-      Array.from({ length: 5 }, () => service.tryDebit(userId, 20)),
-    );
-    expect(results.filter(Boolean)).toHaveLength(2); // 50 只够两次 20
+  it("并发扣减：只有余额足够者成功（原子守卫）", async () => {
+    await service.grantInitial(userId, 50);
+    const results = await Promise.all(Array.from({ length: 5 }, () => service.tryDebit(userId, 20)));
+    expect(results.filter(Boolean)).toHaveLength(2);
     expect(await service.balance(userId)).toBe(10);
-    const sum = (await service.ledger(userId)).reduce((acc, l) => acc + l.delta, 0);
-    expect(sum).toBe(await service.balance(userId)); // 流水与余额一致
+    const sum = (await service.ledger(userId)).reduce((a, e) => a + e.cents, 0);
+    expect(sum).toBe(await service.balance(userId));
   });
 
   it("refund 按任务幂等：第二次退款拒绝", async () => {
-    await service.grant(userId, 100);
+    await service.grantInitial(userId, 500);
     const taskId = await createTaskRow();
-    expect(await service.tryDebit(userId, 40, taskId)).toBe(true);
-    expect(await service.refund(userId, 40, taskId)).toBe(true);
-    expect(await service.balance(userId)).toBe(100);
-    expect(await service.refund(userId, 40, taskId)).toBe(false);
-    expect(await service.balance(userId)).toBe(100); // 不重复退
+    expect(await service.tryDebit(userId, 70, taskId)).toBe(true);
+    expect(await service.refund(userId, 70, taskId)).toBe(true);
+    expect(await service.balance(userId)).toBe(500);
+    expect(await service.refund(userId, 70, taskId)).toBe(false);
+    expect(await service.balance(userId)).toBe(500);
   });
 
   it("非法金额抛错", async () => {
-    await service.grant(userId, 10);
+    await service.grantInitial(userId, 100);
     await expect(service.tryDebit(userId, 0)).rejects.toThrow();
     const taskId = await createTaskRow();
     await expect(service.refund(userId, -5, taskId)).rejects.toThrow();
   });
 
-  /** generation_tasks 有 FK，退款测试需要真实任务行 */
+  it("adminAdjust：加/减（减记 admin_adjust）", async () => {
+    await service.grantInitial(userId, 100);
+    expect(await service.adminAdjust(userId, 200)).toBe(300);
+    const taskId = await createTaskRow();
+    await service.tryDebit(userId, 50, taskId);
+    expect(await service.adminAdjust(userId, -30)).toBe(220);
+    const entries = await service.ledger(userId);
+    expect(entries.filter((e) => e.reason === "admin_adjust").some((e) => e.cents === -30)).toBe(true);
+  });
+
   async function createTaskRow(): Promise<string> {
     const taskId = randomUUID();
     const { error } = await supabase.from("generation_tasks").insert({
@@ -101,7 +105,7 @@ describe("CreditsService（真实 DB）", () => {
       user_id: userId,
       type: "image",
       prompt: "test",
-      cost: 40,
+      cost_cents: 70,
     });
     expect(error).toBeNull();
     return taskId;

@@ -28,25 +28,14 @@ export class MeService {
       .select()
       .single();
     if (error) throw new Error(error.message);
-    // 注册奖励（CREDITS_SIGNUP_BONUS，默认 150）
-    await this.credits.grant(user.id, this.config.signupBonusCredits, "signup_bonus").catch(() => undefined);
+    // 开通赠送（INITIAL_GRANT_CENTS，默认 $5.00；内部使用，无注册赠金语义）
+    await this.credits.grantInitial(user.id, this.config.initialGrantCents).catch(() => undefined);
     return data;
   }
 
   async profileWithCredits(userId: string) {
     const profile = await this.db.from("profiles").select("*").eq("id", userId).maybeSingle();
     if (profile.error) throw new Error(profile.error.message);
-    const ledger = await this.db
-      .from("credit_ledger")
-      .select("delta,reason")
-      .eq("user_id", userId)
-      .order("id", { ascending: false })
-      .limit(200);
-    if (ledger.error) throw new Error(ledger.error.message);
-    const rows = ledger.data ?? [];
-    // 语义拆分：充值进 purchase，注册奖励进 gift（本地语义，无 vip 体系）
-    const gift = rows.filter((r) => r.reason === "signup_bonus" || r.reason === "generation_refund").reduce((a, r) => a + Math.max(r.delta, 0), 0);
-    const purchase = rows.filter((r) => r.reason === "topup").reduce((a, r) => a + Math.max(r.delta, 0), 0);
-    return { profile: profile.data, credit: { vip: 0, gift, purchase, total: gift + purchase } };
+    return { profile: profile.data };
   }
 }

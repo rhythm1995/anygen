@@ -16,7 +16,12 @@ const email = `ui-${Date.now()}@dreamina.local`;
 const password = "ui-password-123";
 const key = envGet("SUPABASE_SERVICE_ROLE_KEY");
 const sbUrl = envGet("SUPABASE_URL");
-console.log("will sign up via UI:", email);
+const createRes = await fetch(`${sbUrl}/auth/v1/admin/users`, {
+  method: "POST",
+  headers: { apikey: key, authorization: `Bearer ${key}`, "content-type": "application/json" },
+  body: JSON.stringify({ email, password, email_confirm: true }),
+});
+console.log("user pre-created:", createRes.ok, email);
 
 const shot = (page, name) => page.screenshot({ path: path.join(OUT, `${name}.png`) });
 
@@ -49,18 +54,20 @@ try {
 
   // 3. 真实 UI 注册登录
   await clickEl('[aria-label="Sign in"]');
-  await page.waitForTimeout(800);
-  await clickEl('[role="dialog"] button.text-center');
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(1000);
   await clickEl('[role="dialog"] input[type="email"]');
+  await page.waitForTimeout(300);
   await typeText(email);
+  await page.waitForTimeout(200);
   await clickEl('[role="dialog"] input[type="password"]');
+  await page.waitForTimeout(200);
   await typeText(password);
+  await page.waitForTimeout(300);
   await page.evaluate(() => {
     const btns = [...document.querySelectorAll('[role="dialog"] button')];
-    btns.find((b) => /sign up$/i.test(b.textContent.trim()))?.click();
+    btns.find((b) => /登录$|sign in$/i.test(b.textContent.trim()))?.click();
   });
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(4000);
 
   // 4. 首页（登录态，feed 加载）
   await page.goto(`${WEB}/ai-tool/home`, { waitUntil: "load", timeout: 60_000 });
@@ -69,11 +76,52 @@ try {
 
   // 5. 生成页：真实输入 + 提交
   await page.goto(`${WEB}/ai-tool/generate`, { waitUntil: "load", timeout: 60_000 });
-  await page.waitForTimeout(2000);
-  await clickEl('[data-testid="composer"] textarea');
-  await typeText("a cinematic shot of a neon-lit Tokyo alley in the rain");
+  let composerReady = false;
+  for (let i = 0; i < 30; i++) {
+    composerReady = await page.evaluate(() => Boolean(document.querySelector('[data-testid="creation-composer"] textarea')));
+    if (composerReady) break;
+    await page.waitForTimeout(500);
+  }
+  if (!composerReady) {
+    const body = await page.evaluate(() => document.body.innerText.slice(0, 200));
+    throw new Error(`composer never appeared. body: ${body}`);
+  }
+  // 切到图片生成（真实坐标点击，React 19 菜单对 evaluate click 不响应）
+  const clickChip = async (patternSource) => {
+    for (let attempt = 0; attempt < 12; attempt++) {
+      const rect = await page.evaluate((p) => {
+        const re = new RegExp(p);
+        const el = [...document.querySelectorAll("button")].find((b) => {
+          try { return re.test(b.textContent?.replace(/\s+/g, " ").trim() ?? ""); } catch { return false; }
+        });
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        if (r.y < 0 || r.y > 900 || r.width === 0) return null;
+        return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      }, patternSource);
+      if (rect) {
+        await page.mouse.move(rect.x, rect.y); await page.mouse.down(); await page.mouse.up();
+        return;
+      }
+      await page.waitForTimeout(500);
+    }
+    await page.screenshot({ path: path.join(OUT, "chip-miss.png") });
+    const body = await page.evaluate(() => document.body.innerText.slice(0, 300));
+    throw new Error(`chip not found after retries: ${patternSource} | body: ${body.split("\n").join("|").slice(0, 200)}`);
+  };
+  await clickChip("Agent 模式");
+  await page.waitForTimeout(500);
+  await clickChip("图片生成");
+  await page.waitForTimeout(800);
+  await clickEl('[data-testid="creation-composer"] textarea');
+  await typeText("一只霓虹雨夜的东京小巷，电影感镜头");
   await page.waitForTimeout(300);
-  await clickEl('[aria-label="Generate"]');
+  await clickChip("1:1 | 2K");
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: path.join(OUT, "image-params.png") });
+  await clickChip("1:1 | 2K");
+  await page.waitForTimeout(300);
+  await clickEl('[aria-label="生成"]');
   await page.waitForTimeout(3500);
   await shot(page, "generate-submit");
 
@@ -85,10 +133,18 @@ try {
   // 7. 画布编辑器：新建项目 → 加节点 → 自动保存
   await page.evaluate(() => {
     const btns = [...document.querySelectorAll("button")];
-    btns.find((b) => b.textContent?.includes("New project"))?.click();
+    btns.find((b) => b.textContent?.includes("新建项目"))?.click();
   });
   await page.waitForTimeout(3000);
-  await clickEl('header button:nth-of-type(2)');
+  await page.evaluate(() => {
+    const btns = [...document.querySelectorAll("button")];
+    btns.find((b) => b.textContent?.includes("+ 图片"))?.click();
+  });
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => {
+    const btns = [...document.querySelectorAll("button")];
+    btns.find((b) => b.textContent?.includes("+ 便签"))?.click();
+  });
   await page.waitForTimeout(2500);
   const canvasDbg = await page.evaluate(() => ({
     url: location.pathname,
