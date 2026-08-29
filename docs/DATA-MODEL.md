@@ -134,3 +134,51 @@ agent_skills / agent_models（agent 配置，seed 静态）
 | me 接口 | …/mweb-v1-get_user_info.json + commerce-v1-benefits-user_credit.json |
 | projects 列表 | …/mweb-v1-infinite_canvas-list_project.json（projects[]/next_cursor/has_more） |
 | 工作区 | …/cc-v1-workspace-get_user_workspaces.json（本项目 v1 单工作区，不建表） |
+
+---
+
+# 增量设计（2026-08-30 · 三件套：Admin 美元计费 / CN 创作面板 / 审核 + Agent）
+
+> 详细设计见 ADMIN.md / UI-SPEC-CN.md / MODERATION.md / AGENT-RESEARCH.md。本节为数据模型汇总。
+
+## 新表一览
+
+| 表 | 用途 | 关键列 |
+|---|---|---|
+| providers | 生成供应商 | name, protocol(ark/openai-compat), base_url, enabled |
+| api_keys | 供应商密钥（pgcrypto 加密） | secret_encrypted bytea, secret_hint(尾4位), enabled |
+| models | 模型配置 = 创作面板数据源 | provider_id, creation_type(7类), code, display_name, badge, unit_type(per_image/per_second/per_token/per_request), price_cents, provider_cost_cents, resolution_factor jsonb, enabled, sort |
+| ledger | 美分账本（替代 credit_ledger） | cents int, reason(signup_bonus/generation/generation_refund/topup/admin_adjust/agent_step), task_id, balance_after_cents |
+| creation_modes | 创作类型面板配置 | key(agent/image/video/music/dubbing/digital_human/motion_mimic), label, icon, enabled, sort |
+| agent_skills 扩展 | 官方技能 | + official bool, plan_template jsonb, description |
+| agent_sessions | Agent 会话 | user_id, prompt, plan jsonb, status(planning/running/succeeded/failed), budget_cents, spent_cents, summary |
+| agent_steps | Agent 步骤 | session_id, seq, type, prompt, params, status, task_id, asset_id, error, cost_cents |
+| moderation_events | 审核事件 | target_type(prompt/asset/feed_item), target_id, auto_score, auto_verdict, status(pending/approved/rejected/human_review), reviewer |
+| user_reports | 用户举报 | reporter, target_type, target_id, reason, status |
+| admin_audit_log | 后台审计 | admin_id, action, target_table, target_id, diff jsonb |
+
+## 既有表变更
+
+| 表 | 变更 |
+|---|---|
+| profiles | + role text default 'user'（user/admin）；+ balance_cents int（替代 credit_balance）；+ preference jsonb（生成偏好：默认比例/分辨率/模型） |
+| generation_tasks | + model_code text；+ moderation_status text default 'pending'；cost 改 cost_cents |
+| assets | + moderation_status text default 'pending' |
+| feed_items | + moderation_status text default 'approved'（seed 数据视为已审） |
+
+## 迁移顺序（实现时）
+
+```
+0005_admin_billing:  providers/api_keys/models/ledger/creation_modes + profiles.role/balance_cents
+                     + data migration: credit_ledger → ledger（积分×汇率折美分）
+0006_agent:          agent_sessions/agent_steps + agent_skills 扩展(official/plan_template)
+0007_moderation:     moderation_events/user_reports + 三表 moderation_status
+0008_cn_seed:        models 灌即梦截图的真实模型清单（图片 5.0 Pro…/Seedance 2.5…）+
+                     creation_modes 灌 7 类型 + agent_skills 灌官方技能
+```
+
+## RLS 原则（增量）
+- providers/api_keys/models/creation_modes：authenticated 读，写仅 service_role（admin API 用 service 通道 + AdminGuard）
+- ledger/agent_sessions/agent_steps：本人
+- moderation_events/user_reports：admin 读（service 通道），用户仅能看自己的举报
+- admin_audit_log：只许 service_role 写，admin 读

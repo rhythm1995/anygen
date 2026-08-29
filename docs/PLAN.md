@@ -59,3 +59,25 @@ anygen/
 ├── turbo.json · pnpm-workspace.yaml · package.json · tsconfig.base.json · .env.example
 └── dreamina-clone/        # 侦察基线（只读证据库，不参与构建）
 ```
+
+---
+
+# 三件套里程碑（2026-08-30 增补 · 等用户确认文档后开工）
+
+> 决策记录：范围=Admin+Agent+即梦CN 三件套合并；计费=**美元制**；审核=纳入本期；Agent=先调研报告后定路线。
+
+| 里程碑 | 内容 | 前置 |
+|---|---|---|
+| M1 文档定稿 | ADMIN / AGENT-RESEARCH / UI-SPEC-CN / MODERATION / DATA-MODEL 增量 / 本文件 | **等用户逐份确认** ← 当前 |
+| M2 Admin + 美元计费 | providers/api_keys/models/ledger 迁移 + AdminGuard + 8 个 admin 页 + 定价计算器 + cents RPC（TDD） | M1 |
+| M3 即梦 CN 创作面板 | creation_modes + models seed + 7 类型工具条/弹层（UI-SPEC-CN）+ zh-Hans 全站 + 提交参数贯通计费 | M2（面板吃 models 配置） |
+| ~~M4 审核管线~~ | **暂缓（用户决策 2026-08-30）**——设计储备保留在 MODERATION.md，顺延为 M6+ | — |
+| M5 Agent 实施 | 按 AGENT-RESEARCH 选定路线（推荐 B：AI SDK 自建 loop）+ agent_sessions/steps + SSE + 官方技能模板 | M1 路线拍板 + M2 计费钩子 |
+
+依赖关系：M2 是 M3/M4 的地基（模型配置与美分账本）；M5 依赖 M2 的预算护栏；M3 与 M4 可并行。
+
+# 遗留决策点（用户确认清单）
+1. ADMIN.md §4 美分汇率与赠金额（$1.50）
+2. AGENT-RESEARCH.md §4 路线（B / C / B→C 混合）与 v1 范围（短链路 or 长链路）
+3. ~~审核相关~~（已决策：暂不做审核，储备保留）
+4. UI-SPEC-CN.md §6 音乐/配音/数字人/动作模仿面板需补一轮登录态侦察（用上轮同法）
