@@ -178,7 +178,8 @@ export function CreationComposer({
   const submit = () => {
     if (!text.trim() || busy) return;
     if (type === "agent") {
-      onSubmit({ type, prompt: text.trim(), model_code: skill?.id ?? "", params: { skill_id: skill?.id } });
+      console.log("[composer] agent submit, skill =", JSON.stringify(skill));
+      onSubmit({ type, prompt: text.trim(), model_code: skill?.id ?? "", skill_id: skill?.id, params: { skill_id: skill?.id } });
       setText("");
       return;
     }

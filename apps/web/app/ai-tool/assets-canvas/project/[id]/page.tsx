@@ -81,6 +81,14 @@ export default function ProjectCanvasPage() {
     setNodes((p.graph?.nodes ?? []) as DmNode[]);
     setEdges((p.graph?.edges ?? []) as Edge[]);
     if (p.graph?.viewport) setViewport(p.graph.viewport);
+    lastSavedJson.current = JSON.stringify({
+      name: p.name,
+      graph: {
+        nodes: (p.graph?.nodes ?? []).map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data })),
+        edges: (p.graph?.edges ?? []).map((e) => ({ id: e.id, source: e.source, target: e.target })),
+        viewport: p.graph?.viewport ?? { x: 0, y: 0, zoom: 1 },
+      },
+    });
     setTimeout(() => (skipNextSync.current = false), 100);
   }, [project.data]);
 
@@ -95,19 +103,24 @@ export default function ProjectCanvasPage() {
   });
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedJson = useRef<string | null>(null);
   const scheduleSave = useCallback(() => {
+    const payload = {
+      name,
+      graph: {
+        nodes: nodes.map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data })),
+        edges: edges.map((e) => ({ id: e.id, source: e.source, target: e.target })),
+        viewport,
+      },
+    };
+    const serialized = JSON.stringify(payload);
+    if (serialized === lastSavedJson.current) return; // 内容未变化，不保存
     setSaveState("dirty");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       setSaveState("saving");
-      save.mutate({
-        name,
-        graph: {
-          nodes: nodes.map((n) => ({ id: n.id, type: n.type, position: n.position, data: n.data })),
-          edges: edges.map((e) => ({ id: e.id, source: e.source, target: e.target })),
-          viewport,
-        },
-      });
+      lastSavedJson.current = serialized;
+      save.mutate(payload);
     }, 800);
   }, [name, nodes, edges, viewport, save]);
 

@@ -17,7 +17,7 @@ const imi = load("imitator_generate_model_config.json").data;
 
 // ---- 定价（成本侧参考 OpenMontage 内置官方价；用户价 = 成本×加价系数，admin 可改）----
 // image: price_cents = 每张基准(1.5k)；视频: price_cents = 每秒(720p)
-const IMG_PRICE = { "5.0 Pro": 8, "5.0 Lite": 5, "4.7": 6, "4.6": 4, "4.5": 4, "4.1": 4, "4.0": 4, "3.1": 3, "3.0": 3 };
+const IMG_PRICE = { "图片 5.0 Pro": 8, "图片 5.0 Lite": 5, "图片 4.7": 6, "图片 4.6": 4, "图片 4.5": 4, "图片 4.1": 4, "图片 4.0": 4, "图片 3.1": 3, "图片 3.0": 3 };
 const IMG_FACTOR = { "1.5k": 1.0, "2k": 1.8, "4k": 3.2 };
 const VID_PRICE_SEC = {
   "即梦 Seedance 2.5": 24, "即梦 Seedance 2.0 mini": 9, "即梦 Seedance 2.0 Fast VIP": 14,
