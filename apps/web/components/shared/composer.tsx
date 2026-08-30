@@ -137,7 +137,7 @@ export function Composer({
         </button>
       </div>
       {!session && !compact && (
-        <p className="px-5 pb-3 text-xs text-dm-text-4">Sign in to start creating — new users get 150 free credits.</p>
+        <p className="px-5 pb-3 text-xs text-dm-text-4">登录后即可开始创作。</p>
       )}
     </div>
   );

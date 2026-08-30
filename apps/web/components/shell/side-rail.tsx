@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Plus, FolderClosed, Shapes, Sparkles, Bell, Code2, Box, Settings, LogOut, ShieldCheck } from "lucide-react";
+import { Home, Plus, FolderClosed, Shapes, Sparkles, LogOut, ShieldCheck } from "lucide-react";
 
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,8 @@ export function DreaminaLogo({ size = 30 }: { size?: number }) {
 }
 
 type RailItem =
-  | { kind: "link"; href: string; label: string; icon: React.ReactNode; badge?: string }
-  | { kind: "button"; label: string; icon: React.ReactNode; onClick: () => void; badge?: string };
+  | { kind: "link"; href: string; label: string; icon: React.ReactNode }
+  | { kind: "button"; label: string; icon: React.ReactNode; onClick: () => void };
 
 export function SideRail() {
   const pathname = usePathname();
@@ -46,11 +46,6 @@ export function SideRail() {
     { kind: "link", href: "/ai-tool/generate", label: "生成", icon: <Plus size={19} strokeWidth={1.6} /> },
     { kind: "link", href: "/ai-tool/assets", label: "资产", icon: <FolderClosed size={19} strokeWidth={1.6} /> },
     { kind: "link", href: "/ai-tool/assets-canvas", label: "画布", icon: <Shapes size={19} strokeWidth={1.6} /> },
-    ...(session
-      ? ([
-          { kind: "button", label: "Octo", icon: <Sparkles size={19} strokeWidth={1.6} />, onClick: () => {}, badge: "Beta" },
-        ] as RailItem[])
-      : []),
   ];
 
   const bottomItems: RailItem[] = session
@@ -58,33 +53,22 @@ export function SideRail() {
         ...(me?.role === "admin"
           ? ([{ kind: "link", href: "/admin/models", label: "管理", icon: <ShieldCheck size={19} strokeWidth={1.6} /> }] as RailItem[])
           : []),
-        { kind: "button", label: "升级", icon: <span className="text-[10px] font-dm-label">+50</span>, onClick: () => {} },
-        { kind: "button", label: "通知", icon: <Bell size={19} strokeWidth={1.6} />, onClick: () => {} },
-        { kind: "button", label: "API", icon: <Code2 size={19} strokeWidth={1.6} />, onClick: () => {} },
-        { kind: "button", label: "3D", icon: <Box size={19} strokeWidth={1.6} />, onClick: () => {} },
-        { kind: "button", label: "设置", icon: <Settings size={19} strokeWidth={1.6} />, onClick: () => {} },
       ]
-    : [
-        { kind: "button", label: "API", icon: <Code2 size={19} strokeWidth={1.6} />, onClick: () => {} },
-        { kind: "button", label: "3D", icon: <Box size={19} strokeWidth={1.6} />, onClick: () => {} },
-      ];
+    : [];
 
   const renderItem = (item: RailItem) => {
-    const active = item.kind === "link" && (pathname === item.href || (item.href !== "/ai-tool/home" && pathname.startsWith(item.href)));
+    // 资产 与 画布 是两个独立页面：各自精确匹配，画布编辑器路径(/project/)同时点亮画布
+    const active =
+      item.kind === "link" &&
+      (pathname === item.href ||
+        (item.href === "/ai-tool/assets-canvas" && pathname.startsWith("/ai-tool/assets-canvas/project/")));
     const inner = (
       <span
         className={`flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors ${
           active ? "text-dm-text" : "text-dm-text-3 hover:text-dm-text-2"
         }`}
       >
-        <span className="relative">
-          {item.icon}
-          {item.badge && (
-            <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-dm-accent-dim px-1 text-[8px] font-medium leading-3 text-dm-accent">
-              {item.badge}
-            </span>
-          )}
-        </span>
+        {item.icon}
         <span className="font-dm-label text-[10px] font-normal leading-none">{item.label}</span>
       </span>
     );
@@ -124,23 +108,20 @@ export function SideRail() {
               aria-label="退出登录"
             >
               <LogOut size={19} strokeWidth={1.6} />
-              <span className="font-dm-label text-[10px] leading-none">{me?.name?.slice(0, 6) ?? "You"}</span>
+              <span className="font-dm-label text-[10px] leading-none">{me?.name?.slice(0, 6) ?? "我"}</span>
             </button>
           ) : (
             !loading && (
-              <>
-                <span className="rounded-full bg-dm-accent px-2 py-0.5 text-[9px] text-[#04252a]">Free credits</span>
-                <button
-                  onClick={() => {
-                    setMode("signin");
-                    setAuthOpen(true);
-                  }}
-                  className="mt-1 flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 text-dm-text-3 transition-colors hover:text-dm-text-2"
-                  aria-label="Sign in"
-                >
-                  <span className="font-dm-label text-[10px]">Sign in</span>
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  setMode("signin");
+                  setAuthOpen(true);
+                }}
+                className="mt-1 flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 text-dm-text-3 transition-colors hover:text-dm-text-2"
+                aria-label="登录"
+              >
+                <span className="font-dm-label text-[10px]">登录</span>
+              </button>
             )
           )}
           {bottomItems.map(renderItem)}
@@ -181,7 +162,7 @@ export function SideRail() {
               className="w-full text-center text-xs text-dm-text-3 hover:text-dm-text-2"
               onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
             >
-              {mode === "signin" ? "没有账号？注册即送 $5.00 创作额度" : "已有账号？直接登录"}
+              {mode === "signin" ? "没有账号？创建一个" : "已有账号？直接登录"}
             </button>
           </div>
         </DialogContent>
