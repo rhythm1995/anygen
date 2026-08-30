@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AtSign, ChevronDown, Clock, Crop, Layers, Sparkles, Wand2, X } from "lucide-react";
+import { ArrowUp, AtSign, ChevronDown, Clock, Crop, Layers, Sparkles, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/providers";
@@ -12,6 +13,14 @@ export interface SubmitPayload {
   prompt: string;
   model_code: string;
   params: Record<string, unknown>;
+}
+
+/** 重新编辑回填：generate 页把历史任务参数灌回 composer */
+export interface ComposerPrefill {
+  type?: CreationType;
+  prompt?: string;
+  model_code?: string;
+  params?: Record<string, unknown>;
 }
 
 const TYPE_LABEL: Record<CreationType, string> = {
@@ -52,7 +61,7 @@ function useCreationConfig() {
   });
 }
 
-function Popover({ open, onClose, children, width = 340 }: { open: boolean; onClose: () => void; children: React.ReactNode; width?: number }) {
+function Popover({ open, onClose, children, width = 340, align = "left" }: { open: boolean; onClose: () => void; children: React.ReactNode; width?: number; align?: "left" | "right" }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -65,7 +74,7 @@ function Popover({ open, onClose, children, width = 340 }: { open: boolean; onCl
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-11 z-50 max-h-[480px] overflow-y-auto rounded-2xl border border-dm-border bg-dm-surface p-4 shadow-2xl"
+      className={`absolute top-11 z-50 max-h-[560px] overflow-y-auto rounded-2xl border border-dm-border bg-dm-surface p-6 shadow-2xl ${align === "right" ? "right-0" : "left-0"}`}
       style={{ width }}
     >
       {children}
@@ -79,7 +88,7 @@ function Chip({ children, active, accent, onClick, ariaLabel }: { children: Reac
       aria-label={ariaLabel}
       onClick={onClick}
       className={`relative flex h-9 items-center gap-1.5 rounded-lg border px-3 font-dm-label text-xs transition-colors ${
-        accent ? "border-dm-border bg-dm-accent-dim text-dm-accent" : active ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-2 hover:bg-dm-border"
+        accent ? "border-transparent bg-transparent text-dm-accent hover:bg-dm-accent-dim" : active ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-2 hover:bg-dm-border"
       }`}
     >
       {children}
@@ -93,8 +102,8 @@ function RatioIcon({ ratio, size = 14 }: { ratio: string; size?: number }) {
   const scale = size / Math.max(w, h);
   return (
     <span
-      className="inline-block rounded-[2px] border-[1.5px] border-current"
-      style={{ width: Math.max(w * scale, 3), height: Math.max(h * scale, 3) }}
+      className="inline-block rounded-[3px] border-[1.5px] border-current"
+      style={{ width: Math.max(w * scale, 4), height: Math.max(h * scale, 4) }}
     />
   );
 }
@@ -111,6 +120,8 @@ export function CreationComposer({
   initialType = "agent",
   skillPicker = false,
   compact = false,
+  docked = false,
+  prefill = null,
 }: {
   onSubmit: (payload: AgentSubmitPayload) => void;
   placeholder?: string;
@@ -119,6 +130,9 @@ export function CreationComposer({
   initialType?: CreationType;
   skillPicker?: boolean;
   compact?: boolean;
+  /** 底部停靠形态：底色亮一档（原站 composer 实测 #1b1c21） */
+  docked?: boolean;
+  prefill?: ComposerPrefill | null;
 }) {
   const { session } = useAuth();
   const config = useCreationConfig();
@@ -150,9 +164,30 @@ export function CreationComposer({
   const [durationSec, setDurationSec] = useState(5);
   const [refMode, setRefMode] = useState("first_end_frame");
 
+  // prefill 设置 type 时跳过一次 model 重置，否则刚回填的 model_code 会被清掉
+  const prefilledTypeRef = useRef<CreationType | null>(null);
   useEffect(() => {
+    if (prefilledTypeRef.current === type) {
+      prefilledTypeRef.current = null;
+      return;
+    }
     setModelCode(null);
   }, [type]);
+  useEffect(() => {
+    // 重新编辑：把历史任务的类型/模型/参数/提示词灌回表单
+    if (!prefill) return;
+    if (prefill.type) {
+      prefilledTypeRef.current = prefill.type;
+      setType(prefill.type);
+    }
+    if (prefill.model_code) setModelCode(prefill.model_code);
+    if (typeof prefill.prompt === "string") setText(prefill.prompt);
+    const p = (prefill.params ?? {}) as Record<string, unknown>;
+    if (typeof p.ratio === "string") (prefill.type === "video" ? setVideoRatio : setRatio)(p.ratio);
+    if (typeof p.resolution === "string") (prefill.type === "video" ? setVidRes : setImgRes)(p.resolution);
+    if (typeof p.count === "number") setCount(p.count);
+    if (typeof p.duration_seconds === "number") setDurationSec(p.duration_seconds);
+  }, [prefill]);
   useEffect(() => {
     // 模型切换时钳制数量到该模型支持的范围（如 OpenRouter 模型仅支持 1）
     if (model?.params?.generate_count_options && !model.params.generate_count_options.includes(count)) {
@@ -199,7 +234,7 @@ export function CreationComposer({
 
   return (
     <div className="w-full" data-testid="creation-composer">
-      <div className="w-full rounded-2xl border border-dm-border bg-dm-surface transition-colors focus-within:border-dm-border-3">
+      <div className={`w-full rounded-2xl border border-dm-border transition-colors focus-within:border-dm-border-3 ${docked ? "bg-dm-composer" : "bg-dm-surface"}`}>
         <div className="px-5 pt-4">
           <textarea
             ref={areaRef}
@@ -287,40 +322,54 @@ export function CreationComposer({
                 {count}
                 <ChevronDown size={12} />
               </Chip>
-              <Popover open={paramsOpen} onClose={() => setParamsOpen(false)} width={460}>
-                <p className="mb-2 text-xs text-dm-text-4">选择比例</p>
-                <div className="mb-3 grid grid-cols-9 gap-1">
-                  <button className={`flex flex-col items-center rounded-lg border py-2 text-[10px] ${"border-dm-border text-dm-text-2"}`}><Crop size={13} />智能</button>
+              <Popover open={paramsOpen} onClose={() => setParamsOpen(false)} width={920} align="right">
+                <p className="mb-3 text-xs text-dm-text-4">选择比例</p>
+                <div className="mb-5 flex gap-2">
+                  <button
+                    onClick={() => setRatio("auto")}
+                    className={`flex h-[72px] flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border text-[11px] transition-colors ${
+                      ratio === "auto" ? "border-[rgb(224,245,255)] text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                    }`}
+                  >
+                    <Crop size={16} strokeWidth={1.6} />
+                    智能
+                  </button>
                   {IMAGE_RATIOS.map((r) => (
                     <button
                       key={r}
                       onClick={() => setRatio(r)}
-                      className={`flex flex-col items-center rounded-lg border py-2 text-[10px] ${ratio === r ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3"}`}
+                      className={`flex h-[72px] flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors ${
+                        ratio === r ? "border-[rgb(224,245,255)] text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                      }`}
                     >
-                      <RatioIcon ratio={r} />
+                      <RatioIcon ratio={r} size={18} />
                       {r}
                     </button>
                   ))}
                 </div>
-                <p className="mb-2 text-xs text-dm-text-4">选择分辨率</p>
-                <div className="mb-3 grid grid-cols-3 gap-1">
+                <p className="mb-3 text-xs text-dm-text-4">选择分辨率</p>
+                <div className="mb-5 grid grid-cols-3 gap-2">
                   {IMAGE_RES.map((r) => (
                     <button
                       key={r.key}
                       onClick={() => setImgRes(r.key)}
-                      className={`rounded-lg border py-2 font-dm-label text-xs ${imgRes === r.key ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3"}`}
+                      className={`h-[52px] rounded-xl border font-dm-label text-sm transition-colors ${
+                        imgRes === r.key ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                      }`}
                     >
                       {r.label}
                     </button>
                   ))}
                 </div>
-                <p className="mb-2 text-xs text-dm-text-4">选择生成数量</p>
-                <div className="grid grid-cols-4 gap-1">
+                <p className="mb-3 text-xs text-dm-text-4">选择生成数量</p>
+                <div className="grid grid-cols-4 gap-2">
                   {countOptions.map((n) => (
                     <button
                       key={n}
                       onClick={() => setCount(n)}
-                      className={`rounded-lg border py-2 text-sm ${count === n ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3"}`}
+                      className={`h-[52px] rounded-xl border text-base transition-colors ${
+                        count === n ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                      }`}
                     >
                       {n}
                     </button>
@@ -359,27 +408,31 @@ export function CreationComposer({
                   {videoRatio} | {vidRes.toUpperCase()}
                   <ChevronDown size={12} />
                 </Chip>
-                <Popover open={paramsOpen} onClose={() => setParamsOpen(false)} width={380}>
-                  <p className="mb-2 text-xs text-dm-text-4">选择比例</p>
-                  <div className="mb-3 grid grid-cols-6 gap-1">
+                <Popover open={paramsOpen} onClose={() => setParamsOpen(false)} width={560} align="right">
+                  <p className="mb-3 text-xs text-dm-text-4">选择比例</p>
+                  <div className="mb-5 flex gap-2">
                     {VIDEO_RATIOS.map((r) => (
                       <button
                         key={r}
                         onClick={() => setVideoRatio(r)}
-                        className={`flex flex-col items-center rounded-lg border py-2 text-[10px] ${videoRatio === r ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3"}`}
+                        className={`flex h-[72px] flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors ${
+                          videoRatio === r ? "border-[rgb(224,245,255)] text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                        }`}
                       >
-                        <RatioIcon ratio={r} />
+                        <RatioIcon ratio={r} size={18} />
                         {r}
                       </button>
                     ))}
                   </div>
-                  <p className="mb-2 text-xs text-dm-text-4">选择分辨率</p>
-                  <div className="grid grid-cols-3 gap-1">
+                  <p className="mb-3 text-xs text-dm-text-4">选择分辨率</p>
+                  <div className="grid grid-cols-2 gap-2">
                     {VIDEO_RES.map((r) => (
                       <button
                         key={r.key}
                         onClick={() => setVidRes(r.key)}
-                        className={`rounded-lg border py-2 font-dm-label text-xs ${vidRes === r.key ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3"}`}
+                        className={`h-[52px] rounded-xl border font-dm-label text-sm transition-colors ${
+                          vidRes === r.key ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                        }`}
                       >
                         {r.label}
                       </button>
@@ -434,19 +487,28 @@ export function CreationComposer({
           {/* 配音：克隆声音 */}
           {type === "dubbing" && <Chip><Wand2 size={13} />克隆声音</Chip>}
 
+          {/* @ 引用素材（原站底栏同位；上传/引用管线未接入，先如实提示） */}
+          <Chip ariaLabel="引用素材" onClick={() => toast("素材引用即将上线")}>
+            <AtSign size={14} />
+          </Chip>
+
           <div className="flex-1" />
+          {costCents > 0 && (
+            <span className="flex items-center gap-1 font-dm-label text-xs text-dm-text-3" data-testid="composer-price">
+              <Sparkles size={12} className="text-dm-text-3" />
+              {formatUsd(costCents)}
+              {type === "image" ? `/张` : type === "video" ? `/${durationSec}s` : ""}
+            </span>
+          )}
           <button
             aria-label="生成"
             onClick={submit}
             disabled={!text.trim() || busy || (type !== "agent" && !model)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-dm-border-3 bg-dm-border-3/60 text-dm-text transition-opacity disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-dm-text text-[#0f0f12] transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            ↑
+            <ArrowUp size={18} strokeWidth={2.2} />
           </button>
         </div>
-        {costCents > 0 && (
-          <p className="px-5 pb-3 text-[11px] text-dm-text-4">预计消耗 {formatUsd(costCents)}</p>
-        )}
       </div>
       {busy && <p className="px-1 pt-2 text-xs text-dm-text-3">生成中…</p>}
       {error && (

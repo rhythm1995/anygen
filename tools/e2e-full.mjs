@@ -176,6 +176,7 @@ try {
     count: document.body.innerText.includes("选择生成数量"),
     fourK: document.body.innerText.includes("超清 4K"),
   }));
+  await page.screenshot({ path: "docs/verify/e2e-params.png" });
   record("T4b 图片参数弹层", t4params.ratios && t4params.res && t4params.count && t4params.fourK);
   // 选 4K 单张，验证计价 8¢×3.2=26¢
   await clickBtnText("超清 4K");
