@@ -182,3 +182,43 @@ export interface CreationTypesConfig {
 }
 
 export const formatUsd = (cents: number) => `$${(cents / 100).toFixed(2)}`;
+
+// ---------- Admin（/admin API） ----------
+
+export interface AdminModelRow {
+  id: string;
+  provider: string;
+  creation_type: string;
+  code: string;
+  display_name: string;
+  description: string;
+  badge: string | null;
+  unit_type: string;
+  price_cents: number;
+  provider_cost_cents: number;
+  enabled: boolean;
+  sort: number;
+  is_default: boolean;
+}
+export interface AdminUsage {
+  days: number;
+  byDay: { date: string; count: number; user_cents: number }[];
+  byModel: { code: string; name: string; creation_type: string; count: number; user_cents: number }[];
+  totals: { task_count: number; billed_cents: number; refunded_cents: number; net_cents: number; models: number; enabled_models: number };
+}
+export interface AdminUserRow {
+  id: string;
+  name: string;
+  role: string;
+  balance_cents: number;
+  created_at: string;
+}
+export interface AuditRow {
+  id: number;
+  admin_id: string;
+  action: string;
+  target_table: string;
+  target_id: string;
+  diff: Record<string, unknown>;
+  created_at: string;
+}

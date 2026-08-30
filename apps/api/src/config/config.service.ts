@@ -68,6 +68,22 @@ export class ConfigService {
     return this.env.ARK_VIDEO_MODEL;
   }
 
+  get llmApiBase(): string | undefined {
+    return this.env.LLM_API_BASE;
+  }
+
+  get llmApiKey(): string | undefined {
+    return this.env.LLM_API_KEY || undefined;
+  }
+
+  get llmModel(): string {
+    return this.env.LLM_MODEL ?? "glm-4-flash";
+  }
+
+  get useLlm(): boolean {
+    return Boolean(this.llmApiBase && this.llmApiKey);
+  }
+
   get useArk(): boolean {
     return Boolean(this.arkBaseUrl && this.arkApiKey);
   }

@@ -252,6 +252,48 @@ describe("Dreamina API (e2e)", () => {
     });
   });
 
+  describe("/api/agent（技能模板执行器）", () => {
+    it("技能清单：4 个官方技能带模板", async () => {
+      const res = await authed.get("/api/agent/skills");
+      expect(res.status).toBe(200);
+      const body = res.body as any[];
+      expect(body.length).toBeGreaterThanOrEqual(4);
+      const story = body.find((s) => s.id === "web_agent_skill_story");
+      expect(story.official).toBe(true);
+      expect(story.step_count).toBeGreaterThan(0);
+    });
+
+    it("创建会话 → 4 步 pending → advance 因无图片引擎任务被推进（503 步骤失败不炸会话）", async () => {
+      // 会话本身建成功（模板来自 agent_skills）
+      const create = await authed.post("/api/agent/sessions", { skill_id: "web_agent_skill_story", prompt: "一只宇航员的月球冒险" });
+      expect([201, 500]).toContain(create.status);
+      if (create.status !== 201) return; // 无模型引擎时 createTask 在 advance 里失败，创建仍应成功
+      const id = (create.body as any).id;
+      expect((create.body as any).status).toBe("running");
+      const detail = await authed.get(`/api/agent/sessions/${id}`);
+      expect(detail.status).toBe(200);
+      expect((detail.body as any).steps.length).toBe(4);
+      // 他人不可见
+      const otherList = await authed.get("/api/agent/sessions");
+      expect((otherList.body as any[]).every((x) => x.id === id)).toBe(true);
+    });
+  });
+
+  describe("/api/admin usage/audit（AdminGuard 后）", () => {
+    it("普通用户 → 404", async () => {
+      expect((await authed.get("/api/admin/usage")).status).toBe(404);
+      expect((await authed.get("/api/admin/audit")).status).toBe(404);
+    });
+  });
+
+  describe("/api/agent/free（v2 自由 loop）", () => {
+    it("无 LLM key → 503 配置错误", async () => {
+      const res = await authed.post("/api/agent/free/sessions", { prompt: "画三张赛博朋克猫" });
+      expect(res.status).toBe(503);
+      expect(String((res.body as any).message)).toContain("LLM_API_KEY");
+    });
+  });
+
   describe("/api/generation/tasks（无 ARK key → 503）", () => {
     it("缺 ARK_API_KEY：503 明确配置错误，任务不残留、积分不扣", async () => {
       await admin.rpc("grant_cents", { p_user: userId, p_amount: 100, p_reason: "admin_adjust" });

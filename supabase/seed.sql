@@ -73,3 +73,16 @@ insert into public.agent_skills (id, name, title, description, enabled) values
 ('web_agent_skill_ecommerce', 'E-commerce Image Set', 'E-commerce Image Set', 'Generate a complete set of visually consistent product assets for major e-commerce platforms', true),
 ('web_agent_skill_poster', 'Poster Design', 'Poster Design', 'Generate more creative poster content, with a focus on marketing scenarios and seasonal trends', true),
 ('web_agent_skill_brand', 'Logo Design', 'Brand Design', 'Generate a brand logo and visual identity based on the company name, business, and target audience', true);
+
+-- 官方技能模板（必须位于 seed 末尾：覆盖 gen-seed 的基础插入，避免 official/plan_template 被重置）
+insert into public.agent_skills (id, name, title, description, enabled, official, plan_template) values
+('web_agent_skill_story', '影视故事短片', '故事短片', '帮你自动生成故事大纲、分镜脚本并产出短片', true, true,
+  '{"steps":[{"title":"分镜 1·开场","type":"image","prompt_suffix":"开场镜头，电影感构图，确立视觉基调","count":1,"params":{"resolution":"2k","count":1}},{"title":"分镜 2·发展","type":"image","prompt_suffix":"发展镜头，推进叙事张力","count":1,"params":{"resolution":"2k","count":1}},{"title":"分镜 3·高潮","type":"image","prompt_suffix":"高潮镜头，戏剧性光线与构图","count":1,"params":{"resolution":"2k","count":1}},{"title":"分镜 4·收尾","type":"image","prompt_suffix":"收尾镜头，留白与余韵","count":1,"params":{"resolution":"2k","count":1}}]}'::jsonb),
+('web_agent_skill_ecommerce', '电商套图', '电商套图', '生成风格统一的商品全套视觉素材，适用于各大电商平台', true, true,
+  '{"steps":[{"title":"主图","type":"image","prompt_suffix":"电商商品主图，纯色背景，居中构图，专业布光","count":1,"params":{"resolution":"2k","count":1}},{"title":"细节图","type":"image","prompt_suffix":"商品细节特写，质感表现","count":1,"params":{"resolution":"2k","count":1}},{"title":"场景图","type":"image","prompt_suffix":"商品使用场景图，生活方式呈现","count":1,"params":{"resolution":"2k","count":1}}]}'::jsonb),
+('web_agent_skill_poster', '海报设计', '海报设计', '生成更有创意的海报内容，擅长营销场景和节日热点', true, true,
+  '{"steps":[{"title":"海报方案 A","type":"image","prompt_suffix":"海报主视觉方案A，强构图，信息层级清晰","count":1,"params":{"resolution":"2k","count":1}},{"title":"海报方案 B","type":"image","prompt_suffix":"海报主视觉方案B，另一创意方向","count":1,"params":{"resolution":"2k","count":1}}]}'::jsonb),
+('web_agent_skill_brand', 'Logo设计', 'Logo设计', '根据公司名称、业务与客群，生成品牌 Logo 与视觉方案', true, true,
+  '{"steps":[{"title":"Logo 方向 A","type":"image","prompt_suffix":"Logo 设计方向A，简洁几何，单色","count":1,"params":{"resolution":"2k","count":1}},{"title":"Logo 方向 B","type":"image","prompt_suffix":"Logo 设计方向B，字形结合","count":1,"params":{"resolution":"2k","count":1}},{"title":"品牌色板","type":"image","prompt_suffix":"品牌色板与应用示例","count":1,"params":{"resolution":"2k","count":1}}]}'::jsonb)
+on conflict (id) do update set official = excluded.official, plan_template = excluded.plan_template,
+  title = excluded.title, description = excluded.description;

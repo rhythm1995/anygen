@@ -99,18 +99,24 @@ function RatioIcon({ ratio, size = 14 }: { ratio: string; size?: number }) {
   );
 }
 
+export interface AgentSubmitPayload extends SubmitPayload {
+  skill_id?: string;
+}
+
 export function CreationComposer({
   onSubmit,
   placeholder = "说点什么，描述你的想法，@ 引用素材，/ 唤起技能",
   busy,
   error,
   initialType = "agent",
+  skillPicker = false,
 }: {
-  onSubmit: (payload: SubmitPayload) => void;
+  onSubmit: (payload: AgentSubmitPayload) => void;
   placeholder?: string;
   busy?: boolean;
   error?: string | null;
   initialType?: CreationType;
+  skillPicker?: boolean;
 }) {
   const { session } = useAuth();
   const config = useCreationConfig();
@@ -118,6 +124,13 @@ export function CreationComposer({
   const [typeOpen, setTypeOpen] = useState(false);
   const [paramsOpen, setParamsOpen] = useState(false);
   const [text, setText] = useState("");
+  const [skillOpen, setSkillOpen] = useState(false);
+  const [skill, setSkill] = useState<{ id: string; name: string } | null>(null);
+  const skillsQuery = useQuery({
+    queryKey: ["agent-skills"],
+    queryFn: () => api<{ id: string; name: string; title: string; description: string; official: boolean; step_count: number }[]>("/agent/skills"),
+    enabled: skillPicker && Boolean(session),
+  });
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   const models = (config.data?.modelsByType[type] ?? []);
@@ -161,7 +174,13 @@ export function CreationComposer({
   }
 
   const submit = () => {
-    if (!text.trim() || !model || busy) return;
+    if (!text.trim() || busy) return;
+    if (type === "agent") {
+      onSubmit({ type, prompt: text.trim(), model_code: skill?.id ?? "", params: { skill_id: skill?.id } });
+      setText("");
+      return;
+    }
+    if (!model) return;
     onSubmit({ type, prompt: text.trim(), model_code: model.code, params });
     setText("");
   };
@@ -367,6 +386,41 @@ export function CreationComposer({
                 {durationSec}s
               </Chip>
             </>
+          )}
+
+          {/* 技能选择（Agent 模式） */}
+          {skillPicker && type === "agent" && (
+            <div className="relative">
+              <Chip onClick={() => { setSkillOpen(!skillOpen); setTypeOpen(false); setParamsOpen(false); setModelOpen(false); }}>
+                <Wand2 size={13} />
+                {skill ? skill.name : "技能"}
+                <ChevronDown size={12} />
+              </Chip>
+              <Popover open={skillOpen} onClose={() => setSkillOpen(false)} width={420}>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs text-dm-text-4">官方技能</span>
+                  {skill && (
+                    <button className="text-[10px] text-dm-accent" onClick={() => setSkill(null)}>
+                      清除
+                    </button>
+                  )}
+                </div>
+                {(skillsQuery.data ?? []).map((sk) => (
+                  <button
+                    key={sk.id}
+                    onClick={() => { setSkill({ id: sk.id, name: sk.name }); setSkillOpen(false); }}
+                    className="w-full rounded-lg px-2 py-2 text-left hover:bg-dm-surface-2/60"
+                  >
+                    <span className="flex items-center gap-2 text-sm text-dm-text">
+                      {sk.name}
+                      {sk.official && <span className="rounded bg-dm-surface-2 px-1 text-[9px] text-dm-text-3">官方</span>}
+                      <span className="ml-auto text-[10px] text-dm-text-4">{sk.step_count} 步</span>
+                    </span>
+                    <span className="mt-0.5 block text-xs text-dm-text-3">{sk.description}</span>
+                  </button>
+                ))}
+              </Popover>
+            </div>
           )}
 
           {/* 音乐：智能时长 */}

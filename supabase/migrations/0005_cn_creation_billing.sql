@@ -125,3 +125,5 @@ create table if not exists public.admin_audit_log (
   created_at timestamptz not null default now()
 );
 alter table public.admin_audit_log enable row level security;
+
+-- 资产删除（软需求 v1：物理删，S3 对象由调用方清理）

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Plus, FolderClosed, Shapes, Sparkles, Bell, Code2, Box, Settings, LogOut } from "lucide-react";
+import { Home, Plus, FolderClosed, Shapes, Sparkles, Bell, Code2, Box, Settings, LogOut, ShieldCheck } from "lucide-react";
 
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ export function SideRail() {
   const items: RailItem[] = [
     { kind: "link", href: "/ai-tool/home", label: "灵感", icon: <Home size={19} strokeWidth={1.6} /> },
     { kind: "link", href: "/ai-tool/generate", label: "生成", icon: <Plus size={19} strokeWidth={1.6} /> },
-    { kind: "link", href: "/ai-tool/assets-canvas", label: "资产", icon: <FolderClosed size={19} strokeWidth={1.6} /> },
+    { kind: "link", href: "/ai-tool/assets", label: "资产", icon: <FolderClosed size={19} strokeWidth={1.6} /> },
     { kind: "link", href: "/ai-tool/assets-canvas", label: "画布", icon: <Shapes size={19} strokeWidth={1.6} /> },
     ...(session
       ? ([
@@ -55,6 +55,9 @@ export function SideRail() {
 
   const bottomItems: RailItem[] = session
     ? [
+        ...(me?.role === "admin"
+          ? ([{ kind: "link", href: "/admin/models", label: "管理", icon: <ShieldCheck size={19} strokeWidth={1.6} /> }] as RailItem[])
+          : []),
         { kind: "button", label: "升级", icon: <span className="text-[10px] font-dm-label">+50</span>, onClick: () => {} },
         { kind: "button", label: "通知", icon: <Bell size={19} strokeWidth={1.6} />, onClick: () => {} },
         { kind: "button", label: "API", icon: <Code2 size={19} strokeWidth={1.6} />, onClick: () => {} },
@@ -67,7 +70,7 @@ export function SideRail() {
       ];
 
   const renderItem = (item: RailItem) => {
-    const active = item.kind === "link" && pathname === item.href;
+    const active = item.kind === "link" && (pathname === item.href || (item.href !== "/ai-tool/home" && pathname.startsWith(item.href)));
     const inner = (
       <span
         className={`flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors ${

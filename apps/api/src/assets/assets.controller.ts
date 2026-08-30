@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpException, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { z } from "zod";
 import { assetKindSchema } from "@dreamina/shared";
@@ -45,6 +45,20 @@ export class AssetsController {
     @Body(new ZodBodyPipe(registerSchema)) body: z.infer<typeof registerSchema>,
   ) {
     return this.storage.register(this.factory.serviceClient, { userId: req.user!.id, ...body });
+  }
+
+  @Delete(":id")
+  async remove(@Req() req: Request, @Param("id") id: string) {
+    const { data, error } = await this.factory.serviceClient
+      .from("assets")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", req.user!.id)
+      .select()
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new HttpException("asset not found", 404);
+    return { deleted: true, storageKey: (data as any).storage_key };
   }
 
   @Get()
