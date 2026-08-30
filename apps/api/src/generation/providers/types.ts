@@ -1,6 +1,7 @@
 import type { GenerationType } from "@dreamina/shared";
 
 export const GENERATION_PROVIDER = Symbol("GENERATION_PROVIDER");
+export const OPENROUTER_PROVIDER = Symbol("OPENROUTER_PROVIDER");
 
 export interface ProviderSubmitInput {
   type: GenerationType;
@@ -25,6 +26,8 @@ export interface GenerationProvider {
   readonly name: string;
   submit(input: ProviderSubmitInput): Promise<ProviderSubmitResult>;
   poll(remoteId: string): Promise<ProviderPollResult>;
+  /** 同步型供应商（如 OpenRouter 图像）可另行实现 submitImage */
+  submitImage?(model: string, prompt: string): Promise<ProviderSubmitResult>;
 }
 
 export class ProviderError extends Error {

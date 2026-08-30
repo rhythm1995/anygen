@@ -444,6 +444,8 @@ export const pricing = {
   ): number {
     const factor = (res?: string) => {
       if (!res) throw new Error(`pricing: resolution required for ${model.unit_type}`);
+      // 空系数表 = 扁平定价模型（如 OpenRouter 按次计费），任意分辨率同价
+      if (Object.keys(model.resolution_factor).length === 0) return 1;
       const f = model.resolution_factor[res];
       if (typeof f !== "number" || !(f > 0)) throw new Error(`pricing: unknown resolution ${res}`);
       return f;

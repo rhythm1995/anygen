@@ -7,16 +7,22 @@ import { SupabaseClientFactory } from "../auth/supabase.client";
 import { CreditsService } from "../credits/credits.service";
 import { StorageService } from "../assets/storage.service";
 import { nextStatus } from "./state-machine";
-import { GENERATION_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
+import { GENERATION_PROVIDER, OPENROUTER_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
 
 @Injectable()
 export class GenerationService {
   constructor(
-    @Inject(GENERATION_PROVIDER) private readonly provider: GenerationProvider,
+    @Inject(GENERATION_PROVIDER) private readonly arkProvider: GenerationProvider,
+    @Inject(OPENROUTER_PROVIDER) private readonly openRouterProvider: GenerationProvider,
     private readonly factory: SupabaseClientFactory,
     private readonly credits: CreditsService,
     private readonly storage: StorageService,
   ) {}
+
+  /** 按模型所属供应商路由 Provider（未知供应商回退 ark） */
+  private providerFor(modelProvider: string): GenerationProvider {
+    return modelProvider === "openrouter" ? this.openRouterProvider : this.arkProvider;
+  }
 
   private get db(): SupabaseClient {
     return this.factory.serviceClient;
@@ -82,7 +88,7 @@ export class GenerationService {
     const engineType: "image" | "video" = input.type;
 
     try {
-      const submitted = await this.provider.submit({
+      const submitted = await this.providerFor(model.provider).submit({
         type: engineType,
         prompt: input.prompt,
         params: { ...params, model_code: model.code },
@@ -120,7 +126,7 @@ export class GenerationService {
     if (!task) throw new HttpException("task not found", 404);
     if (task.status !== "running") return this.serialize(task);
 
-    const poll = await this.provider.poll(task.remote_id!);
+    const poll = await this.providerFor(task.provider ?? "ark").poll(task.remote_id!);
     if (poll.status === "succeeded") {
       const updated = await this.completeTask(task, poll.urls!, task.type);
       return this.serialize(updated);

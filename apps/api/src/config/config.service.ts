@@ -84,6 +84,14 @@ export class ConfigService {
     return Boolean(this.llmApiBase && this.llmApiKey);
   }
 
+  get openRouterBaseUrl(): string | undefined {
+    return this.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
+  }
+
+  get openRouterApiKey(): string | undefined {
+    return this.env.OPENROUTER_API_KEY || undefined;
+  }
+
   get useArk(): boolean {
     return Boolean(this.arkBaseUrl && this.arkApiKey);
   }

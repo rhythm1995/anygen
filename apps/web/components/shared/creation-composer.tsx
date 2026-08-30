@@ -141,6 +141,7 @@ export function CreationComposer({
   const model: ModelEntry | undefined = models.find((m) => m.code === modelCode) ?? models.find((m) => m.is_default) ?? models[0];
 
   // 参数状态（按类型）
+  const countOptions = model?.params?.generate_count_options ?? [1, 2, 3, 4];
   const [ratio, setRatio] = useState("1:1");
   const [videoRatio, setVideoRatio] = useState("16:9");
   const [imgRes, setImgRes] = useState("2k");
@@ -152,6 +153,12 @@ export function CreationComposer({
   useEffect(() => {
     setModelCode(null);
   }, [type]);
+  useEffect(() => {
+    // 模型切换时钳制数量到该模型支持的范围（如 OpenRouter 模型仅支持 1）
+    if (model?.params?.generate_count_options && !model.params.generate_count_options.includes(count)) {
+      setCount(model.params.generate_count_options[0]);
+    }
+  }, [model]);
 
   const params: Record<string, unknown> = {};
   let costCents = 0;
@@ -309,7 +316,7 @@ export function CreationComposer({
                 </div>
                 <p className="mb-2 text-xs text-dm-text-4">选择生成数量</p>
                 <div className="grid grid-cols-4 gap-1">
-                  {[1, 2, 3, 4].map((n) => (
+                  {countOptions.map((n) => (
                     <button
                       key={n}
                       onClick={() => setCount(n)}

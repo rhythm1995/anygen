@@ -5,7 +5,8 @@ import { CreditsModule } from "../credits/credits.module";
 import { GenerationController } from "./generation.controller";
 import { GenerationService } from "./generation.service";
 import { ArkProvider } from "./providers/ark.provider";
-import { GENERATION_PROVIDER } from "./providers/types";
+import { OpenRouterProvider } from "./providers/openrouter.provider";
+import { GENERATION_PROVIDER, OPENROUTER_PROVIDER } from "./providers/types";
 import { ConfigService } from "../config/config.service";
 
 const providerFactory: Provider = {
@@ -20,10 +21,20 @@ const providerFactory: Provider = {
     }),
 };
 
+const openRouterFactory: Provider = {
+  provide: OPENROUTER_PROVIDER,
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) =>
+    new OpenRouterProvider({
+      baseUrl: config.openRouterBaseUrl ?? "",
+      apiKey: config.openRouterApiKey ?? "",
+    }),
+};
+
 @Module({
   imports: [AuthModule, AssetsModule, CreditsModule],
   controllers: [GenerationController],
-  providers: [GenerationService, providerFactory],
+  providers: [GenerationService, providerFactory, openRouterFactory],
   exports: [GenerationService, GENERATION_PROVIDER],
 })
 export class GenerationModule {}
