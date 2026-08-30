@@ -84,5 +84,5 @@ insert into public.agent_skills (id, name, title, description, enabled, official
   '{"steps":[{"title":"海报方案 A","type":"image","prompt_suffix":"海报主视觉方案A，强构图，信息层级清晰","count":1,"params":{"resolution":"2k","count":1}},{"title":"海报方案 B","type":"image","prompt_suffix":"海报主视觉方案B，另一创意方向","count":1,"params":{"resolution":"2k","count":1}}]}'::jsonb),
 ('web_agent_skill_brand', 'Logo设计', 'Logo设计', '根据公司名称、业务与客群，生成品牌 Logo 与视觉方案', true, true,
   '{"steps":[{"title":"Logo 方向 A","type":"image","prompt_suffix":"Logo 设计方向A，简洁几何，单色","count":1,"params":{"resolution":"2k","count":1}},{"title":"Logo 方向 B","type":"image","prompt_suffix":"Logo 设计方向B，字形结合","count":1,"params":{"resolution":"2k","count":1}},{"title":"品牌色板","type":"image","prompt_suffix":"品牌色板与应用示例","count":1,"params":{"resolution":"2k","count":1}}]}'::jsonb)
-on conflict (id) do update set official = excluded.official, plan_template = excluded.plan_template,
+on conflict (id) do update set name = excluded.name, official = excluded.official, plan_template = excluded.plan_template,
   title = excluded.title, description = excluded.description;

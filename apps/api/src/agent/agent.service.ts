@@ -155,18 +155,29 @@ export class AgentService {
         });
         await this.db.from("agent_steps").update({ status: "running", task_id: task.id, cost_cents: task.cost_cents }).eq("id", step.id);
       } catch (e) {
-        const msg = (e as Error).message;
-        const status = msg.includes("402") || msg.includes("insufficient") ? "failed" : "pending";
-        await this.db
-          .from("agent_steps")
-          .update({ status, error: msg.slice(0, 300) })
-          .eq("id", step.id);
-        if (status === "failed") await this.failSession(sessionId, `步骤「${step.title}」失败: ${msg.slice(0, 120)}`);
-        // 预算不足 → 会话失败并停止推进
-        if (msg.includes("402") || msg.includes("insufficient")) {
-          await this.failSession(sessionId, "余额不足，会话已终止");
+        const err = e as Error & { status?: number };
+        const msg = err.message;
+        // 不可恢复（引擎未配置 503 / 预算不足 402 / 模型缺失 404）→ 步骤与会话置失败，停止推进
+        const fatal = [503, 402, 404].includes(err.status ?? 0) || msg.includes("insufficient");
+        if (fatal) {
+          await this.db
+            .from("agent_steps")
+            .update({ status: "failed", error: msg.slice(0, 300) })
+            .eq("id", step.id);
+          // 引擎未配置/预算不足对后续步骤同样致命：一次置失败，避免步骤悬挂
+          await this.db
+            .from("agent_steps")
+            .update({ status: "failed", error: "会话已终止: " + msg.slice(0, 200) })
+            .eq("session_id", sessionId)
+            .in("status", ["pending", "running"]);
+          await this.failSession(sessionId, msg.slice(0, 200));
           return { status: "failed" };
         }
+        // 可恢复（供应商 5xx 等）→ 留 pending，下次 advance 重试
+        await this.db
+          .from("agent_steps")
+          .update({ error: msg.slice(0, 300) })
+          .eq("id", step.id);
       }
     }
     // 汇总会话状态

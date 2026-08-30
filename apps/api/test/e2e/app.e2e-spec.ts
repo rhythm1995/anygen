@@ -276,6 +276,18 @@ describe("Dreamina API (e2e)", () => {
       // 他人不可见
       const otherList = await authed.get("/api/agent/sessions");
       expect((otherList.body as any[]).every((x) => x.id === id)).toBe(true);
+
+      // advance：无 ARK key → createTask 503（不可恢复）→ 会话 failed 带明确原因，步骤不悬挂
+      const me2 = await authed.get("/api/me");
+      await admin.rpc("grant_cents", { p_user: userId, p_amount: 500, p_reason: "admin_adjust" });
+      const adv = await authed.post(`/api/agent/sessions/${id}/advance`);
+      expect([200, 201]).toContain(adv.status);
+      expect((adv.body as any).status).toBe("failed");
+      const after = await authed.get(`/api/agent/sessions/${id}`);
+      expect((after.body as any).status).toBe("failed");
+      const steps = (after.body as any).steps as any[];
+      expect(steps.every((st) => st.status === "failed")).toBe(true);
+      expect(String((after.body as any).error)).toContain("ARK_API_KEY");
     });
   });
 
@@ -296,6 +308,8 @@ describe("Dreamina API (e2e)", () => {
 
   describe("/api/generation/tasks（无 ARK key → 503）", () => {
     it("缺 ARK_API_KEY：503 明确配置错误，任务不残留、积分不扣", async () => {
+      const meBefore = await authed.get("/api/me");
+      const before = (meBefore.body as any).balance_cents;
       await admin.rpc("grant_cents", { p_user: userId, p_amount: 100, p_reason: "admin_adjust" });
       const res = await authed.post("/api/generation/tasks", {
         type: "image",
@@ -305,7 +319,7 @@ describe("Dreamina API (e2e)", () => {
       expect(res.status).toBe(503);
       expect(String((res.body as any).message)).toContain("config");
       const me = await authed.get("/api/me");
-      expect((me.body as any).balance_cents).toBe(600); // 500 初始 + 100 未扣分
+      expect((me.body as any).balance_cents).toBe(before + 100); // 未扣分
     });
   });
 });

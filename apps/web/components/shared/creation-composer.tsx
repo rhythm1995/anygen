@@ -432,7 +432,7 @@ export function CreationComposer({
           <button
             aria-label="生成"
             onClick={submit}
-            disabled={!text.trim() || busy || !model}
+            disabled={!text.trim() || busy || (type !== "agent" && !model)}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-dm-border-3 bg-dm-border-3/60 text-dm-text transition-opacity disabled:opacity-40"
           >
             ↑
