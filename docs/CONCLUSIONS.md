@@ -71,12 +71,12 @@ Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
 | M1.5 | CN 侦察（7 类型/模型矩阵/技能） | ✅ 8498add |
 | M2 | Admin 核心（AdminGuard/models 管理 API+审计+美分账本 RPC/初始赠金 $5）| ✅ 本轮 |
 | M3 | **即梦 CN 创作面板**：7 类型工具条 + 图片模式（9 模型/分辨率矩阵/数量）+ 视频模式（11 模型/参考模式/时长）+ zh-Hans + 实时计价 | ✅ 本轮 |
-| M2.5 剩余 | admin 二级页完整版（pricing/usage/用户管理页 UI；API 已就绪） | 排队 |
-| M4 | Agent v1：技能模板执行器（plan_template + steps 状态机 + 审批门 + 预算护栏 + JSON 桥接 vendor 工具） | 排队 |
-| M5 | Agent v2：自由 agent loop（AI SDK）+ SSE | 排队 |
-| M6+ | 审核管线（储备）、产品化剥离（AGPL） | 储备 |
+| M2.5 | Admin 二级页完整版：/admin layout + 模型(改价/启停/毛利) + 用量(按日/按模型/净收入) + 用户(余额调整) + 审计 + 侧栏「管理」入口(admin 可见) | ✅ 974e486 |
+| M4 | Agent v1：技能模板执行器（agent_sessions/steps + 4 官方技能 plan_template + advance 执行器：预算预估/步骤计费/失败重试/按完成结算 + UI 步骤卡） | ✅ 974e486 |
+| M5 | Agent v2：自由 loop（OpenAI 兼容 tool calling，LLM_API_* 可配 GLM/Ark/OpenAI）+ SSE 流式事件 + 无 key 503 + UI 入口 | ✅ 974e486 |
+| M6+ | 审核管线（储备）、产品化剥离（AGPL）、兑换码 | 储备 |
 
-> 本轮交付（2026-08-30）：迁移 0005/0006 + 26 模型入库（RECON 真实配置）+ 美分 RPC + config/admin API + 七类型面板。测试 63 绿（shared 26 + api 单元 20 + e2e 17）。UI 实测：7 类型切换/图片模型下拉/参数弹层/视频工具条/实时计价/画布编辑 全通过（docs/verify/）。
+> M2.5/M4/M5 交付（2026-08-30，974e486）：turbo 6/6 绿（api 28 单元 + e2e 21 + shared 26 = 75 测试）。UI 实测：资产库页（六类筛选/上传/删除，资产↔画布入口分离）+ admin 四页（models/usage/users/audit）+ 资产/画布按钮重叠 bug 修复（各归各位）。
 
 ## 6. 风险登记
 
