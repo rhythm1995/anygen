@@ -110,6 +110,7 @@ export function CreationComposer({
   error,
   initialType = "agent",
   skillPicker = false,
+  compact = false,
 }: {
   onSubmit: (payload: AgentSubmitPayload) => void;
   placeholder?: string;
@@ -117,6 +118,7 @@ export function CreationComposer({
   error?: string | null;
   initialType?: CreationType;
   skillPicker?: boolean;
+  compact?: boolean;
 }) {
   const { session } = useAuth();
   const config = useCreationConfig();
@@ -185,10 +187,6 @@ export function CreationComposer({
     setText("");
   };
 
-  // DEBUG: 组件实际拿到的 config
-  (window as unknown as Record<string, unknown>).__cfgData = config.data;
-  (window as unknown as Record<string, unknown>).__cfgErr = config.error ? String(config.error) : null;
-  (window as unknown as Record<string, unknown>).__cfgStatus = config.status;
   const modes = (config.data?.modes ?? []).filter((m) => CREATION_TYPES.includes(m.key as CreationType));
 
   return (
@@ -203,7 +201,7 @@ export function CreationComposer({
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
             }}
             placeholder={placeholder}
-            rows={3}
+            rows={compact ? 2 : 3}
             className="w-full resize-none bg-transparent text-[15px] text-dm-text outline-none placeholder:text-dm-text-3"
           />
         </div>

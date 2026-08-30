@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Plus } from "lucide-react";
 
-import { Composer } from "@/components/shared/composer";
+import { CreationComposer } from "@/components/shared/creation-composer";
 import { useAuth } from "@/components/providers";
 import { api, type Project } from "@/lib/api";
 
@@ -124,6 +124,7 @@ function Shapes({ placeholder }: { placeholder?: string }) {
 
 export default function CanvasEntryPage() {
   const { session, loading } = useAuth();
+  const router = useRouter();
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-dm-text-3">Loading…</div>;
@@ -144,7 +145,14 @@ export default function CanvasEntryPage() {
     <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center px-8 pt-16">
       <h1 className="mb-8 font-dm-label text-[26px] font-semibold text-dm-text">今天想创作点什么？</h1>
       <div className="w-full max-w-[780px]">
-        <Composer compact placeholder="从想法开始，@ 引用元素" />
+        <CreationComposer
+            compact
+            placeholder="从想法开始，@ 引用元素"
+            onSubmit={(payload) => {
+              sessionStorage.setItem("pending-generation", JSON.stringify(payload));
+              router.push("/ai-tool/generate?auto=1");
+            }}
+          />
       </div>
       <div className="w-full">
         <IdeaCards />

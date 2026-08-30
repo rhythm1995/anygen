@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Flame, Play, Sparkles, Upload } from "lucide-react";
 
-import { Composer } from "@/components/shared/composer";
+import { CreationComposer, type AgentSubmitPayload } from "@/components/shared/creation-composer";
 import { useAuth } from "@/components/providers";
 import { api, type FeedItem, type FeedPage } from "@/lib/api";
 
@@ -107,7 +107,12 @@ export default function HomePage() {
           </button>
         </h1>
         <div className="w-full max-w-[1000px]">
-          <Composer onSubmit={() => router.push("/ai-tool/generate")} />
+          <CreationComposer
+            onSubmit={(payload: AgentSubmitPayload) => {
+              sessionStorage.setItem("pending-generation", JSON.stringify(payload));
+              router.push("/ai-tool/generate?auto=1");
+            }}
+          />
         </div>
 
         {/* Model cards */}

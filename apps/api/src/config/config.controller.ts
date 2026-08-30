@@ -1,10 +1,9 @@
-import { Controller, Get, UseGuards } from "@nestjs/common";
-import { SupabaseJwtGuard } from "../auth/auth.guard";
+import { Controller, Get } from "@nestjs/common";
 import { SupabaseClientFactory } from "../auth/supabase.client";
 import { creationModesConfigSchema } from "@dreamina/shared";
 
+// 创作类型/模型配置是公开信息（匿名首页也要渲染面板）；写操作仍走 admin
 @Controller("config")
-@UseGuards(SupabaseJwtGuard)
 export class ConfigController {
   constructor(private readonly factory: SupabaseClientFactory) {}
 

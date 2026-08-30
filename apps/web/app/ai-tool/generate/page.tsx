@@ -1,7 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PanelLeft, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 import { CreationComposer, type AgentSubmitPayload } from "@/components/shared/creation-composer";
@@ -175,6 +175,20 @@ export default function GeneratePage() {
     },
     onError: (e) => setSubmitError((e as Error).message),
   });
+
+  // 首页/画布提交跳转过来：自动消费暂存的生成请求（仅登录态执行一次）
+  const autoConsumed = useRef(false);
+  useEffect(() => {
+    if (autoConsumed.current || loading || !session) return;
+    if (!new URLSearchParams(window.location.search).get("auto")) return;
+    const raw = sessionStorage.getItem("pending-generation");
+    if (!raw) return;
+    autoConsumed.current = true;
+    sessionStorage.removeItem("pending-generation");
+    try {
+      submit.mutate(JSON.parse(raw));
+    } catch {}
+  }, [loading, session, submit]);
 
   const visibleTasks = (tasks.data ?? []).filter((t) => taskIds.includes(t.id));
 
