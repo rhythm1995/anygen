@@ -16,13 +16,14 @@ const IDEA_SEEDS = [
   "7129448542808052225.jpg",
   "7130515992936976897.jpg",
 ];
+// 文案对齐即梦 CN 实测（RECON/auth/canvas-editor/00-entry-uitexts.json）
 const IDEAS = [
-  "Urban Coffee Visual Identity",
-  "Art Toy Character Design",
-  "Stellar Odyssey Storyboard",
-  "Perfume Collection Poster",
-  "Healing Illustrated Storybook",
-  "Surreal Dreamscape Storyboard",
+  "中式茶饮品牌VI设计",
+  "IP潮玩人物设定及表情包",
+  "宇宙迷航短片分镜",
+  "香水产品系列海报",
+  "治愈系插画故事绘本",
+  "超现实梦境MV概念分镜",
 ].map((title, i) => ({ title, seed: IDEA_SEEDS[i] }));
 
 function IdeaCards() {
@@ -38,7 +39,7 @@ function IdeaCards() {
 
   return (
     <section className="mt-14 w-full">
-      <h2 className="mb-4 text-base text-dm-text-2">Start with these ideas</h2>
+      <h2 className="mb-4 text-base text-dm-text-2">快速开始</h2>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         {IDEAS.map((idea) => (
           <button
@@ -83,7 +84,7 @@ function ProjectList() {
 
   return (
     <section className="mb-16 mt-14 w-full">
-      <h2 className="mb-4 text-base text-dm-text-2">Recent projects</h2>
+      <h2 className="mb-4 text-base text-dm-text-2">最近项目</h2>
       <div className="flex flex-wrap gap-3">
         <button
           onClick={() => create.mutate()}
@@ -125,6 +126,14 @@ function Shapes({ placeholder }: { placeholder?: string }) {
 export default function CanvasEntryPage() {
   const { session, loading } = useAuth();
   const router = useRouter();
+  const qc = useQueryClient();
+  const create = useMutation({
+    mutationFn: (name?: string) => api<Project>("/projects", { method: "POST", body: name ? { name } : {} }),
+    onSuccess: (p) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      return p;
+    },
+  });
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-dm-text-3">Loading…</div>;
@@ -147,10 +156,15 @@ export default function CanvasEntryPage() {
       <div className="w-full max-w-[780px]">
         <CreationComposer
             compact
-            placeholder="从想法开始，@ 引用元素"
+            placeholder='输入想法、剧本或上传参考，支持 "/"使用技能，添加主体，和Agent一起创作'
             onSubmit={(payload) => {
-              sessionStorage.setItem("pending-generation", JSON.stringify(payload));
-              router.push("/ai-tool/generate?auto=1");
+              const prompt = (payload as { prompt?: string }).prompt?.trim() ?? "";
+              create.mutate(prompt ? prompt.slice(0, 40) : undefined, {
+                onSuccess: (p) => {
+                  if (prompt) sessionStorage.setItem("pending-canvas-prompt", prompt);
+                  router.push(`/ai-tool/assets-canvas/project/${p.id}`);
+                },
+              });
             }}
           />
       </div>

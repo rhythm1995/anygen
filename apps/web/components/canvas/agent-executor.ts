@@ -5,6 +5,7 @@
  */
 import { api, type CreationTypesConfig, type AssetRow } from "@/lib/api";
 import { defaultModelFor, modelsFor, submitCanvasTask } from "@/lib/canvas/generation";
+import { applyCameraPrompt } from "./utils/canvas-camera";
 import { CanvasNodeType, type CanvasConnection, type CanvasNodeData, type Position } from "./types";
 import type { CanvasAgentAction, CanvasAgentToolResult } from "./agent/canvas-agent-tools";
 
@@ -93,7 +94,7 @@ export function createAgentExecutor(deps: AgentExecutorDeps) {
             .filter((item): item is CanvasNodeData => Boolean(item && item.type === CanvasNodeType.Text))
             .map((item) => (item.metadata?.content || "").trim())
             .filter(Boolean);
-        const finalPrompt = [...upstreamTexts, prompt.trim()].filter(Boolean).join("\n");
+        const finalPrompt = applyCameraPrompt([...upstreamTexts, prompt.trim()].filter(Boolean).join("\n"), node.metadata?.cameraControl);
         const resolutionOptions = Object.keys(model.params.resolutions ?? {});
         const ratioOptions = model.params.aspect_ratio?.options ?? [];
         const resolution = resolutionOptions[0] ?? "";

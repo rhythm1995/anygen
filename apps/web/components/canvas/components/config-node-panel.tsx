@@ -12,7 +12,8 @@ import { formatUsd, type ModelEntry } from "@/lib/api";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { estimateCostCents } from "@/lib/canvas/generation";
 import { useThemeStore } from "../theme-store";
-import type { CanvasNodeData, CanvasNodeMetadata } from "../types";
+import { CanvasCameraControl } from "./canvas-camera-control";
+import type { CameraControlOptions, CanvasNodeData, CanvasNodeMetadata } from "../types";
 
 export interface ConfigNodeDraft {
   model?: string;
@@ -136,6 +137,9 @@ export function ConfigNodePanel({ node, isRunning, imageModels, videoModels, inp
             </div>
 
             <div className="flex cursor-default items-center gap-2" onMouseDown={(event) => event.stopPropagation()}>
+                {mode === "image" ? (
+                    <CanvasCameraControl value={node.metadata?.cameraControl} onChange={(cameraControl: CameraControlOptions) => onConfigChange(node.id, { cameraControl })} />
+                ) : null}
                 {mode === "image" ? (
                     <div className="flex items-center gap-1 rounded-lg p-0.5" style={{ background: theme.node.fill }}>
                         {countOptions.map((option) => (

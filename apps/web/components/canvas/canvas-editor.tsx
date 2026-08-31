@@ -20,6 +20,7 @@ import { CanvasNodeType, type CanvasConnection, type CanvasNodeData, type Canvas
 import { findGroupDropTarget, snapNodesIntoGroup } from "./utils/canvas-group";
 import { isCanvasImageNodeType } from "./utils/canvas-panorama";
 import { uploadLocalImage, uploadImageFile, imageMetadata } from "./utils/canvas-image-data";
+import { applyCameraPrompt } from "./utils/canvas-camera";
 import { InfiniteCanvas } from "./components/infinite-canvas";
 import { CanvasNode } from "./components/canvas-node";
 import { ConnectionPath, ActiveConnectionPath } from "./components/canvas-connections";
@@ -31,6 +32,9 @@ import { ConfigNodePanel } from "./components/config-node-panel";
 import { CanvasAssistantPanel, type AssistantBridge } from "./components/canvas-assistant-panel";
 import { createAgentExecutor } from "./agent-executor";
 import { CanvasNodeHoverToolbar, CanvasNodeInfoModal } from "./components/canvas-node-hover-toolbar";
+import { CanvasDirector } from "./components/canvas-director";
+import { CanvasDirectorNodePanel } from "./components/canvas-director-node-panel";
+import { CanvasAssetPickerModal } from "./components/canvas-asset-picker";
 import { CanvasNodeCropDialog, CanvasNodeSplitDialog, CanvasNodeUpscaleDialog, CanvasNodeAngleDialog } from "./components/canvas-node-dialogs";
 import { cropDataUrl, splitDataUrl, upscaleDataUrl, transformAngleDataUrl, dataUrlToFile, type ImageCropRect, type ImageSplitParams, type ImageUpscaleParams, type ImageAngleTransform } from "./utils/canvas-image-ops";
 import type { CanvasAssistantSession } from "./types";
@@ -136,6 +140,19 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     const [infoNode, setInfoNode] = useState<CanvasNodeData | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [replaceUploadNodeId, setReplaceUploadNodeId] = useState<string | null>(null);
+    // Phase D：导演台
+    const [directorNodeId, setDirectorNodeId] = useState<string | null>(null);
+    // Phase E：资产选择器
+    const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+    const directorPanoramas = useMemo<import("./types").CanvasDirectorPanorama[]>(() => {
+        return connections
+            .filter((connection) => connection.toNodeId === directorNodeId)
+            .flatMap((connection) => {
+                const source = nodes.find((node) => node.id === connection.fromNodeId);
+                if (!source || source.type !== CanvasNodeType.Panorama || !source.metadata?.content) return [];
+                return [{ edgeId: connection.id, sourceNodeId: source.id, imageUrl: source.metadata.content, fileName: `${source.title || "全景图"}.jpg`, projectionMode: "equirectangular" as const }];
+            });
+    }, [connections, directorNodeId, nodes]);
     const replaceInputRef = useRef<HTMLInputElement>(null);
     const replaceUploadRef = useRef<string | null>(null);
     useEffect(() => {
@@ -177,6 +194,14 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         setActiveChatId(loaded.activeChatId ?? null);
         lastSavedJson.current = JSON.stringify(serializeGraph(loaded.nodes, loaded.connections, loaded.viewport, loaded.backgroundMode, nameDirty ? name : loaded.name));
         setTimeout(() => (skipNextHistory.current = false), 120);
+        // 首页 composer 语义（UI-SPEC-CN §7.1）：带 prompt 进画布 → 预填生成配置节点
+        const pendingPrompt = sessionStorage.getItem("pending-canvas-prompt");
+        if (pendingPrompt && !loaded.nodes.length) {
+            sessionStorage.removeItem("pending-canvas-prompt");
+            const config = createCanvasNode(CanvasNodeType.Config, { x: 260, y: 200 }, "生成配置");
+            config.metadata = { generationMode: "image", composerContent: pendingPrompt, status: "idle" };
+            setNodes([...loaded.nodes, config]);
+        }
     }, [project.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -522,6 +547,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             toast.error("请先输入描述或连接文本节点");
             return;
         }
+        const finalPrompt = applyCameraPrompt(promptParts.join("\n"), configNode.metadata?.cameraControl);
         const resolutionOptions = Object.keys(model.params.resolutions ?? {});
         const resolution = mode === "image" ? configNode.metadata?.quality : configNode.metadata?.vquality;
         const finalResolution = resolutionOptions.includes(resolution ?? "") ? resolution : resolutionOptions[0];
@@ -534,8 +560,8 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         try {
             const task = await submitCanvasTask(
                 mode === "image"
-                    ? { type: "image", prompt: promptParts.join("\n"), model_code: model.code, params: { resolution: finalResolution, ratio, count: configNode.metadata?.count ?? model.params.default_generate_count ?? 1 } }
-                    : { type: "video", prompt: promptParts.join("\n"), model_code: model.code, params: { resolution: finalResolution, ratio, duration_seconds: Number(configNode.metadata?.seconds) || 5 } },
+                    ? { type: "image", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, count: configNode.metadata?.count ?? model.params.default_generate_count ?? 1 } }
+                    : { type: "video", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, duration_seconds: Number(configNode.metadata?.seconds) || 5 } },
             );
             setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: "loading", startedAt: Date.now(), progress: 0, errorDetails: undefined, imageTaskId: mode === "image" ? task.id : undefined, videoTaskId: mode === "video" ? task.id : undefined } } : node)));
             setRunningNodeTasks((current) => ({ ...current, [nodeId]: task.id }));
@@ -1077,7 +1103,9 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                             showPanel={false}
                             showImageInfo={showImageInfo}
                             mentionReferences={[]}
-                            renderNodeContent={node.type === CanvasNodeType.Config ? (target) => {
+                            renderNodeContent={node.type === CanvasNodeType.Director ? () => (
+                                <CanvasDirectorNodePanel onOpen={() => setDirectorNodeId(node.id)} />
+                            ) : node.type === CanvasNodeType.Config ? (target) => {
                                 const inputs = upstreamInputsOf(target.id);
                                 const mode = target.metadata?.generationMode === "video" ? "video" : "image";
                                 return (
@@ -1128,6 +1156,58 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                         />
                     ) : null}
                 </InfiniteCanvas>
+
+                {/* Phase D：导演台覆盖层 */}
+                {directorNodeId ? (
+                    <CanvasDirector
+                        nodeId={directorNodeId}
+                        project={nodes.find((node) => node.id === directorNodeId)?.metadata?.directorProject ?? null}
+                        panoramas={directorPanoramas}
+                        theme={useThemeStore.getState().theme}
+                        onClose={() => setDirectorNodeId(null)}
+                        onProjectChange={(project) => setNodes((current) => current.map((node) => (node.id === directorNodeId ? { ...node, metadata: { ...node.metadata, directorProject: project } } : node)))}
+                        onPanoramaRemoved={({ edgeId }) => setConnections((current) => current.filter((connection) => connection.id !== edgeId))}
+                        onCapturesSent={(sourceNodeId, captures) => {
+                            void (async () => {
+                                const source = nodesRef.current.find((node) => node.id === sourceNodeId);
+                                if (!source) return;
+                                let index = 0;
+                                for (const capture of captures) {
+                                    try {
+                                        const file = await dataUrlToFile(capture.dataUrl, capture.fileName.replace(/\.[^.]+$/, ""));
+                                        const uploaded = await uploadImageFile(file);
+                                        const meta = await import("@/lib/canvas-image-utils").then((m) => m.readImageMeta(capture.dataUrl));
+                                        const node = createCanvasNode(CanvasNodeType.Image, { x: source.position.x + source.width + 80, y: source.position.y + index * 280 }, capture.fileName.replace(/\.[^.]+$/, ""));
+                                        node.metadata = { content: uploaded.url, assetId: uploaded.assetId, status: "success", naturalWidth: meta.width, naturalHeight: meta.height, mimeType: meta.mimeType, bytes: file.size };
+                                        setNodes((current) => [...current, node]);
+                                        setConnections((current) => [...current, { id: uid("conn"), fromNodeId: sourceNodeId, toNodeId: node.id }]);
+                                        index += 1;
+                                    } catch (error) {
+                                        toast.error(`截图上传失败：${error instanceof Error ? error.message : "未知错误"}`);
+                                    }
+                                }
+                                if (index) toast.success(`已发送 ${index} 张机位截图到画布`);
+                            })();
+                        }}
+                        onVideoSent={(sourceNodeId, video) => {
+                            void (async () => {
+                                const source = nodesRef.current.find((node) => node.id === sourceNodeId);
+                                if (!source) return;
+                                try {
+                                    const file = new File([video.blob], video.fileName, { type: "video/mp4" });
+                                    const uploaded = await uploadImageFile(file);
+                                    const node = createCanvasNode(CanvasNodeType.Video, { x: source.position.x + source.width + 80, y: source.position.y }, "导演台视频");
+                                    node.metadata = { content: uploaded.url, assetId: uploaded.assetId, status: "success", mimeType: "video/mp4", bytes: video.blob.size, durationMs: Math.round(video.durationSeconds * 1000) };
+                                    setNodes((current) => [...current, node]);
+                                    setConnections((current) => [...current, { id: uid("conn"), fromNodeId: sourceNodeId, toNodeId: node.id }]);
+                                    toast.success("导演台视频已发送到画布");
+                                } catch (error) {
+                                    toast.error(`视频上传失败：${error instanceof Error ? error.message : "未知错误"}`);
+                                }
+                            })();
+                        }}
+                    />
+                ) : null}
 
                 {/* B 尾：节点 hover 工具条 */}
                 <CanvasNodeHoverToolbar
@@ -1207,6 +1287,19 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
 
                 <CanvasNodeInfoModal node={infoNode} open={Boolean(infoNode)} onClose={() => setInfoNode(null)} />
 
+                <CanvasAssetPickerModal
+                    open={assetPickerOpen}
+                    onClose={() => setAssetPickerOpen(false)}
+                    onPick={(asset) => {
+                        pushHistory();
+                        const type = asset.kind === "video" ? CanvasNodeType.Video : asset.kind === "audio" ? CanvasNodeType.Audio : CanvasNodeType.Image;
+                        const node = createCanvasNode(type, getCanvasCenter(), "画布资产");
+                        node.metadata = { content: asset.url, assetId: asset.id, status: "success", naturalWidth: asset.width ?? undefined, naturalHeight: asset.height ?? undefined, mimeType: asset.mime, bytes: undefined };
+                        setNodes((current) => [...current, node]);
+                        toast.success("已插入画布");
+                    }}
+                />
+
                 {/* 大图预览 */}
                 {previewUrl ? (
                     <div className="fixed inset-0 z-[110] grid place-items-center bg-black/80 p-8" onClick={() => setPreviewUrl(null)} data-canvas-no-zoom>
@@ -1246,7 +1339,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                                 <Upload size={14} />
                                 本地上传
                             </button>
-                            <button type="button" onClick={() => toast.info("资产选择器将在 Phase B 开放")} className="flex h-9 items-center gap-2 rounded-lg border px-4 text-xs" style={{ background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.node.text }}>
+                            <button type="button" onClick={() => setAssetPickerOpen(true)} className="flex h-9 items-center gap-2 rounded-lg border px-4 text-xs" style={{ background: theme.toolbar.panel, borderColor: theme.toolbar.border, color: theme.node.text }}>
                                 <FolderOpen size={14} />
                                 选择资产
                             </button>
@@ -1313,8 +1406,8 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                     onCanvasToolChange={setCanvasTool}
                     onBackgroundModeChange={setBackgroundMode}
                     onShowImageInfoChange={setShowImageInfo}
-                    onOpenAssetLibrary={() => toast.info("素材库选择器将在 Phase B 开放")}
-                    onOpenMyAssets={() => toast.info("我的素材将在 Phase B 开放")}
+                    onOpenAssetLibrary={() => setAssetPickerOpen(true)}
+                    onOpenMyAssets={() => setAssetPickerOpen(true)}
                 />
 
                 <input
