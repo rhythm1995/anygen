@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUp, AtSign, ChevronDown, Clock, Crop, Layers, Sparkles, Wand2 } from "lucide-react";
+import { ArrowUp, AtSign, ChevronDown, Crop, Layers, Plus, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 
@@ -26,8 +26,16 @@ export interface ComposerPrefill {
   params?: Record<string, unknown>;
 }
 
-const TYPE_LABEL: Record<CreationType, string> = {
-  agent: "Agent 模式",
+// 预置音色（平台自有配置；音色克隆管线未接入，见 D7/D11）
+const VOICE_PRESETS = [
+  { key: "female_warm", label: "温柔女声" },
+  { key: "female_bright", label: "明亮女声" },
+  { key: "male_deep", label: "沉稳男声" },
+  { key: "male_energetic", label: "活力男声" },
+  { key: "child", label: "童声" },
+];
+
+const TYPE_LABEL: Record<CreationType, string> = {  agent: "Agent 模式",
   image: "图片生成",
   video: "视频生成",
   music: "音乐生成",
@@ -169,6 +177,10 @@ export function CreationComposer({
   const [count, setCount] = useState(2);
   const [durationSec, setDurationSec] = useState(5);
   const [refMode, setRefMode] = useState("first_end_frame");
+  // 音乐时长 / 配音音色（引擎未接入前为提交参数，见 D7/D11）
+  const [musicDur, setMusicDur] = useState(30);
+  const [voice, setVoice] = useState<string | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
 
   // prefill 设置 type 时跳过一次 model 重置，否则刚回填的 model_code 会被清掉
   const prefilledTypeRef = useRef<CreationType | null>(null);
@@ -233,6 +245,8 @@ export function CreationComposer({
     } else {
       costCents = model.price_cents;
       if (type === "motion_mimic") params.style = "生动";
+      if (type === "music") params.duration_seconds = musicDur;
+      if (type === "dubbing" && voice) params.voice = voice;
     }
   }
 
@@ -503,10 +517,45 @@ export function CreationComposer({
             </div>
           )}
 
-          {/* 音乐：智能时长 */}
-          {type === "music" && <Chip><Clock size={13} />智能时长</Chip>}
-          {/* 配音：克隆声音 */}
-          {type === "dubbing" && <Chip><Wand2 size={13} />克隆声音</Chip>}
+          {/* 音乐：时长选择（DurationPicker 复用，提交 params.duration_seconds） */}
+          {type === "music" && (
+            <div className="relative">
+              <DurationPicker value={musicDur} min={10} max={300} onChange={setMusicDur} label="选择音乐生成时长" />
+            </div>
+          )}
+          {/* 配音：音色选择（预置音色真实入参；音色克隆管线未接入如实提示） */}
+          {type === "dubbing" && (
+            <div className="relative">
+              <Chip onClick={() => setVoiceOpen(!voiceOpen)}>
+                <Wand2 size={13} />
+                {voice ? VOICE_PRESETS.find((v) => v.key === voice)?.label : "克隆声音"}
+                <ChevronDown size={12} />
+              </Chip>
+              <Popover open={voiceOpen} onClose={() => setVoiceOpen(false)} width={240}>
+                <p className="mb-2 text-xs text-dm-text-4">选择音色</p>
+                {VOICE_PRESETS.map((v) => (
+                  <button
+                    key={v.key}
+                    onClick={() => { setVoice(v.key); setVoiceOpen(false); }}
+                    className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                      voice === v.key ? "bg-dm-surface-2 text-dm-text" : "text-dm-text-2 hover:bg-dm-surface-2/60"
+                    }`}
+                  >
+                    {v.label}
+                    {voice === v.key && <span className="text-dm-accent">✓</span>}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-dm-border" />
+                <button
+                  onClick={() => { setVoiceOpen(false); toast("音色克隆管线未接入，敬请期待"); }}
+                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-dm-text-2 hover:bg-dm-surface-2/60"
+                >
+                  <Plus size={13} />
+                  克隆新声音
+                </button>
+              </Popover>
+            </div>
+          )}
 
           {/* @ 引用素材（原站底栏同位；上传/引用管线未接入，先如实提示） */}
           <Chip ariaLabel="引用素材" onClick={() => toast("素材引用即将上线")}>

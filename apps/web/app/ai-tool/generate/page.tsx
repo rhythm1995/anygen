@@ -687,17 +687,23 @@ export default function GeneratePage() {
     } catch {}
   }, [loading, session, submit]);
 
-  // 资产详情「重新编辑/生成视频」跳转过来：回填 composer（不自动提交）
+  // 资产详情/首页能力卡跳转过来：新开对话并按类型适配 composer（不自动提交）
   const prefillConsumed = useRef(false);
   useEffect(() => {
     if (prefillConsumed.current || loading || !session) return;
     if (!new URLSearchParams(window.location.search).get("prefill")) return;
-    const raw = sessionStorage.getItem("pending-prefill");
-    if (!raw) return;
     prefillConsumed.current = true;
+    // 干净 URL：跳转目标就是 /ai-tool/generate 本身
+    window.history.replaceState({}, "", "/ai-tool/generate");
+    const raw = sessionStorage.getItem("pending-prefill");
     sessionStorage.removeItem("pending-prefill");
     try {
-      openComposerWith(JSON.parse(raw));
+      const p = JSON.parse(raw ?? "null");
+      if (p) {
+        setActiveChat(null); // 新对话：不在旧会话流里继续
+        setEntered(false); // 回到创作态，而非旧结果流
+        openComposerWith(p);
+      }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, session]);

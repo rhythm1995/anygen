@@ -17,6 +17,7 @@ export function DurationPicker({
   onChange,
   disabled,
   title,
+  label = "选择视频生成时长",
 }: {
   value: number;
   min: number;
@@ -25,6 +26,8 @@ export function DurationPicker({
   disabled?: boolean;
   /** chip hover 提示（原版超长视频 hover 显示「最长可生成3分钟」） */
   title?: string;
+  /** 弹层标题（音乐生成等复用时替换） */
+  label?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<string | null>(null);
@@ -71,7 +74,7 @@ export function DurationPicker({
           className="absolute bottom-full right-0 z-50 mb-2 w-[400px] rounded-2xl border border-dm-border-2 bg-[#1c1e22] p-4 shadow-[0_8px_56px_rgba(0,0,0,0.24)]"
           data-testid="duration-popover"
         >
-          <p className="mb-3 font-dm-label text-xs font-medium text-[rgba(224,245,255,0.35)]">选择视频生成时长</p>
+          <p className="mb-3 font-dm-label text-xs font-medium text-[rgba(224,245,255,0.35)]">{label}</p>
           <div className="flex items-center gap-4">
             <div className="flex-1">
               <input
