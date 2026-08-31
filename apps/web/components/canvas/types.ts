@@ -219,7 +219,7 @@ export type CanvasAgentContent =
     >;
 
 export type CanvasAgentToolCall = {
-    id: string;
+    id?: string;
     name: string;
     arguments: Record<string, unknown>;
 };
@@ -227,7 +227,7 @@ export type CanvasAgentToolCall = {
 export type CanvasAgentProtocolMessage =
     | { role: "user" | "system"; content: CanvasAgentContent }
     | { role: "assistant"; content?: string; reasoningContent?: string; responseItems?: unknown[]; toolCalls?: CanvasAgentToolCall[] }
-    | { role: "tool"; content: string; toolCallId: string; name: string };
+    | { role: "tool"; content: string; toolCallId?: string; name: string };
 
 export type CanvasAssistantMessageStatus = "thinking" | "running" | "waiting" | "success" | "error";
 

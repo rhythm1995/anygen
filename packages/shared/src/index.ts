@@ -309,6 +309,9 @@ const canvasGraphBase = z.object({
     .optional(),
   backgroundMode: canvasBackgroundModeSchema.optional(),
   showImageInfo: z.boolean().optional(),
+  /** 画布 Agent 会话（D12 Phase C：v1 内嵌 graph 持久化，宽松透传；v2 拆 agent_sessions.project_id） */
+  chatSessions: z.array(z.unknown()).optional(),
+  activeChatId: z.string().max(64).optional(),
 });
 
 /** graph 整体校验：edge 不得悬挂（data 为宽松 metadata，类型见 canvasNodeTypeSchema） */

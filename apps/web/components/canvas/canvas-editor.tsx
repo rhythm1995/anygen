@@ -28,6 +28,9 @@ import { CanvasZoomControls } from "./components/canvas-zoom-controls";
 import { CanvasToolbar } from "./components/canvas-toolbar";
 import { CanvasNodeContextMenu } from "./components/canvas-context-menu";
 import { ConfigNodePanel } from "./components/config-node-panel";
+import { CanvasAssistantPanel, type AssistantBridge } from "./components/canvas-assistant-panel";
+import { createAgentExecutor } from "./agent-executor";
+import type { CanvasAssistantSession } from "./types";
 
 const MAX_HISTORY = 60;
 
@@ -78,7 +81,9 @@ function graphToEditor(detail: ProjectDetail) {
     const connections: CanvasConnection[] = (graph.edges ?? []).map((edge) => ({ id: edge.id, fromNodeId: edge.source, toNodeId: edge.target }));
     const viewport: ViewportTransform = graph.viewport ? { x: graph.viewport.x, y: graph.viewport.y, k: graph.viewport.zoom ?? 1 } : { x: 0, y: 0, k: 1 };
     const backgroundMode = (["dots", "lines", "blank"] as const).includes((graph as { backgroundMode?: string }).backgroundMode as never) ? ((graph as { backgroundMode?: "dots" | "lines" | "blank" }).backgroundMode as "dots" | "lines" | "blank") : "lines";
-    return { nodes, connections, viewport, backgroundMode, name: detail.name };
+    const chatSessions = Array.isArray((graph as { chatSessions?: unknown }).chatSessions) ? ((graph as { chatSessions?: CanvasAssistantSession[] }).chatSessions ?? []) : [];
+    const activeChatId = typeof (graph as { activeChatId?: unknown }).activeChatId === "string" ? (graph as { activeChatId?: string }).activeChatId : null;
+    return { nodes, connections, viewport, backgroundMode, name: detail.name, chatSessions, activeChatId };
 }
 
 export function CanvasEditor({ projectId }: { projectId: string }) {
@@ -118,6 +123,19 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     const [minimapOpen, setMinimapOpen] = useState(true);
     const [clipboard, setClipboard] = useState<CanvasNodeData[]>([]);
     const [runningNodeTasks, setRunningNodeTasks] = useState<Record<string, string>>({});
+    const [assistantOpen, setAssistantOpen] = useState(false);
+    const [chatSessions, setChatSessions] = useState<CanvasAssistantSession[]>([]);
+    const [activeChatId, setActiveChatId] = useState<string | null>(null);
+
+    // Agent 桥接 refs（跨模型步骤读取实时画布）
+    const nodesRef = useRef<CanvasNodeData[]>([]);
+    const connectionsRef = useRef<CanvasConnection[]>([]);
+    const selectedIdsRef = useRef<string[]>([]);
+    const creationConfigRef = useRef<CreationTypesConfig | undefined>(undefined);
+    useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+    useEffect(() => { connectionsRef.current = connections; }, [connections]);
+    useEffect(() => { selectedIdsRef.current = selectedIds; }, [selectedIds]);
+    useEffect(() => { creationConfigRef.current = creationConfig.data; }, [creationConfig.data]);
     const [createMenuOpen, setCreateMenuOpen] = useState(false);
     const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
     const skipNextHistory = useRef(true);
@@ -139,6 +157,8 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         setConnections(loaded.connections);
         setViewport(loaded.viewport);
         setBackgroundMode(loaded.backgroundMode);
+        setChatSessions(loaded.chatSessions);
+        setActiveChatId(loaded.activeChatId ?? null);
         lastSavedJson.current = JSON.stringify(serializeGraph(loaded.nodes, loaded.connections, loaded.viewport, loaded.backgroundMode, nameDirty ? name : loaded.name));
         setTimeout(() => (skipNextHistory.current = false), 120);
     }, [project.data]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -171,6 +191,8 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                 viewport: { x: nextViewport.x, y: nextViewport.y, zoom: Math.min(Math.max(nextViewport.k, 0.05), 5) },
                 backgroundMode: nextBackgroundMode,
                 showImageInfo,
+                ...(chatSessions.length ? { chatSessions } : {}),
+                ...(activeChatId ? { activeChatId } : {}),
             },
         };
     }
@@ -195,12 +217,12 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             lastSavedJson.current = serialized;
             save.mutate(payload);
         }, 800);
-    }, [nodes, connections, viewport, backgroundMode, name, save, showImageInfo]);
+    }, [nodes, connections, viewport, backgroundMode, name, save, showImageInfo, chatSessions, activeChatId]);
 
     useEffect(() => {
         if (skipNextHistory.current) return;
         scheduleSave();
-    }, [nodes, connections, viewport, backgroundMode, showImageInfo, scheduleSave]);
+    }, [nodes, connections, viewport, backgroundMode, showImageInfo, chatSessions, activeChatId, scheduleSave]);
 
     // ---- 历史栈 ----
     const pushHistory = useCallback((entry?: HistoryEntry) => {
@@ -378,8 +400,8 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     }, []);
 
     const finalizeTask = useCallback(async (nodeId: string, task: GenTask) => {
-        const configNode = nodes.find((node) => node.id === nodeId);
-        if (!configNode) return;
+        const target = nodes.find((node) => node.id === nodeId);
+        if (!target) return;
         let urls: string[] = [];
         let assets: AssetRow[] = [];
         if (task.outputs?.length) {
@@ -390,25 +412,65 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             markNodeError(nodeId, "生成完成但未返回产物");
             return;
         }
-        const mode = configNode.metadata?.generationMode === "video" ? "video" : "image";
+        const clearRunning = () => setRunningNodeTasks((current) => {
+            if (!(nodeId in current)) return current;
+            const next = { ...current };
+            delete next[nodeId];
+            return next;
+        });
+
+        // Agent/独立生成节点（image/video 节点本身）：原位填充
+        if (target.type === CanvasNodeType.Image || target.type === CanvasNodeType.Panorama) {
+            pushHistory();
+            if (urls.length === 1) {
+                const asset = assets.find((row) => row.url === urls[0]);
+                setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, content: urls[0], status: "success" as const, imageTaskId: task.id, progress: undefined, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png" } } : node)));
+            } else {
+                const children = urls.slice(1).map((url, index) => {
+                    const asset = assets.find((row) => row.url === url);
+                    const child = createCanvasNode(CanvasNodeType.Image, { x: target.position.x, y: target.position.y + (index + 1) * (target.height + 40) }, `${target.title} ${index + 2}`);
+                    child.metadata = { content: url, status: "success" as const, batchRootId: nodeId, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png" };
+                    return child;
+                });
+                const primaryAsset = assets.find((row) => row.url === urls[0]);
+                setNodes((current) => [
+                    ...current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, content: urls[0], status: "success" as const, imageTaskId: task.id, isBatchRoot: true, batchChildIds: children.map((child) => child.id), primaryImageId: children[0]?.id ?? "", naturalWidth: primaryAsset?.width ?? undefined, naturalHeight: primaryAsset?.height ?? undefined } } : node)),
+                    ...children,
+                ]);
+            }
+            clearRunning();
+            toast.success("生成完成");
+            return;
+        }
+        if (target.type === CanvasNodeType.Video) {
+            pushHistory();
+            const asset = assets.find((row) => row.url === urls[0]);
+            setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, content: urls[0], status: "success" as const, videoTaskId: task.id, progress: undefined, mimeType: asset?.mime ?? "video/mp4" } } : node)));
+            clearRunning();
+            toast.success("生成完成");
+            return;
+        }
+
+        // 配置节点：产物作为新节点落画布并连线
+        const mode = target.metadata?.generationMode === "video" ? "video" : "image";
         pushHistory();
-        const baseX = configNode.position.x + configNode.width + 80;
+        const baseX = target.position.x + target.width + 80;
         const created: CanvasNodeData[] = [];
         if (mode === "video") {
-            const node = createCanvasNode(CanvasNodeType.Video, { x: baseX, y: configNode.position.y }, "生成视频");
-            node.metadata = { content: urls[0], status: "success", videoTaskId: task.id, mimeType: assets[0]?.mime ?? "video/mp4" };
+            const node = createCanvasNode(CanvasNodeType.Video, { x: baseX, y: target.position.y }, "生成视频");
+            node.metadata = { content: urls[0], status: "success" as const, videoTaskId: task.id, mimeType: assets[0]?.mime ?? "video/mp4" };
             created.push(node);
         } else if (urls.length === 1) {
-            const node = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: configNode.position.y }, "生成图片");
+            const node = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: target.position.y }, "生成图片");
             const asset = assets.find((row) => row.url === urls[0]);
-            node.metadata = { content: urls[0], status: "success", imageTaskId: task.id, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png", bytes: undefined };
+            node.metadata = { content: urls[0], status: "success", imageTaskId: task.id, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png" };
             created.push(node);
         } else {
-            const root = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: configNode.position.y }, `图片组 ${urls.length}`);
+            const root = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: target.position.y }, `图片组 ${urls.length}`);
             root.metadata = { content: urls[0], status: "success", isBatchRoot: true, batchChildIds: [], primaryImageId: "", imageTaskId: task.id };
             const children = urls.map((url, index) => {
                 const asset = assets.find((row) => row.url === url);
-                const child = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: configNode.position.y + (index + 1) * (root.height + 40) }, `图片 ${index + 1}`);
+                const child = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: target.position.y + (index + 1) * (root.height + 40) }, `图片 ${index + 1}`);
                 child.metadata = { content: url, status: "success", batchRootId: root.id, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png" };
                 return child;
             });
@@ -421,12 +483,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             ...created,
         ]);
         setConnections((current) => [...current, ...created.slice(0, 1).map((node) => ({ id: uid("conn"), fromNodeId: nodeId, toNodeId: node.id }))]);
-        setRunningNodeTasks((current) => {
-            if (!(nodeId in current)) return current;
-            const next = { ...current };
-            delete next[nodeId];
-            return next;
-        });
+        clearRunning();
         toast.success(`生成完成：${created.length} 个节点已插入画布`);
     }, [nodes, pushHistory, markNodeError]);
 
@@ -498,6 +555,60 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             clearInterval(timer);
         };
     }, [runningNodeTasks, finalizeTask, markNodeError]);
+
+    // ---- 画布 Agent（Phase C）----
+    const executeAction = useMemo(
+        () =>
+            createAgentExecutor({
+                nodesRef,
+                connectionsRef,
+                selectedIdsRef,
+                setNodes,
+                setConnections,
+                pushHistory,
+                registerRunningTask: (nodeId, taskId) => setRunningNodeTasks((current) => ({ ...current, [nodeId]: taskId })),
+                creationConfigRef,
+                projectTitle: () => name,
+                renameProject: (title) => {
+                    setNameDirty(true);
+                    setName(title);
+                },
+                canvasCenter: getCanvasCenter,
+            }),
+        [pushHistory, getCanvasCenter, name],
+    );
+
+    const assistantBridge = useMemo<AssistantBridge>(
+        () => ({
+            projectId,
+            projectTitle: name,
+            nodes,
+            connections,
+            selectedIds,
+            viewport,
+            textModel: "canvas-agent",
+            imageDefaults: { resolution: Object.keys(modelsFor(creationConfig.data, "image")[0]?.params.resolutions ?? { "2k": 1 })[0] ?? "2k", ratio: modelsFor(creationConfig.data, "image")[0]?.params.aspect_ratio?.default ?? "1:1", count: 1 },
+            videoDefaults: { resolution: Object.keys(modelsFor(creationConfig.data, "video")[0]?.params.resolutions ?? { "720p": 1 })[0] ?? "720p", seconds: 5 },
+            imageModelCode: defaultModelFor(modelsFor(creationConfig.data, "image"))?.code ?? "",
+            videoModelCode: defaultModelFor(modelsFor(creationConfig.data, "video"))?.code ?? "",
+            executeAction,
+            onSessionsChange: (sessions: CanvasAssistantSession[], nextActiveChatId: string | null) => {
+                setChatSessions(sessions);
+                setActiveChatId(nextActiveChatId);
+            },
+            onInsertAsset: (message) => {
+                const text = (message.text ?? "").trim();
+                if (!text) return;
+                const node = createCanvasNode(CanvasNodeType.Text, getCanvasCenter(), "对话便签");
+                node.metadata = { content: text, status: "idle", fontSize: 14 };
+                setNodes((current) => [...current, node]);
+                toast.success("已插入画布");
+            },
+            onOpenUpload: () => fileInputRef.current?.click(),
+        }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [projectId, name, nodes, connections, selectedIds, viewport, executeAction, creationConfig.data],
+    );
 
     // ---- 交互：节点拖拽 ----
     const handleNodeMouseDown = useCallback((event: React.MouseEvent, nodeId: string) => {
@@ -809,15 +920,16 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                 <div className="flex-1" />
                 <button
                     type="button"
-                    disabled
-                    title="对话侧栏（Phase C 开放）"
-                    className="flex h-8 items-center gap-1.5 rounded-lg border border-dm-border px-3 text-xs text-dm-text-4"
+                    title="对话"
+                    onClick={() => setAssistantOpen((open) => !open)}
+                    className={`flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs transition ${assistantOpen ? "border-dm-accent text-dm-text" : "border-dm-border text-dm-text-2 hover:text-dm-text"}`}
                 >
                     <MessageSquare size={14} />
                     对话
                 </button>
             </header>
 
+            <div className="flex min-h-0 flex-1">
             <div className="relative min-h-0 flex-1">
                 <InfiniteCanvas
                     containerRef={containerRef}
@@ -1023,6 +1135,8 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                         event.target.value = "";
                     }}
                 />
+            </div>
+            <CanvasAssistantPanel bridge={assistantBridge} open={assistantOpen} onClose={() => setAssistantOpen(false)} />
             </div>
         </div>
     );

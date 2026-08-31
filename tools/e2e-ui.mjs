@@ -324,6 +324,39 @@ try {
   console.log("canvas generation done in", Math.round((Date.now() - genStart) / 1000), "s");
   await page.waitForTimeout(3000); // 等自动保存落库
   await shot(page, "canvas-generation");
+
+  // 9. 画布 Agent 对话侧栏（Phase C）：开面板 → 发消息 → 如实回复或 503 文案
+  await page.evaluate(() => {
+    [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === "对话")?.click();
+  });
+  await page.waitForTimeout(800);
+  const agentPanelOk = await page.evaluate(() => Boolean([...document.querySelectorAll("textarea")].find((t) => (t.placeholder || "").includes("创作目标"))));
+  if (!agentPanelOk) throw new Error("assistant panel did not open");
+  await page.evaluate(() => {
+    const el = [...document.querySelectorAll("textarea")].find((t) => (t.placeholder || "").includes("创作目标"));
+    el.focus();
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+    setter.call(el, "你好，介绍一下你能做什么");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => {
+    [...document.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === "发送")?.click();
+  });
+  const replyStart = Date.now();
+  let agentDone = false;
+  while (Date.now() - replyStart < 60_000) {
+    await page.waitForTimeout(3000);
+    agentDone = await page.evaluate(() => {
+      const bubbles = [...document.querySelectorAll("aside div.whitespace-pre-wrap")];
+      const assistant = bubbles.filter((b) => b.textContent && b.textContent.length > 8);
+      return assistant.length > 0;
+    });
+    if (agentDone) break;
+  }
+  if (!agentDone) throw new Error("canvas agent did not reply (or show honest error) in 60s");
+  await shot(page, "canvas-agent");
+  console.log("canvas agent replied");
   await page.evaluate(() => {
     const host = document.querySelector("[data-node-id]")?.parentElement?.parentElement || document.body;
     const r = host.getBoundingClientRect();
