@@ -21,6 +21,7 @@ import { findGroupDropTarget, snapNodesIntoGroup } from "./utils/canvas-group";
 import { isCanvasImageNodeType } from "./utils/canvas-panorama";
 import { uploadLocalImage, uploadImageFile, imageMetadata } from "./utils/canvas-image-data";
 import { applyCameraPrompt } from "./utils/canvas-camera";
+import { buildPanoramaPrompt, PANORAMA_NODE_SIZE } from "./utils/canvas-panorama";
 import { InfiniteCanvas } from "./components/infinite-canvas";
 import { CanvasNode } from "./components/canvas-node";
 import { ConnectionPath, ActiveConnectionPath } from "./components/canvas-connections";
@@ -507,7 +508,12 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             node.metadata = { content: urls[0], status: "success" as const, videoTaskId: task.id, mimeType: assets[0]?.mime ?? "video/mp4" };
             created.push(node);
         } else if (urls.length === 1) {
-            const node = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: target.position.y }, "生成图片");
+            const panorama = Boolean(target.metadata?.isPanoramaGeneration);
+            const node = createCanvasNode(panorama ? CanvasNodeType.Panorama : CanvasNodeType.Image, { x: baseX, y: target.position.y }, panorama ? "生成全景图" : "生成图片");
+            if (panorama) {
+                node.width = PANORAMA_NODE_SIZE.width;
+                node.height = PANORAMA_NODE_SIZE.height;
+            }
             const asset = assets.find((row) => row.url === urls[0]);
             node.metadata = { content: urls[0], status: "success", imageTaskId: task.id, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png" };
             created.push(node);
@@ -552,8 +558,11 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             toast.error("请先输入描述或连接文本节点");
             return;
         }
-        const finalPrompt = applyCameraPrompt(promptParts.join("\n"), configNode.metadata?.cameraControl);
         const inputImages = inputs.imageNodes.map((node) => node.metadata?.content ?? "").filter((url): url is string => /^https?:\/\//.test(url)).slice(0, 4);
+        const isPanorama = mode === "image" && Boolean(configNode.metadata?.isPanoramaGeneration);
+        const finalPrompt = isPanorama
+            ? buildPanoramaPrompt(promptParts.join("\n"), inputImages.length > 0)
+            : applyCameraPrompt(promptParts.join("\n"), configNode.metadata?.cameraControl);
         const resolutionOptions = Object.keys(model.params.resolutions ?? {});
         const resolution = mode === "image" ? configNode.metadata?.quality : configNode.metadata?.vquality;
         const finalResolution = resolutionOptions.includes(resolution ?? "") ? resolution : resolutionOptions[0];
@@ -566,7 +575,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         try {
             const task = await submitCanvasTask(
                 mode === "image"
-                    ? { type: "image", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, count: configNode.metadata?.count ?? model.params.default_generate_count ?? 1, ...(inputImages.length ? { input_images: inputImages } : {}) } }
+                    ? { type: "image", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, count: isPanorama ? 1 : (configNode.metadata?.count ?? model.params.default_generate_count ?? 1), ...(isPanorama ? { custom_size: { width: 2048, height: 1024 } } : {}), ...(inputImages.length ? { input_images: inputImages } : {}) } }
                     : { type: "video", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, duration_seconds: Number(configNode.metadata?.seconds) || 5 } },
             );
             setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: "loading", startedAt: Date.now(), progress: 0, errorDetails: undefined, imageTaskId: mode === "image" ? task.id : undefined, videoTaskId: mode === "video" ? task.id : undefined } } : node)));
@@ -893,9 +902,18 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             if (file.type.startsWith("image/")) {
                 const image = await uploadLocalImage(file);
                 pushHistory();
-                const node = createCanvasNode(CanvasNodeType.Image, position, file.name.replace(/\.[^.]+$/, ""));
-                node.width = Math.min(Math.max(image.width, 220), 480);
-                node.height = node.width * (image.height / image.width || 0.75);
+                const strictPanorama = Math.abs(image.width / Math.max(1, image.height) - 2) < 0.04;
+                const asPanorama = strictPanorama
+                    ? window.confirm("检测到 2:1 全景图：确定=作为全景图节点导入，取消=作为普通图片导入")
+                    : false;
+                const node = createCanvasNode(asPanorama ? CanvasNodeType.Panorama : CanvasNodeType.Image, position, file.name.replace(/\.[^.]+$/, ""));
+                if (asPanorama) {
+                    node.width = PANORAMA_NODE_SIZE.width;
+                    node.height = PANORAMA_NODE_SIZE.height;
+                } else {
+                    node.width = Math.min(Math.max(image.width, 220), 480);
+                    node.height = node.width * (image.height / image.width || 0.75);
+                }
                 node.metadata = imageMetadata(image);
                 setNodes((current) => [...current, node]);
             } else if (file.type.startsWith("video/") || file.type.startsWith("audio/")) {
@@ -1368,7 +1386,23 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                             setSelectedIds([config.id]);
                             toast.success("已创建生成配置节点");
                         }}
-                        onInstantiateWorkflow={(skill, prompt) => {
+                        getGraphSnapshot={() => ({ nodes: nodesRef.current ?? [], connections: (connectionsRef.current ?? []).map((connection) => ({ fromNodeId: connection.fromNodeId, toNodeId: connection.toNodeId })) })}
+                    onInstantiateTemplate={(snapshot) => {
+                        pushHistory();
+                        const idMap = new Map<string, string>();
+                        const cloned = snapshot.nodes.map((node) => {
+                            const id = uid(node.type);
+                            idMap.set(node.id, id);
+                            return { ...node, id, position: { x: node.position.x + 80, y: node.position.y + 80 }, metadata: { ...node.metadata } };
+                        });
+                        const clonedConnections = snapshot.connections
+                            .filter((connection) => idMap.has(connection.fromNodeId) && idMap.has(connection.toNodeId))
+                            .map((connection) => ({ id: uid("conn"), fromNodeId: idMap.get(connection.fromNodeId)!, toNodeId: idMap.get(connection.toNodeId)! }));
+                        setNodes((current) => [...current, ...cloned]);
+                        setConnections((current) => [...current, ...clonedConnections]);
+                        toast.success(`已实例化个人模板：${cloned.length} 个节点`);
+                    }}
+                    onInstantiateWorkflow={(skill, prompt) => {
                             const graph = buildWorkflowNodes(skill, prompt, { x: 160, y: 140 });
                             pushHistory();
                             setNodes((current) => [...current, ...graph.nodes]);
@@ -1553,6 +1587,22 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                         setNodes((current) => [...current, config]);
                         setSelectedIds([config.id]);
                         toast.success("已创建生成配置节点");
+                    }}
+                    getGraphSnapshot={() => ({ nodes: nodesRef.current ?? [], connections: (connectionsRef.current ?? []).map((connection) => ({ fromNodeId: connection.fromNodeId, toNodeId: connection.toNodeId })) })}
+                    onInstantiateTemplate={(snapshot) => {
+                        pushHistory();
+                        const idMap = new Map<string, string>();
+                        const cloned = snapshot.nodes.map((node) => {
+                            const id = uid(node.type);
+                            idMap.set(node.id, id);
+                            return { ...node, id, position: { x: node.position.x + 80, y: node.position.y + 80 }, metadata: { ...node.metadata } };
+                        });
+                        const clonedConnections = snapshot.connections
+                            .filter((connection) => idMap.has(connection.fromNodeId) && idMap.has(connection.toNodeId))
+                            .map((connection) => ({ id: uid("conn"), fromNodeId: idMap.get(connection.fromNodeId)!, toNodeId: idMap.get(connection.toNodeId)! }));
+                        setNodes((current) => [...current, ...cloned]);
+                        setConnections((current) => [...current, ...clonedConnections]);
+                        toast.success(`已实例化个人模板：${cloned.length} 个节点`);
                     }}
                     onInstantiateWorkflow={(skill, prompt) => {
                         const graph = buildWorkflowNodes(skill, prompt, { x: 160, y: 140 });

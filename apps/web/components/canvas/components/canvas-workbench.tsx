@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { AlertCircle, Grid2x2, LayoutGrid, Lightbulb, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
 
 import { api, formatUsd, type AgentSkill, type GenTask, type AssetRow } from "@/lib/api";
+import { fetchRemotePrompts, type RemotePrompt } from "@/lib/canvas/prompt-sources";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { useThemeStore } from "../theme-store";
 import { CanvasNodeType, type CanvasNodeData, type Position } from "../types";
@@ -28,6 +29,8 @@ type WorkbenchProps = {
     onRetryTask: (task: GenTask) => void;
     onUsePrompt: (prompt: string) => void;
     onInstantiateWorkflow: (skill: { title: string; steps?: WorkflowStep[]; plan_template?: { steps?: WorkflowStep[] } }, prompt: string) => void;
+    getGraphSnapshot: () => { nodes: CanvasNodeData[]; connections: Array<{ fromNodeId: string; toNodeId: string }> };
+    onInstantiateTemplate: (snapshot: { nodes: CanvasNodeData[]; connections: Array<{ fromNodeId: string; toNodeId: string }> }) => void;
 };
 
 export type WorkflowStep = { title?: string; prompt?: string; type?: string };
@@ -77,12 +80,32 @@ const PROMPT_LIBRARY: Array<{ tag: string; items: Array<{ title: string; prompt:
     },
 ];
 
-export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageModelsCount, onInsertImageNode, onRetryTask, onUsePrompt, onInstantiateWorkflow }: WorkbenchProps) {
+type PersonalTemplate = { id: string; name: string; savedAt: number; snapshot: { nodes: CanvasNodeData[]; connections: Array<{ fromNodeId: string; toNodeId: string }> } };
+
+const TEMPLATE_KEY = "anygen:canvas:workflow_templates";
+
+function loadTemplates(): PersonalTemplate[] {
+    try {
+        return (JSON.parse(localStorage.getItem(TEMPLATE_KEY) ?? "[]") as PersonalTemplate[]).filter((item) => item?.snapshot?.nodes);
+    } catch {
+        return [];
+    }
+}
+
+export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageModelsCount, onInsertImageNode, onRetryTask, onUsePrompt, onInstantiateWorkflow, getGraphSnapshot, onInstantiateTemplate }: WorkbenchProps) {
     const theme = canvasThemes[useThemeStore((state) => state.theme)];
     const [tab, setTab] = useState<"history" | "prompts" | "workflow">("history");
     const [filter, setFilter] = useState<"all" | "image" | "video">("all");
     const [search, setSearch] = useState("");
     const [workflowPrompt, setWorkflowPrompt] = useState("");
+    const [templateName, setTemplateName] = useState("");
+    const [templates, setTemplates] = useState<PersonalTemplate[]>(() => loadTemplates());
+    const remotePrompts = useQuery({
+        queryKey: ["canvas-remote-prompts"],
+        queryFn: () => fetchRemotePrompts(),
+        staleTime: 60 * 60 * 1000,
+        enabled: open && tab === "prompts",
+    });
 
     const tasks = useQuery({
         queryKey: ["canvas-workbench-tasks"],
@@ -113,8 +136,10 @@ export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageMo
     const filteredTasks = useMemo(() => (tasks.data ?? []).filter((task) => (filter === "all" ? true : task.type === filter)).slice(0, 30), [tasks.data, filter]);
     const promptHits = useMemo(() => {
         const keyword = search.trim().toLowerCase();
-        return PROMPT_LIBRARY.flatMap((group) => group.items.map((item) => ({ ...item, tag: group.tag }))).filter((item) => !keyword || `${item.title} ${item.prompt} ${item.tag}`.toLowerCase().includes(keyword));
-    }, [search]);
+        const builtin = PROMPT_LIBRARY.flatMap((group) => group.items.map((item) => ({ ...item, tag: group.tag })));
+        const remote = (remotePrompts.data ?? []).map((item: RemotePrompt) => ({ title: item.title, prompt: item.prompt, tag: `${item.tag} · 远程` }));
+        return [...builtin, ...remote].filter((item) => !keyword || `${item.title} ${item.prompt} ${item.tag}`.toLowerCase().includes(keyword));
+    }, [search, remotePrompts.data]);
 
     if (!open) return null;
 
@@ -233,6 +258,7 @@ export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageMo
                             </button>
                         ))}
                         {!promptHits.length ? <div className="py-8 text-center text-xs opacity-50">无匹配提示词</div> : null}
+                        <div className="pt-1 text-center text-[10px] opacity-40">{remotePrompts.isFetching ? "远程源同步中…" : remotePrompts.data?.length ? `远程源 ${remotePrompts.data.length} 条已缓存（24h）` : "远程源不可用，展示内置精选集"}</div>
                     </div>
                 </div>
             ) : null}
@@ -265,6 +291,55 @@ export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageMo
                                 </div>
                             </div>
                         ))}
+                        <div className="rounded-xl border p-2.5" style={{ borderColor: theme.node.stroke, background: theme.toolbar.panel }}>
+                            <div className="text-xs font-medium" style={{ color: theme.node.text }}>个人模板（当前画布存为可复用工作流）</div>
+                            <div className="mt-2 flex gap-1.5">
+                                <input value={templateName} onChange={(event) => setTemplateName(event.target.value)} placeholder="模板名称" className="h-8 min-w-0 flex-1 rounded-lg border px-2 text-[11px] outline-none" style={{ background: theme.node.fill, borderColor: theme.node.stroke, color: theme.node.text }} />
+                                <button type="button" className="h-8 shrink-0 rounded-lg px-3 text-[11px] font-medium text-white transition hover:opacity-90" style={{ background: "#2f80ff" }} onClick={() => {
+                                    const name = templateName.trim();
+                                    if (!name) {
+                                        toast.error("请填写模板名称");
+                                        return;
+                                    }
+                                    const snapshot = getGraphSnapshot();
+                                    if (!snapshot.nodes.length) {
+                                        toast.error("当前画布为空");
+                                        return;
+                                    }
+                                    const next = [{ id: `tpl-${Date.now().toString(36)}`, name, savedAt: Date.now(), snapshot }, ...templates].slice(0, 20);
+                                    setTemplates(next);
+                                    try {
+                                        localStorage.setItem(TEMPLATE_KEY, JSON.stringify(next));
+                                        setTemplateName("");
+                                        toast.success(`已保存模板「${name}」`);
+                                    } catch {
+                                        toast.error("模板保存失败（存储不可用）");
+                                    }
+                                }}>
+                                    保存当前画布
+                                </button>
+                            </div>
+                            {templates.length ? (
+                                <div className="mt-2 space-y-1.5">
+                                    {templates.map((template) => (
+                                        <div key={template.id} className="flex items-center gap-2 rounded-lg border px-2 py-1.5" style={{ borderColor: theme.node.stroke }}>
+                                            <span className="min-w-0 flex-1 truncate text-[11px]" style={{ color: theme.node.text }}>{template.name}</span>
+                                            <span className="shrink-0 text-[10px] opacity-50">{template.snapshot.nodes.length} 节点</span>
+                                            <button type="button" className="shrink-0 rounded-md px-2 py-1 text-[10px] text-white" style={{ background: "#2f80ff" }} onClick={() => onInstantiateTemplate(template.snapshot)}>
+                                                实例化
+                                            </button>
+                                            <button type="button" title="删除模板" className="shrink-0 rounded-md px-1.5 py-1 text-[10px]" style={{ color: "#f87171" }} onClick={() => {
+                                                const next = templates.filter((item) => item.id !== template.id);
+                                                setTemplates(next);
+                                                localStorage.setItem(TEMPLATE_KEY, JSON.stringify(next));
+                                            }}>
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : null}
+                        </div>
                         <div className="rounded-xl border border-dashed p-2.5 text-[11px] leading-4 opacity-60" style={{ borderColor: theme.node.stroke, color: theme.node.text }}>
                             需要自定义工作流？直接在右侧「对话」里对 Agent 描述，它会用 workflow 技能为你创建节点图。
                         </div>

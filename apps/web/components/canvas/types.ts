@@ -92,6 +92,7 @@ export type CanvasNodeMetadata = {
     multiShot?: string;
     shotType?: string;
     cameraControl?: CameraControlOptions;
+    isPanoramaGeneration?: boolean;
     panoramaSourcePrompt?: string;
     panoramaFinalPrompt?: string;
     panoramaProjection?: "equirectangular";

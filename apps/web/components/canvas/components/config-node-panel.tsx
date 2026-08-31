@@ -170,7 +170,11 @@ export function ConfigNodePanel({ node, isRunning, imageModels, videoModels, inp
                         <span className="text-[11px] opacity-60">秒</span>
                     </div>
                 )}
-                <div className="ml-auto text-xs tabular-nums" style={{ color: theme.node.muted }}>
+                <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-[11px]" style={{ color: theme.node.muted }} onMouseDown={(event) => event.stopPropagation()}>
+                    <input type="checkbox" checked={Boolean(node.metadata?.isPanoramaGeneration)} onChange={(event) => onConfigChange(node.id, { isPanoramaGeneration: event.target.checked, ...(event.target.checked ? { count: 1 } : {}) })} />
+                    全景 2:1
+                </label>
+                <div className="text-xs tabular-nums" style={{ color: theme.node.muted }}>
                     {costCents === null ? "价格待定" : formatUsd(costCents)}
                 </div>
             </div>
