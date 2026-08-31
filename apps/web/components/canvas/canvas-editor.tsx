@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, MessageSquare, Upload, FolderOpen } from "lucide-react";
+import { ArrowLeft, LayoutGrid, MessageSquare, Upload, FolderOpen } from "lucide-react";
 
 import { api, type AssetRow, type CreationTypesConfig, type GenTask, type ProjectDetail } from "@/lib/api";
 import { normalizeLegacyGraphNode } from "@dreamina/shared";
@@ -35,6 +35,7 @@ import { CanvasNodeHoverToolbar, CanvasNodeInfoModal } from "./components/canvas
 import { CanvasDirector } from "./components/canvas-director";
 import { CanvasDirectorNodePanel } from "./components/canvas-director-node-panel";
 import { CanvasAssetPickerModal } from "./components/canvas-asset-picker";
+import { CanvasWorkbench, buildWorkflowNodes, type WorkbenchLayout } from "./components/canvas-workbench";
 import { CanvasNodeCropDialog, CanvasNodeSplitDialog, CanvasNodeUpscaleDialog, CanvasNodeAngleDialog } from "./components/canvas-node-dialogs";
 import { CanvasNodeMaskEditDialog } from "./components/canvas-node-mask-edit-dialog";
 import { cropDataUrl, splitDataUrl, upscaleDataUrl, transformAngleDataUrl, dataUrlToFile, type ImageCropRect, type ImageSplitParams, type ImageUpscaleParams, type ImageAngleTransform } from "./utils/canvas-image-ops";
@@ -145,6 +146,9 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     const [directorNodeId, setDirectorNodeId] = useState<string | null>(null);
     // Phase E：资产选择器
     const [assetPickerOpen, setAssetPickerOpen] = useState(false);
+    // Phase D-3：生图工作台
+    const [workbenchOpen, setWorkbenchOpen] = useState(false);
+    const [workbenchLayout, setWorkbenchLayout] = useState<WorkbenchLayout>("side");
     const directorPanoramas = useMemo<import("./types").CanvasDirectorPanorama[]>(() => {
         return connections
             .filter((connection) => connection.toNodeId === directorNodeId)
@@ -1033,6 +1037,15 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                 <div className="flex-1" />
                 <button
                     type="button"
+                    title="生图工作台"
+                    onClick={() => setWorkbenchOpen((openValue) => !openValue)}
+                    className={`flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs transition ${workbenchOpen ? "border-dm-accent text-dm-text" : "border-dm-border text-dm-text-2 hover:text-dm-text"}`}
+                >
+                    <LayoutGrid size={14} />
+                    工作台
+                </button>
+                <button
+                    type="button"
                     title="对话"
                     onClick={() => setAssistantOpen((open) => !open)}
                     className={`flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs transition ${assistantOpen ? "border-dm-accent text-dm-text" : "border-dm-border text-dm-text-2 hover:text-dm-text"}`}
@@ -1314,6 +1327,57 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
 
                 <CanvasNodeInfoModal node={infoNode} open={Boolean(infoNode)} onClose={() => setInfoNode(null)} />
 
+                {workbenchOpen && workbenchLayout === "bottom" ? (
+                    <CanvasWorkbench
+                        open
+                        layout="bottom"
+                        onLayoutChange={setWorkbenchLayout}
+                        onClose={() => setWorkbenchOpen(false)}
+                        imageModelsCount={0}
+                        onInsertImageNode={(url, asset, title) => {
+                            pushHistory();
+                            const type = asset?.kind === "video" ? CanvasNodeType.Video : CanvasNodeType.Image;
+                            const node = createCanvasNode(type, getCanvasCenter(), title);
+                            node.metadata = { content: url, assetId: asset?.id, status: "success", naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime };
+                            setNodes((current) => [...current, node]);
+                            toast.success("已插入画布");
+                        }}
+                        onRetryTask={(task) => {
+                            void (async () => {
+                                try {
+                                    const params = { ...task.params } as Record<string, unknown>;
+                                    delete params.model_code;
+                                    delete params.model_name;
+                                    const newTask = await submitCanvasTask({ type: task.type === "video" ? "video" : "image", prompt: task.prompt, model_code: task.model_code, params: params as never });
+                                    pushHistory();
+                                    const node = createCanvasNode(task.type === "video" ? CanvasNodeType.Video : CanvasNodeType.Image, getCanvasCenter(), "重试生成");
+                                    node.metadata = { status: "loading", startedAt: Date.now(), progress: 0, prompt: task.prompt, imageTaskId: newTask.id };
+                                    setNodes((current) => [...current, node]);
+                                    setRunningNodeTasks((current) => ({ ...current, [node.id]: newTask.id }));
+                                    toast.success("已按原参数重新提交");
+                                } catch (error) {
+                                    toast.error(error instanceof Error ? error.message : "重试失败");
+                                }
+                            })();
+                        }}
+                        onUsePrompt={(prompt) => {
+                            pushHistory();
+                            const config = createCanvasNode(CanvasNodeType.Config, getCanvasCenter(), "生成配置");
+                            config.metadata = { generationMode: "image", composerContent: prompt, status: "idle" };
+                            setNodes((current) => [...current, config]);
+                            setSelectedIds([config.id]);
+                            toast.success("已创建生成配置节点");
+                        }}
+                        onInstantiateWorkflow={(skill, prompt) => {
+                            const graph = buildWorkflowNodes(skill, prompt, { x: 160, y: 140 });
+                            pushHistory();
+                            setNodes((current) => [...current, ...graph.nodes]);
+                            setConnections((current) => [...current, ...graph.connections.map((connection) => ({ id: uid("conn"), fromNodeId: connection.fromNodeId, toNodeId: connection.toNodeId }))]);
+                            toast.success(`已实例化「${skill.title}」：${graph.nodes.length} 个节点`);
+                        }}
+                    />
+                ) : null}
+
                 <CanvasAssetPickerModal
                     open={assetPickerOpen}
                     onClose={() => setAssetPickerOpen(false)}
@@ -1449,6 +1513,56 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                     }}
                 />
             </div>
+            {workbenchOpen && workbenchLayout === "side" ? (
+                <CanvasWorkbench
+                    open
+                    layout="side"
+                    onLayoutChange={setWorkbenchLayout}
+                    onClose={() => setWorkbenchOpen(false)}
+                    imageModelsCount={modelsFor(creationConfig.data, "image").length}
+                    onInsertImageNode={(url, asset, title) => {
+                        pushHistory();
+                        const type = asset?.kind === "video" ? CanvasNodeType.Video : CanvasNodeType.Image;
+                        const node = createCanvasNode(type, getCanvasCenter(), title);
+                        node.metadata = { content: url, assetId: asset?.id, status: "success", naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime };
+                        setNodes((current) => [...current, node]);
+                        toast.success("已插入画布");
+                    }}
+                    onRetryTask={(task) => {
+                        void (async () => {
+                            try {
+                                const params = { ...task.params } as Record<string, unknown>;
+                                delete params.model_code;
+                                delete params.model_name;
+                                const newTask = await submitCanvasTask({ type: task.type === "video" ? "video" : "image", prompt: task.prompt, model_code: task.model_code, params: params as never });
+                                pushHistory();
+                                const node = createCanvasNode(task.type === "video" ? CanvasNodeType.Video : CanvasNodeType.Image, getCanvasCenter(), "重试生成");
+                                node.metadata = { status: "loading", startedAt: Date.now(), progress: 0, prompt: task.prompt, imageTaskId: newTask.id };
+                                setNodes((current) => [...current, node]);
+                                setRunningNodeTasks((current) => ({ ...current, [node.id]: newTask.id }));
+                                toast.success("已按原参数重新提交");
+                            } catch (error) {
+                                toast.error(error instanceof Error ? error.message : "重试失败");
+                            }
+                        })();
+                    }}
+                    onUsePrompt={(prompt) => {
+                        pushHistory();
+                        const config = createCanvasNode(CanvasNodeType.Config, getCanvasCenter(), "生成配置");
+                        config.metadata = { generationMode: "image", composerContent: prompt, status: "idle" };
+                        setNodes((current) => [...current, config]);
+                        setSelectedIds([config.id]);
+                        toast.success("已创建生成配置节点");
+                    }}
+                    onInstantiateWorkflow={(skill, prompt) => {
+                        const graph = buildWorkflowNodes(skill, prompt, { x: 160, y: 140 });
+                        pushHistory();
+                        setNodes((current) => [...current, ...graph.nodes]);
+                        setConnections((current) => [...current, ...graph.connections.map((connection) => ({ id: uid("conn"), fromNodeId: connection.fromNodeId, toNodeId: connection.toNodeId }))]);
+                        toast.success(`已实例化「${skill.title}」：${graph.nodes.length} 个节点`);
+                    }}
+                />
+            ) : null}
             <CanvasAssistantPanel bridge={assistantBridge} open={assistantOpen} onClose={() => setAssistantOpen(false)} />
             </div>
         </div>
