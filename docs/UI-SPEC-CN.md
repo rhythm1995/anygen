@@ -230,3 +230,4 @@ chip：`🔧 技能`。点击弹层（宽 ~640px）：
 4. 会话持久化 → agent_sessions(project_id, 0012) + messages；chatSessions 不再内嵌 graph
 5. antd → shadcn/ui（映射表 CANVAS-RESEARCH 附录A）
 6. 未登录本地直连模式删除（内部平台）
+7. 交付增量（2026-09-01 全量完成）：顶栏另有「工作台」入口（生图工作台：生成记录/提示词库/创作工作流三 tab，侧边/底部布局）；对话按钮可用（Agent 面板）；配置面板含摄像机入口与「全景 2:1」开关；hover 工具条含裁剪/切分/放大/多角度/蒙版重绘/预览；上游图片节点自动作为参考图（input_images，Gemini/Grok 系模型支持，其余模型服务端如实报错）
