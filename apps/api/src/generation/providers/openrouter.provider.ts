@@ -36,11 +36,15 @@ export class OpenRouterProvider implements GenerationProvider {
   }
 
 
-  /** 同步出图：直接返回 data URL 列表（GenerationService 按 immediateUrls 处理） */
-  async submitImage(model: string, prompt: string): Promise<ProviderSubmitResult> {
+  /** 同步出图：直接返回 data URL 列表（GenerationService 按 immediateUrls 处理）。inputImages=参考图（图生图/蒙版重绘） */
+  async submitImage(model: string, prompt: string, inputImages?: string[]): Promise<ProviderSubmitResult> {
     this.assertConfigured();
-    const route = CHAT_ROUTE_MODELS.has(model) ? "chat" : "images";
-    const urls = route === "chat" ? await this.chatGenerate(model, prompt) : await this.imagesGenerate(model, prompt);
+    const referenceImages = (inputImages ?? []).filter((url) => typeof url === "string" && /^https?:\/\//.test(url)).slice(0, 4);
+    const isChatRoute = CHAT_ROUTE_MODELS.has(model);
+    if (referenceImages.length && !isChatRoute) {
+      throw new ProviderError(`openrouter: model ${model} does not support reference images; use a gemini/grok image model`);
+    }
+    const urls = isChatRoute ? await this.chatGenerate(model, prompt, referenceImages) : await this.imagesGenerate(model, prompt);
     return { remoteId: null, immediateUrls: urls };
   }
 
@@ -48,7 +52,8 @@ export class OpenRouterProvider implements GenerationProvider {
     if (input.type !== "image") throw new ProviderError("openrouter: only image generation supported");
     const model = typeof input.params.model_code === "string" ? input.params.model_code : "";
     if (!model) throw new ProviderError("openrouter: params.model_code required");
-    return this.submitImage(model, input.prompt);
+    const inputImages = Array.isArray(input.params.input_images) ? (input.params.input_images as string[]) : undefined;
+    return this.submitImage(model, input.prompt, inputImages);
   }
 
   async poll(_remoteId: string): Promise<ProviderPollResult> {
@@ -83,10 +88,13 @@ export class OpenRouterProvider implements GenerationProvider {
     }
   }
 
-  private async chatGenerate(model: string, prompt: string): Promise<string[]> {
+  private async chatGenerate(model: string, prompt: string, inputImages: string[] = []): Promise<string[]> {
+    const content = inputImages.length
+      ? [{ type: "text", text: prompt }, ...inputImages.map((url) => ({ type: "image_url", image_url: { url } }))]
+      : prompt;
     const out = await this.request("/chat/completions", {
       model,
-      messages: [{ role: "user", content: prompt }],
+      messages: [{ role: "user", content }],
     });
     const message = out?.choices?.[0]?.message ?? {};
     const urls: string[] = [];

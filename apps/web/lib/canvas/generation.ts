@@ -54,7 +54,7 @@ export interface CanvasTaskInput {
   prompt: string;
   model_code: string;
   params:
-    | { resolution: string; ratio: string; count: number }
+    | { resolution: string; ratio: string; count: number; input_images?: string[] }
     | { resolution: string; ratio: string; duration_seconds: number };
 }
 

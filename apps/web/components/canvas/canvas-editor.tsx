@@ -36,6 +36,7 @@ import { CanvasDirector } from "./components/canvas-director";
 import { CanvasDirectorNodePanel } from "./components/canvas-director-node-panel";
 import { CanvasAssetPickerModal } from "./components/canvas-asset-picker";
 import { CanvasNodeCropDialog, CanvasNodeSplitDialog, CanvasNodeUpscaleDialog, CanvasNodeAngleDialog } from "./components/canvas-node-dialogs";
+import { CanvasNodeMaskEditDialog } from "./components/canvas-node-mask-edit-dialog";
 import { cropDataUrl, splitDataUrl, upscaleDataUrl, transformAngleDataUrl, dataUrlToFile, type ImageCropRect, type ImageSplitParams, type ImageUpscaleParams, type ImageAngleTransform } from "./utils/canvas-image-ops";
 import type { CanvasAssistantSession } from "./types";
 
@@ -136,7 +137,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     // B 尾：hover 工具条 + 编辑弹窗 + 大图预览
     const [toolbarNodeId, setToolbarNodeId] = useState<string | null>(null);
     const toolbarKeepRef = useRef(false);
-    const [editDialog, setEditDialog] = useState<{ type: "crop" | "split" | "upscale" | "angle"; nodeId: string } | null>(null);
+    const [editDialog, setEditDialog] = useState<{ type: "crop" | "split" | "upscale" | "angle" | "mask"; nodeId: string } | null>(null);
     const [infoNode, setInfoNode] = useState<CanvasNodeData | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [replaceUploadNodeId, setReplaceUploadNodeId] = useState<string | null>(null);
@@ -548,6 +549,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             return;
         }
         const finalPrompt = applyCameraPrompt(promptParts.join("\n"), configNode.metadata?.cameraControl);
+        const inputImages = inputs.imageNodes.map((node) => node.metadata?.content ?? "").filter((url): url is string => /^https?:\/\//.test(url)).slice(0, 4);
         const resolutionOptions = Object.keys(model.params.resolutions ?? {});
         const resolution = mode === "image" ? configNode.metadata?.quality : configNode.metadata?.vquality;
         const finalResolution = resolutionOptions.includes(resolution ?? "") ? resolution : resolutionOptions[0];
@@ -560,7 +562,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         try {
             const task = await submitCanvasTask(
                 mode === "image"
-                    ? { type: "image", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, count: configNode.metadata?.count ?? model.params.default_generate_count ?? 1 } }
+                    ? { type: "image", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, count: configNode.metadata?.count ?? model.params.default_generate_count ?? 1, ...(inputImages.length ? { input_images: inputImages } : {}) } }
                     : { type: "video", prompt: finalPrompt, model_code: model.code, params: { resolution: finalResolution, ratio, duration_seconds: Number(configNode.metadata?.seconds) || 5 } },
             );
             setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: "loading", startedAt: Date.now(), progress: 0, errorDetails: undefined, imageTaskId: mode === "image" ? task.id : undefined, videoTaskId: mode === "video" ? task.id : undefined } } : node)));
@@ -1227,7 +1229,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                     onUpload={(node) => setReplaceUploadNodeId(node.id)}
                     onDownload={downloadNodeMedia}
                     onGenerateImage={textToConfigNode}
-                    onMaskEdit={() => toast.info("局部重绘（图生图）将在参考图管线开放后支持")}
+                    onMaskEdit={(node) => setEditDialog({ type: "mask", nodeId: node.id })}
                     onCrop={(node) => setEditDialog({ type: "crop", nodeId: node.id })}
                     onSplit={(node) => setEditDialog({ type: "split", nodeId: node.id })}
                     onUpscale={(node) => setEditDialog({ type: "upscale", nodeId: node.id })}
@@ -1280,6 +1282,31 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                                 setEditDialog(null);
                                 const dataUrl = await transformAngleDataUrl(editDialogNode.metadata!.content!, params);
                                 await addEditedImageNode(editDialogNode, dataUrl, `${editDialogNode.title} 多角度`);
+                            }}
+                        />
+                        <CanvasNodeMaskEditDialog
+                            dataUrl={editDialogNode.metadata.content}
+                            open={editDialog.type === "mask"}
+                            imageModels={modelsFor(creationConfig.data, "image")}
+                            onClose={() => setEditDialog(null)}
+                            onConfirm={async ({ model, prompt, markedDataUrl }) => {
+                                setEditDialog(null);
+                                // 上传 marked 参考图 → 建图生图任务（原图+标记图）→ 新节点轮询落图
+                                try {
+                                    const file = await dataUrlToFile(markedDataUrl, `mask-${Date.now()}`);
+                                    const uploaded = await uploadImageFile(file);
+                                    const originalUrl = editDialogNode.metadata!.content!;
+                                    const resolution = Object.keys(model.params.resolutions ?? {})[0] ?? "2k";
+                                    const task = await submitCanvasTask({ type: "image", prompt: `${prompt}（修改图中蓝色半透明蒙版标记的区域，保持其余部分不变）`, model_code: model.code, params: { resolution, ratio: "1:1", count: 1, input_images: [uploaded.url, ...(/^https?:\/\//.test(originalUrl) ? [originalUrl] : [])] } });
+                                    pushHistory();
+                                    const node = createCanvasNode(CanvasNodeType.Image, { x: editDialogNode.position.x + editDialogNode.width + 80, y: editDialogNode.position.y }, `${editDialogNode.title} 重绘`);
+                                    node.metadata = { status: "loading", startedAt: Date.now(), progress: 0, prompt, imageTaskId: task.id };
+                                    setNodes((current) => [...current, node]);
+                                    setConnections((current) => [...current, { id: uid("conn"), fromNodeId: editDialogNode.id, toNodeId: node.id }]);
+                                    setRunningNodeTasks((current) => ({ ...current, [node.id]: task.id }));
+                                } catch (error) {
+                                    toast.error(error instanceof Error ? error.message : "提交失败");
+                                }
                             }}
                         />
                     </>

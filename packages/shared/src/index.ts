@@ -592,6 +592,8 @@ export function taskParamsSchema(type: CreationType) {
           custom_size: z
             .object({ width: z.number().int().min(512).max(8192), height: z.number().int().min(512).max(8192) })
             .optional(),
+          /** 参考图（图生图/蒙版重绘）：公网可访问 URL，最多 4 张（D12 画布 v2） */
+          input_images: z.array(z.string().url()).max(4).optional(),
         })
         .passthrough();
     case "video":

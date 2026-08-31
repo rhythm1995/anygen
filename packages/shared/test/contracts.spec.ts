@@ -14,6 +14,7 @@ import {
   generationTaskStatusSchema,
   canvasGraphSchema,
   normalizeLegacyGraphNode,
+  taskParamsSchema,
 } from "../src/index";
 
 const fixture = <T = unknown>(name: string): T =>
@@ -198,5 +199,12 @@ describe("本项目的生成契约（不来自原站）", () => {
   it("canvas v2：viewport zoom 上限放宽到 5（引擎钳制 0.05–5）", () => {
     const graph = { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 4.8 } };
     expect(canvasGraphSchema.parse(graph)).toBeTruthy();
+  });
+
+  it("image 任务参数：input_images 参考图（公网 URL，最多 4 张）", () => {
+    const schema = taskParamsSchema("image");
+    expect(schema.safeParse({ resolution: "2k", input_images: ["https://a/1.png", "https://a/2.png"] }).success).toBe(true);
+    expect(schema.safeParse({ resolution: "2k", input_images: ["not-a-url"] }).success).toBe(false);
+    expect(schema.safeParse({ resolution: "2k", input_images: ["https://a/1", "https://a/2", "https://a/3", "https://a/4", "https://a/5"] }).success).toBe(false);
   });
 });
