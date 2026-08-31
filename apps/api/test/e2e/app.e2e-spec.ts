@@ -218,9 +218,130 @@ describe("Dreamina API (e2e)", () => {
       const reg = await authed.post("/api/assets", { key: (presign.body as any).key, kind: "image", mime: "image/jpeg", width: 10, height: 10 });
       expect(reg.status).toBe(201);
 
-      const list = await authed.get("/api/assets?type=image");
+      const list = await authed.get("/api/assets?kind=image");
       expect(list.status).toBe(200);
       expect((list.body as any[]).some((a) => a.storageKey === (presign.body as any).key)).toBe(true);
+    });
+  });
+
+  // ---------- D8 资产库完整版（CONCLUSIONS.md D8，2026-08-31） ----------
+  describe("/api/assets D8 筛选/收藏/批量", () => {
+    let id21x9: string;
+    let id16x9: string;
+    let idGen: string;
+
+    beforeAll(async () => {
+      const seed = async (body: Record<string, unknown>) => {
+        const kind = (body.kind as string) ?? "image";
+        const presign = await authed.post("/api/assets/presign", { filename: "d8.jpg", contentType: "image/jpeg", kind });
+        const reg = await authed.post("/api/assets", { key: (presign.body as any).key, ...body });
+        expect(reg.status).toBe(201);
+        return (reg.body as any).id as string;
+      };
+      id21x9 = await seed({ kind: "image", mime: "image/jpeg", width: 2520, height: 1080, meta: { prompt: "赛博朋克城市夜景" } });
+      id16x9 = await seed({ kind: "image", mime: "image/jpeg", width: 1280, height: 720, meta: { prompt: "一只橘猫" } });
+      idGen = await seed({ kind: "video", mime: "video/mp4", meta: { prompt: "赛博朋克跑车飞驰", taskId: "t-1" } });
+    });
+
+    it("ratio=21:9 只命中 2520x1080", async () => {
+      const list = await authed.get("/api/assets?kind=image&ratio=21%3A9");
+      expect(list.status).toBe(200);
+      const ids = (list.body as any[]).map((a) => a.id);
+      expect(ids).toContain(id21x9);
+      expect(ids).not.toContain(id16x9);
+    });
+
+    it("res=1K 命中 1280x720（log 最近邻分桶），2520x1080 属 2K 不命中", async () => {
+      const list = await authed.get("/api/assets?kind=image&res=1K");
+      const ids = (list.body as any[]).map((a) => a.id);
+      expect(ids).toContain(id16x9);
+      expect(ids).not.toContain(id21x9);
+    });
+
+    it("hd=1 只命中长边≥2560（2520 与 1920 都不算超清）", async () => {
+      const list = await authed.get("/api/assets?hd=1");
+      const ids = (list.body as any[]).map((a) => a.id);
+      expect(ids).not.toContain(id16x9);
+      expect(ids).not.toContain(id21x9);
+    });
+
+    it("q 按 meta.prompt 搜索命中两个「赛博朋克」", async () => {
+      const list = await authed.get("/api/assets?q=%E8%B5%9B%E5%8D%9A%E6%9C%8B%E5%85%8B");
+      expect(list.status).toBe(200);
+      const ids = (list.body as any[]).map((a) => a.id);
+      expect(ids).toContain(id21x9);
+      expect(ids).toContain(idGen);
+      expect(ids).not.toContain(id16x9);
+    });
+
+    it("from 未来时间 → 空；sort=asc 时间升序", async () => {
+      const empty = await authed.get(`/api/assets?from=${encodeURIComponent("2099-01-01T00:00:00Z")}`);
+      expect((empty.body as any[]).length).toBe(0);
+
+      const asc = await authed.get("/api/assets?sort=asc&limit=200");
+      const times = (asc.body as any[]).map((a) => new Date(a.createdAt).getTime());
+      const sorted = [...times].sort((a, b) => a - b);
+      expect(times).toEqual(sorted);
+    });
+
+    it("PATCH favorited → fav=1 筛选命中；取消后不再命中", async () => {
+      const patch = await authed.patch(`/api/assets/${id16x9}`, { favorited: true });
+      expect(patch.status).toBe(200);
+      expect((patch.body as any).favorited).toBe(true);
+
+      const fav = await authed.get("/api/assets?fav=1");
+      expect((fav.body as any[]).map((a) => a.id)).toContain(id16x9);
+
+      await authed.patch(`/api/assets/${id16x9}`, { favorited: false });
+      const fav2 = await authed.get("/api/assets?fav=1");
+      expect((fav2.body as any[]).map((a) => a.id)).not.toContain(id16x9);
+    });
+
+    it("PATCH 空 body → 422；他人资产 → 404", async () => {
+      expect((await authed.patch(`/api/assets/${id16x9}`, {})).status).toBe(422);
+
+      const other = await admin.auth.admin.createUser({
+        email: `other-${randomUUID()}@dreamina.local`, password: "password-123", email_confirm: true,
+      });
+      // profiles 无自建触发器，必须显式建行才能挂资产（FK）
+      await admin.from("profiles").insert({ id: other.data!.user!.id, name: "foreign" });
+      const ins = await admin
+        .from("assets")
+        .insert({ id: randomUUID(), user_id: other.data!.user!.id, kind: "image", storage_key: `x/${randomUUID()}.jpg`, url: "https://x" })
+        .select("id");
+      if (ins.error) throw new Error(`seed foreign asset failed: ${ins.error.message}`);
+      const res = await authed.patch(`/api/assets/${ins.data![0]!.id}`, { favorited: true });
+      expect(res.status).toBe(404);
+      await admin.auth.admin.deleteUser(other.data!.user!.id);
+    });
+
+    it("批量 favorite + publish → 标记生效；批量 delete 移除", async () => {
+      const batch = await authed.post("/api/assets/batch", { action: "favorite", ids: [id21x9, idGen] });
+      expect(batch.status).toBe(201);
+      expect((batch.body as any).updated).toBe(2);
+
+      const pub = await authed.post("/api/assets/batch", { action: "publish", ids: [id21x9] });
+      expect(pub.status).toBe(201);
+      const one = await authed.get("/api/assets?fav=1");
+      const row = (one.body as any[]).find((a) => a.id === id21x9);
+      expect(row.published).toBe(true);
+
+      const del = await authed.post("/api/assets/batch", { action: "delete", ids: [idGen] });
+      expect(del.status).toBe(201);
+      const after = await authed.get("/api/assets");
+      expect((after.body as any[]).map((a) => a.id)).not.toContain(idGen);
+    });
+
+    it("批量非法 action / 空 ids → 422", async () => {
+      expect((await authed.post("/api/assets/batch", { action: "nuke", ids: [id21x9] })).status).toBe(422);
+      expect((await authed.post("/api/assets/batch", { action: "delete", ids: [] })).status).toBe(422);
+    });
+
+    it("unfavorite 批量可撤销收藏", async () => {
+      await authed.post("/api/assets/batch", { action: "favorite", ids: [id16x9] });
+      await authed.post("/api/assets/batch", { action: "unfavorite", ids: [id16x9] });
+      const fav = await authed.get("/api/assets?fav=1");
+      expect((fav.body as any[]).map((a) => a.id)).not.toContain(id16x9);
     });
   });
 
@@ -233,7 +354,8 @@ describe("Dreamina API (e2e)", () => {
       expect(body.modes.map((m: any) => m.label)).toEqual([
         "Agent 模式", "图片生成", "视频生成", "音乐生成", "配音生成", "数字人", "动作模仿",
       ]);
-      expect(body.modelsByType.image).toHaveLength(9);
+      // c211bee 起 OpenRouter 供应商接入：9 CN + 8 OpenRouter 图片模型
+      expect(body.modelsByType.image).toHaveLength(17);
       expect(body.modelsByType.video).toHaveLength(11);
       const pro = body.modelsByType.image.find((m: any) => m.code === "high_aes_general_v50p_large");
       expect(pro.is_default).toBe(true);

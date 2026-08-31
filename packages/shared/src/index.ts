@@ -278,6 +278,38 @@ export const ASSET_KINDS = ["image", "video", "audio", "doc", "element"] as cons
 export const assetKindSchema = z.enum(ASSET_KINDS);
 export type AssetKind = (typeof ASSET_KINDS)[number];
 
+// ---------- 资产库契约（D8，2026-08-31，选项源 RECON/auth/asset 实测） ----------
+
+export const ASSET_FILTER_RATIOS = ["21:9", "16:9", "3:2", "4:3", "1:1", "3:4", "2:3", "9:16"] as const;
+export const assetFilterRatioSchema = z.enum(ASSET_FILTER_RATIOS);
+export type AssetFilterRatio = (typeof ASSET_FILTER_RATIOS)[number];
+
+export const ASSET_FILTER_RESOLUTIONS = ["1K", "2K", "4K", "8K"] as const;
+export const assetFilterResolutionSchema = z.enum(ASSET_FILTER_RESOLUTIONS);
+export type AssetFilterResolution = (typeof ASSET_FILTER_RESOLUTIONS)[number];
+
+export const ASSET_TIME_PRESETS = ["all", "week", "month", "quarter"] as const;
+export const assetTimePresetSchema = z.enum(ASSET_TIME_PRESETS);
+export type AssetTimePreset = (typeof ASSET_TIME_PRESETS)[number];
+
+export const ASSET_SORT_ORDERS = ["desc", "asc"] as const;
+export const assetSortSchema = z.enum(ASSET_SORT_ORDERS);
+
+export const assetBatchActionSchema = z.enum(["delete", "favorite", "unfavorite", "publish"]);
+export type AssetBatchAction = z.infer<typeof assetBatchActionSchema>;
+
+export const assetBatchSchema = z.object({
+  action: assetBatchActionSchema,
+  ids: z.array(z.string().uuid()).min(1).max(200),
+});
+export type AssetBatchInput = z.infer<typeof assetBatchSchema>;
+
+export const assetPatchSchema = z.object({
+  favorited: z.boolean().optional(),
+  published: z.boolean().optional(),
+}).refine((v) => v.favorited !== undefined || v.published !== undefined, { message: "empty patch" });
+export type AssetPatchInput = z.infer<typeof assetPatchSchema>;
+
 export const CREDIT_REASONS = ["signup_bonus", "generation_consume", "generation_refund", "topup"] as const;
 export const creditReasonSchema = z.enum(CREDIT_REASONS);
 export type CreditReason = (typeof CREDIT_REASONS)[number];
