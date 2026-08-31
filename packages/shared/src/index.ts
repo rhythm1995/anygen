@@ -201,7 +201,51 @@ export type GenerationTaskStatus = z.infer<typeof generationTaskStatusSchema>;
 export const generationTypeSchema = z.enum(["image", "video"]);
 export type GenerationType = z.infer<typeof generationTypeSchema>;
 
-export const canvasNodeData = z.discriminatedUnion("type", [
+// ---- D12 画布 v2：节点模型对齐 vendor/infinite-canvas（tigerowo）CanvasNodeMetadata ----
+export const canvasNodeTypeSchema = z.enum([
+  "image", "text", "generation", "video", "audio", "config", "panorama", "director", "group",
+]);
+export type CanvasNodeTypeV2 = z.infer<typeof canvasNodeTypeSchema>;
+export const canvasNodeStatusSchema = z.enum(["idle", "success", "loading", "error"]);
+export const canvasGenerationModeSchema = z.enum(["text", "image", "video", "audio"]);
+export const canvasBackgroundModeSchema = z.enum(["dots", "lines", "blank"]);
+
+/** v2 节点 data：扁平 metadata；未建模字段（cameraControl、panorama 系列、directorProject 等 Phase D）透传 */
+export const canvasNodeMetadataSchema = z
+  .object({
+    content: z.string().optional(),
+    prompt: z.string().max(8000).optional(),
+    status: canvasNodeStatusSchema.optional(),
+    errorDetails: z.string().max(2000).optional(),
+    fontSize: z.number().optional(),
+    generationMode: canvasGenerationModeSchema.optional(),
+    model: z.string().max(120).optional(),
+    size: z.string().max(40).optional(),
+    quality: z.string().max(40).optional(),
+    count: z.number().int().min(1).max(20).optional(),
+    naturalWidth: z.number().optional(),
+    naturalHeight: z.number().optional(),
+    freeResize: z.boolean().optional(),
+    isBatchRoot: z.boolean().optional(),
+    batchRootId: z.string().max(64).optional(),
+    batchChildIds: z.array(z.string().max(64)).optional(),
+    primaryImageId: z.string().max(64).optional(),
+    imageBatchExpanded: z.boolean().optional(),
+    inputOrder: z.array(z.string().max(64)).optional(),
+    assetId: z.string().max(64).optional(),
+    mimeType: z.string().max(80).optional(),
+    bytes: z.number().optional(),
+    durationMs: z.number().optional(),
+    startedAt: z.number().optional(),
+    progress: z.number().optional(),
+    taskId: z.string().max(64).optional(),
+    groupId: z.string().max(64).optional(),
+  })
+  .passthrough();
+export type CanvasNodeMetadataV2 = z.infer<typeof canvasNodeMetadataSchema>;
+
+/** legacy 节点 data（xyflow 时代：image{url}/text{text}/generation{taskId,url}），仅作读取兼容 */
+export const legacyCanvasNodeData = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("image"),
     url: z.string().min(1),
@@ -220,15 +264,35 @@ export const canvasNodeData = z.discriminatedUnion("type", [
     url: z.string().optional(),
   }),
 ]);
-export type CanvasNodeData = z.infer<typeof canvasNodeData>;
+export type CanvasNodeData = z.infer<typeof legacyCanvasNodeData>;
+
+/** 把 legacy 节点（url/text 载荷）归一化为 v2 metadata 节点；v2 节点原样返回 */
+export function normalizeLegacyGraphNode<T extends { id: string; type: string; position: { x: number; y: number }; data?: Record<string, unknown> | null }>(node: T): T & { data: Record<string, unknown> } {
+  const data = (node.data ?? {}) as Record<string, unknown>;
+  if (node.type === "image" && typeof data.url === "string" && data.content === undefined) {
+    const { url, width, height, ...rest } = data;
+    return { ...node, data: { ...rest, content: url, naturalWidth: typeof width === "number" ? width : undefined, naturalHeight: typeof height === "number" ? height : undefined } };
+  }
+  if (node.type === "text" && typeof data.text === "string" && data.content === undefined) {
+    const { text, ...rest } = data;
+    return { ...node, data: { ...rest, content: text } };
+  }
+  if (node.type === "generation" && data.content === undefined && data.url !== undefined) {
+    const { url, ...rest } = data;
+    return { ...node, data: { ...rest, content: typeof url === "string" ? url : undefined } };
+  }
+  if (node.data === undefined || node.data === null) return { ...node, data: {} };
+  return node as T & { data: Record<string, unknown> };
+}
 
 const canvasGraphBase = z.object({
   nodes: z.array(
     z.object({
       id: z.string().min(1).max(64),
-      type: z.string().max(32),
+      type: canvasNodeTypeSchema,
       position: z.object({ x: z.number(), y: z.number() }),
-      data: z.unknown(),
+      data: canvasNodeMetadataSchema,
+      title: z.string().max(120).optional(),
       width: z.number().positive().optional(),
       height: z.number().positive().optional(),
     }),
@@ -241,19 +305,15 @@ const canvasGraphBase = z.object({
     }),
   ),
   viewport: z
-    .object({ x: z.number(), y: z.number(), zoom: z.number().min(0.05).max(4) })
+    .object({ x: z.number(), y: z.number(), zoom: z.number().min(0.05).max(5) })
     .optional(),
+  backgroundMode: canvasBackgroundModeSchema.optional(),
+  showImageInfo: z.boolean().optional(),
 });
 
-/** graph 整体校验：节点 data 必须与 type 匹配，edge 不得悬挂 */
+/** graph 整体校验：edge 不得悬挂（data 为宽松 metadata，类型见 canvasNodeTypeSchema） */
 export const canvasGraphSchema = canvasGraphBase.superRefine((graph, ctx) => {
   const nodeIds = new Set(graph.nodes.map((n) => n.id));
-  for (const node of graph.nodes) {
-    const data = canvasNodeData.safeParse({ ...(node.data as Record<string, unknown>), type: node.type });
-    if (!data.success) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["nodes"], message: `node ${node.id}: invalid data for type ${node.type}` });
-    }
-  }
   for (const edge of graph.edges) {
     if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["edges"], message: `edge ${edge.id}: dangling endpoint` });

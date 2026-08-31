@@ -13,6 +13,7 @@ import {
   feedItem,
   generationTaskStatusSchema,
   canvasGraphSchema,
+  normalizeLegacyGraphNode,
 } from "../src/index";
 
 const fixture = <T = unknown>(name: string): T =>
@@ -146,5 +147,56 @@ describe("本项目的生成契约（不来自原站）", () => {
       edges: [],
     };
     expect(canvasGraphSchema.safeParse(graph).success).toBe(false);
+  });
+
+  // ---- D12 画布 v2：tigerowo CanvasNodeMetadata 模型 ----
+  it("canvas v2：video/config/panorama 节点（metadata 风格 data）通过", () => {
+    const graph = {
+      nodes: [
+        { id: "v1", type: "video", position: { x: 0, y: 0 }, width: 420, height: 236, title: "视频", data: { content: "https://x/v.mp4", status: "idle", mimeType: "video/mp4" } },
+        { id: "c1", type: "config", position: { x: 500, y: 0 }, width: 440, height: 240, title: "生成配置", data: { generationMode: "image", model: "high_aes_general_v50", size: "2k", count: 2, inputOrder: ["t1"] } },
+        { id: "p1", type: "panorama", position: { x: 0, y: 400 }, width: 340, height: 170, data: { content: "", status: "idle", size: "2:1", panoramaSourcePrompt: "" } },
+        { id: "b1", type: "image", position: { x: 0, y: 700 }, data: { content: "/x/a.jpg", isBatchRoot: true, batchChildIds: ["b2"], primaryImageId: "b2" } },
+      ],
+      edges: [{ id: "e1", source: "c1", target: "v1" }],
+      backgroundMode: "lines",
+      showImageInfo: false,
+    };
+    expect(canvasGraphSchema.parse(graph)).toBeTruthy();
+  });
+
+  it("canvas v2：非法 status/generationMode 被拒", () => {
+    const graph = {
+      nodes: [{ id: "n1", type: "image", position: { x: 0, y: 0 }, data: { status: "exploded" } }],
+      edges: [],
+    };
+    expect(canvasGraphSchema.safeParse(graph).success).toBe(false);
+    const graph2 = {
+      nodes: [{ id: "n1", type: "config", position: { x: 0, y: 0 }, data: { generationMode: "3d" } }],
+      edges: [],
+    };
+    expect(canvasGraphSchema.safeParse(graph2).success).toBe(false);
+  });
+
+  it("canvas v2：cameraControl 等未建模字段透传（Phase D 预留）", () => {
+    const graph = {
+      nodes: [{ id: "n1", type: "image", position: { x: 0, y: 0 }, data: { content: "/x.jpg", cameraControl: { enabled: true, camera: "ARRI", lens: "35mm", focalLength: 35, aperture: 2.8 } } }],
+      edges: [],
+    };
+    expect(canvasGraphSchema.parse(graph).nodes[0].data.cameraControl).toEqual({ enabled: true, camera: "ARRI", lens: "35mm", focalLength: 35, aperture: 2.8 });
+  });
+
+  it("canvas v2：legacy 节点归一化（url/text → content）", () => {
+    expect(normalizeLegacyGraphNode({ id: "n1", type: "image", position: { x: 0, y: 0 }, data: { url: "/seed/a.jpg", width: 640, height: 640 } })).toMatchObject({ id: "n1", type: "image", data: { content: "/seed/a.jpg", naturalWidth: 640, naturalHeight: 640 } });
+    expect(normalizeLegacyGraphNode({ id: "n2", type: "text", position: { x: 0, y: 0 }, data: { text: "hello" } })).toMatchObject({ id: "n2", type: "text", data: { content: "hello" } });
+    expect(normalizeLegacyGraphNode({ id: "n3", type: "generation", position: { x: 0, y: 0 }, data: { prompt: "a cat", url: "/g.png" } })).toMatchObject({ id: "n3", type: "generation", data: { prompt: "a cat", content: "/g.png" } });
+    // v2 节点原样返回
+    const v2 = { id: "n4", type: "video", position: { x: 0, y: 0 }, data: { content: "/v.mp4" } };
+    expect(normalizeLegacyGraphNode(v2)).toBe(v2);
+  });
+
+  it("canvas v2：viewport zoom 上限放宽到 5（引擎钳制 0.05–5）", () => {
+    const graph = { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 4.8 } };
+    expect(canvasGraphSchema.parse(graph)).toBeTruthy();
   });
 });

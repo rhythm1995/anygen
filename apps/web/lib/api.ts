@@ -73,13 +73,22 @@ export interface Project {
   updated_at: string;
 }
 export interface ProjectDetail extends Project {
-  graph: { nodes: CanvasNode[]; edges: CanvasEdge[]; viewport?: { x: number; y: number; zoom: number } };
+  graph: {
+    nodes: CanvasNode[];
+    edges: CanvasEdge[];
+    viewport?: { x: number; y: number; zoom: number };
+    backgroundMode?: "dots" | "lines" | "blank";
+    showImageInfo?: boolean;
+  };
 }
 export interface CanvasNode {
   id: string;
   type: string;
   position: { x: number; y: number };
   data: Record<string, unknown>;
+  title?: string;
+  width?: number;
+  height?: number;
 }
 export interface CanvasEdge {
   id: string;

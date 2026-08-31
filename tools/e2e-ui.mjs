@@ -29,7 +29,7 @@ const browser = await systemChromium.launch({ executablePath: exe });
 const errors = [];
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  page.on("pageerror", (e) => errors.push(String(e.message).slice(0, 100)));
+  page.on("pageerror", (e) => { errors.push(String(e.message).slice(0, 300)); console.log("PAGEERROR:", String(e.message).slice(0, 300)); });
   page.on("console", (m) => { const t = m.text?.() ?? ""; if (t.includes("[auth]")) console.log("PAGE:", t.slice(0, 120)); });
 
   const clickEl = async (selector) => {
@@ -152,41 +152,56 @@ try {
   await page.waitForTimeout(2000);
   await shot(page, "canvas-entry");
 
-  // 7. 画布编辑器：新建项目 → 加节点 → 自动保存
+  // 7. 画布编辑器 v2（D12 引擎）：新建项目 → 双击建文本节点 → 自动保存 → 刷新持久化
   await page.evaluate(() => {
     const btns = [...document.querySelectorAll("button")];
     btns.find((b) => b.textContent?.includes("新建项目"))?.click();
   });
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(4000);
+  const editorPath = await page.evaluate(() => location.pathname);
+  if (!editorPath.includes("/assets-canvas/project/")) {
+    throw new Error(`canvas editor did not open, at ${editorPath}`);
+  }
+  // 双击画布中央 → 创建节点菜单 → 文本
   await page.evaluate(() => {
-    const btns = [...document.querySelectorAll("button")];
-    btns.find((b) => b.textContent?.includes("+ 图片"))?.click();
+    const host = document.querySelector("[data-node-id]")?.parentElement?.parentElement || document.querySelector("main") || document.body;
+    const r = (host instanceof Element ? host : document.body).getBoundingClientRect();
+    const target = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) || document.body;
+    target.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 }));
   });
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(800);
   await page.evaluate(() => {
-    const btns = [...document.querySelectorAll("button")];
-    btns.find((b) => b.textContent?.includes("+ 便签"))?.click();
+    const item = [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === "文本");
+    item?.click();
   });
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(1200);
   const canvasDbg = await page.evaluate(() => ({
     url: location.pathname,
-    reactFlowEl: Boolean(document.querySelector(".react-flow")),
-    nodeCount: document.querySelectorAll(".react-flow__node").length,
-    toolbar: Boolean(document.querySelector("header")),
-    saveText: document.body.innerText.match(/All changes saved|Saving|Unsaved/)?.[0],
-    nodeRect: (() => { const n = document.querySelector(".react-flow__node"); if (!n) return null; const r = n.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; })(),
-    vpTransform: document.querySelector(".react-flow__viewport")?.style.transform,
-    containerRect: (() => { const c = document.querySelector(".react-flow")?.parentElement; if (!c) return null; const r = c.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) }; })(),
-    vpVisibility: (() => { const vp = document.querySelector(".react-flow__viewport"); if (!vp) return null; const cs = getComputedStyle(vp); return { visibility: cs.visibility, opacity: cs.opacity, display: cs.display }; })(),
-    nodeVisibility: (() => { const n = document.querySelector(".react-flow__node"); if (!n) return null; const cs = getComputedStyle(n); return { visibility: cs.visibility, opacity: cs.opacity, zIndex: cs.zIndex, bg: cs.backgroundColor, color: cs.color }; })(),
-    paneEl: Boolean(document.querySelector(".react-flow__pane")),
-    hitTest: (() => { const n = document.querySelector(".react-flow__node"); if (!n) return null; const r = n.getBoundingClientRect(); const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return el ? `${el.tagName}.${String(el.className).slice(0, 50)}` : null; })(),
-    bgSvg: Boolean(document.querySelector(".react-flow__background")),
-    xyflowCss: [...document.styleSheets].some((ss) => (ss.href ?? "").includes("xyflow")),
-    rfComputed: (() => { const rf = document.querySelector(".react-flow"); if (!rf) return null; const cs = getComputedStyle(rf); return { pos: cs.position, w: rf.clientWidth, h: rf.clientHeight }; })(),
-    nodeComputed: (() => { const n = document.querySelector(".react-flow__node"); if (!n) return null; const cs = getComputedStyle(n); return { pos: cs.position, transform: cs.transform.slice(0, 40), pe: cs.pointerEvents }; })(),
+    nodeCount: document.querySelectorAll("[data-node-id]").length,
+    toolbarButtons: [...document.querySelectorAll("header button")].map((b) => b.getAttribute("aria-label") || b.textContent?.trim()).filter(Boolean),
+    saveText: document.body.innerText.match(/已保存|保存中|未保存/)?.[0],
+    minimap: Boolean(document.querySelector("[class*='rounded-lg border']")),
+    zoomText: document.body.innerText.match(/\d+%/)?.[0],
   }));
   console.log("canvas dbg:", JSON.stringify(canvasDbg));
+  if (canvasDbg.nodeCount < 1) throw new Error("canvas node was not created");
+  // 等自动保存落库
+  await page.waitForTimeout(2500);
+  const editorUrl = await page.evaluate(() => location.href);
+  await page.goto(editorUrl, { waitUntil: "load", timeout: 60_000 });
+  await page.waitForTimeout(3500);
+  const persisted = await page.evaluate(() => document.querySelectorAll("[data-node-id]").length);
+  if (persisted < 1) throw new Error("canvas node did not persist after reload");
+  console.log("canvas persisted nodes:", persisted);
+  await page.evaluate(() => {
+    const host = document.querySelector("[data-node-id]")?.parentElement?.parentElement || document.body;
+    const r = host.getBoundingClientRect();
+    const target = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) || document.body;
+    target.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: r.x + r.width / 2, clientY: r.y + r.height / 2 }));
+  });
+  await page.waitForTimeout(600);
+  await page.connection.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+  await page.connection.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
   // captureBeyondViewport 有渲染 bug，canvas 页用原生 captureScreenshot
   await page.connection.send("Page.captureScreenshot", { format: "png" }).then((r) => {
     fs.writeFileSync(path.join(OUT, "canvas-editor.png"), Buffer.from(r.data, "base64"));
