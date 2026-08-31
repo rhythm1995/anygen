@@ -224,3 +224,62 @@ export interface AuditRow {
   diff: Record<string, unknown>;
   created_at: string;
 }
+
+// ---------- 用户洞察（D10，/admin/insights API） ----------
+
+export interface InsightUserStats {
+  tasks_total: number;
+  tasks_succeeded: number;
+  tasks_failed: number;
+  tasks_image: number;
+  tasks_video: number;
+  spend_cents: number;
+  refund_cents: number;
+  granted_cents: number;
+  agent_sessions: number;
+  agent_spent_cents: number;
+  assets: number;
+  projects: number;
+  chats: number;
+}
+export interface InsightUserRow {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  balance_cents: number;
+  created_at: string;
+  stats: InsightUserStats;
+}
+export interface InsightTaskRow {
+  id: string;
+  type: string;
+  model_code: string;
+  status: string;
+  cost_cents: number;
+  prompt: string;
+  created_at: string;
+}
+export interface InsightLedgerRow {
+  id: number;
+  cents: number;
+  reason: string;
+  task_id: string | null;
+  balance_after_cents: number;
+  created_at: string;
+}
+export interface InsightAgentSessionRow {
+  id: string;
+  skill_id: string;
+  prompt: string;
+  status: string;
+  budget_cents: number;
+  spent_cents: number;
+  created_at: string;
+}
+export interface InsightUserDetail extends InsightUserRow {
+  avatar_url: string;
+  recent_tasks: InsightTaskRow[];
+  recent_ledger: InsightLedgerRow[];
+  recent_agent_sessions: InsightAgentSessionRow[];
+}

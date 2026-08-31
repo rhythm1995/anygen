@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Plus, FolderClosed, Shapes, Sparkles, LogOut, ShieldCheck } from "lucide-react";
+import { Home, Plus, FolderClosed, Shapes, Sparkles, LogOut, ShieldCheck, UserCog } from "lucide-react";
 
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,8 @@ export function SideRail() {
         <nav className="flex flex-1 flex-col items-center gap-1.5 self-stretch">
           {items.map(renderItem)}
           <div className="flex-1" />
+          {me?.role === "admin" &&
+            renderItem({ kind: "link", href: "/admin/user-insights", label: "用户", icon: <UserCog size={19} strokeWidth={1.6} /> })}
           {session ? (
             <button
               onClick={() => void signOut()}

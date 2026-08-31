@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin/models", label: "模型" },
   { href: "/admin/usage", label: "用量" },
   { href: "/admin/users", label: "用户" },
+  { href: "/admin/user-insights", label: "用户洞察" },
   { href: "/admin/audit", label: "审计" },
 ];
 
