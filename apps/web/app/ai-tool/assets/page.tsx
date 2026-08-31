@@ -27,6 +27,7 @@ interface Filters {
   hd: boolean;
   res: string[];
   ratio: string[];
+  tags: string[];
   time: TimePreset;
   from: string;
   to: string;
@@ -34,7 +35,7 @@ interface Filters {
 }
 
 const EMPTY_FILTERS: Filters = {
-  fav: false, hd: false, res: [], ratio: [], time: "all", from: "", to: "", sort: "desc",
+  fav: false, hd: false, res: [], ratio: [], tags: [], time: "all", from: "", to: "", sort: "desc",
 };
 
 const RES_OPTIONS = ["1K", "2K", "4K", "8K"];
@@ -74,7 +75,7 @@ export default function AssetsPage() {
   const [mainTab, setMainTab] = useState<MainTab>("history");
   const [kind, setKind] = useState<KindFilter>("image");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [openPanel, setOpenPanel] = useState<"filter" | "time" | "sort" | null>(null);
+  const [openPanel, setOpenPanel] = useState<"filter" | "time" | "sort" | "tags" | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState("");
   const [batchMode, setBatchMode] = useState(false);
@@ -98,6 +99,7 @@ export default function AssetsPage() {
     if (filters.hd) p.set("hd", "1");
     if (filters.res.length) p.set("res", filters.res.join(","));
     if (filters.ratio.length) p.set("ratio", filters.ratio.join(","));
+    if (filters.tags.length) p.set("tag", filters.tags.join(","));
     if (filters.sort === "asc") p.set("sort", "asc");
     const now = Date.now();
     const day = 86_400_000;
@@ -122,6 +124,13 @@ export default function AssetsPage() {
     queryKey: ["projects"],
     enabled: Boolean(session) && mainTab === "canvas",
     queryFn: () => api<ProjectRow[]>("/projects"),
+  });
+
+  // 用户全量标签（筛选面板「标签」分组；标签增删后失效重拉）
+  const allTags = useQuery({
+    queryKey: ["asset-tags"],
+    enabled: Boolean(session),
+    queryFn: () => api<{ tags: string[] }>("/assets/tags"),
   });
 
   const rows = assets.data ?? [];
@@ -157,7 +166,10 @@ export default function AssetsPage() {
   const patch = useMutation({
     mutationFn: ({ id, body }: { id: string; body: Record<string, unknown> }) =>
       api(`/assets/${id}`, { method: "PATCH", body }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["assets"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["asset-tags"] });
+    },
   });
 
   const batch = useMutation({
@@ -238,7 +250,7 @@ export default function AssetsPage() {
     );
   }
 
-  const filterActive = filters.fav || filters.hd || filters.res.length > 0 || filters.ratio.length > 0;
+  const filterActive = filters.fav || filters.hd || filters.res.length > 0 || filters.ratio.length > 0 || filters.tags.length > 0;
   const timeActive = filters.time !== "all";
   const toggleSel = (id: string) => {
     setSelected((prev) => {
@@ -354,6 +366,29 @@ export default function AssetsPage() {
           >
             <SortPanel filters={filters} setFilters={setFilters} onClose={() => setOpenPanel(null)} />
           </FilterTrigger>
+          <FilterTrigger
+            label={filters.tags.length ? `标签：${filters.tags[0]}${filters.tags.length > 1 ? `+${filters.tags.length - 1}` : ""}` : "标签"}
+            active={filters.tags.length > 0} open={openPanel === "tags"}
+            onClick={() => setOpenPanel(openPanel === "tags" ? null : "tags")}
+          >
+            <div className="w-56 py-2">
+              {(allTags.data?.tags ?? []).length === 0 ? (
+                <p className="px-5 py-3 text-xs text-dm-text-4">暂无标签 — 在详情弹层给资产添加</p>
+              ) : (
+                (allTags.data?.tags ?? []).map((t) => (
+                  <CheckRow
+                    key={t} label={t} checked={filters.tags.includes(t)}
+                    onChange={() =>
+                      setFilters({
+                        ...filters,
+                        tags: filters.tags.includes(t) ? filters.tags.filter((x) => x !== t) : [...filters.tags, t],
+                      })
+                    }
+                  />
+                ))
+              )}
+            </div>
+          </FilterTrigger>
         </div>
       )}
 
@@ -443,6 +478,7 @@ export default function AssetsPage() {
           onActiveChange={setDetailId}
           onClose={() => setDetailId(null)}
           onToggleFavorite={(a) => patch.mutate({ id: a.id, body: { favorited: !a.favorited } })}
+          onUpdateTags={(a, tags) => patch.mutate({ id: a.id, body: { tags } })}
         />
       )}
     </div>

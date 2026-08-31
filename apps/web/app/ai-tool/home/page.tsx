@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Flame, Play, Sparkles, Upload } from "lucide-react";
+import { ChevronDown, Flame, Play, Upload } from "lucide-react";
 
 import { CreationComposer, type AgentSubmitPayload } from "@/components/shared/creation-composer";
 import { useAuth } from "@/components/providers";
@@ -14,21 +14,19 @@ function ModelCard({
   title,
   subtitle,
   badge,
-  corner,
+  onClick,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
   badge?: string;
-  corner?: string;
+  onClick?: () => void;
 }) {
   return (
-    <button className="relative flex w-[240px] items-center gap-3 rounded-xl bg-dm-surface px-3 py-2.5 text-left transition-colors hover:bg-dm-surface-2">
-      {corner && (
-        <span className="absolute -top-2 right-2 rounded bg-dm-accent px-1.5 py-0.5 text-[9px] font-medium text-[#04252a]">
-          {corner}
-        </span>
-      )}
+    <button
+      onClick={onClick}
+      className="relative flex w-[240px] items-center gap-3 rounded-xl bg-dm-surface px-3 py-2.5 text-left transition-colors hover:bg-dm-surface-2"
+    >
       <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-dm-surface-2 text-lg">{icon}</span>
       <span className="flex flex-col">
         <span className="text-sm text-dm-text">{title}</span>
@@ -115,12 +113,26 @@ export default function HomePage() {
           />
         </div>
 
-        {/* Model cards */}
+        {/* Model cards（D11：只留 AI 视频/AI 图片，点击联动生成页创作类型；黏土渲染/智能编辑暂隐藏） */}
         <div className="mt-6 flex flex-wrap justify-center gap-3 pb-10">
-          <ModelCard icon={<span className="text-[#4f8dff]">▶</span>} title="AI 视频" subtitle="Seedance 2.5" badge="25" />
-          <ModelCard icon={<span className="text-[#37d1e8]">✦</span>} title="AI 图片" subtitle="Seedream 5.0" badge="5.0" />
-          <ModelCard icon={<span>🏺</span>} title="黏土渲染" subtitle="Seedance 2.5 插件" />
-          <ModelCard icon={<Sparkles size={18} className="text-[#b9c6ff]" />} title="智能编辑 ✨" subtitle="上传你的素材" corner="New" />
+          {(
+            [
+              { icon: <span className="text-[#4f8dff]">▶</span>, title: "AI 视频", subtitle: "Seedance 2.5", badge: "25", type: "video" },
+              { icon: <span className="text-[#37d1e8]">✦</span>, title: "AI 图片", subtitle: "Seedream 5.0", badge: "5.0", type: "image" },
+            ] as const
+          ).map((c) => (
+            <ModelCard
+              key={c.title}
+              icon={c.icon}
+              title={c.title}
+              subtitle={c.subtitle}
+              badge={c.badge}
+              onClick={() => {
+                sessionStorage.setItem("pending-prefill", JSON.stringify({ type: c.type, prompt: "", params: {} }));
+                router.push("/ai-tool/generate?prefill=1");
+              }}
+            />
+          ))}
         </div>
       </section>
 

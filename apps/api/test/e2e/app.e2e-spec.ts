@@ -343,6 +343,26 @@ describe("Dreamina API (e2e)", () => {
       const fav = await authed.get("/api/assets?fav=1");
       expect((fav.body as any[]).map((a) => a.id)).not.toContain(id16x9);
     });
+
+    it("D11 标签：PATCH tags → ?tag 过滤命中 → /assets/tags 去重清单 → 非法标签 422", async () => {
+      const patch = await authed.patch(`/api/assets/${id16x9}`, { tags: ["猫片", "已采用"] });
+      expect(patch.status).toBe(200);
+      expect((patch.body as any).tags).toEqual(["猫片", "已采用"]);
+
+      await authed.patch(`/api/assets/${id21x9}`, { tags: ["海报"] });
+
+      const hit = await authed.get(`/api/assets?tag=${encodeURIComponent("猫片")}`);
+      expect((hit.body as any[]).map((a) => a.id)).toContain(id16x9);
+      expect((hit.body as any[]).map((a) => a.id)).not.toContain(id21x9);
+
+      const list = await authed.get("/api/assets/tags");
+      expect(list.status).toBe(200);
+      const tags = (list.body as any).tags;
+      for (const t of ["猫片", "已采用", "海报"]) expect(tags).toContain(t);
+
+      expect((await authed.patch(`/api/assets/${id16x9}`, { tags: [""] })).status).toBe(422);
+      expect((await authed.patch(`/api/assets/${id16x9}`, { tags: [new Array(25).fill("x").join("")] })).status).toBe(422);
+    });
   });
 
   describe("GET /api/config/creation-types", () => {

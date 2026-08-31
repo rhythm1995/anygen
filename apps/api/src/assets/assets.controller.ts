@@ -93,6 +93,16 @@ export class AssetsController {
     return this.serializeRow(data);
   }
 
+  @Get("tags")
+  async tags(@Req() req: Request) {
+    // 用户全量去重标签（ unnest + distinct ）
+    const { data, error } = await this.factory.serviceClient.rpc("asset_distinct_tags", {
+      p_user: req.user!.id,
+    });
+    if (error) throw new Error(error.message);
+    return { tags: data ?? [] };
+  }
+
   @Post("batch")
   async batch(
     @Req() req: Request,
@@ -153,6 +163,7 @@ export class AssetsController {
     @Query("from") from?: string,
     @Query("to") to?: string,
     @Query("sort") sort?: string,
+    @Query("tag") tag?: string,
   ) {
     const client = this.factory.serviceClient;
     const parsedKind = assetKindSchema.safeParse(kind);
@@ -170,6 +181,9 @@ export class AssetsController {
       .limit(Math.min(Math.max(Number(limit ?? 500), 1), 1000));
     if (parsedKind.success) query = query.eq("kind", parsedKind.data);
     if (fav === "1") query = query.eq("favorited", true);
+    // 标签多选 OR 语义（逗号分隔）
+    const tagList = (tag ?? "").split(",").map((t) => t.trim().slice(0, 24)).filter(Boolean);
+    if (tagList.length) query = query.overlaps("tags", tagList);
     if (from && !Number.isNaN(Date.parse(from))) query = query.gte("created_at", from);
     if (to && !Number.isNaN(Date.parse(to))) query = query.lte("created_at", to);
     if (q && q.trim()) {
@@ -206,6 +220,7 @@ export class AssetsController {
       sizeBytes: r.size_bytes,
       favorited: r.favorited ?? false,
       published: r.published ?? false,
+      tags: r.tags ?? [],
       meta: r.meta ?? {},
       createdAt: r.created_at,
     };

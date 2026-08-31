@@ -274,6 +274,30 @@ try {
   if (!prefillText.trim()) throw new Error("重新编辑未回填提示词");
   await shot("11-reedit-prefill");
 
+  // D11 标签：详情加标签 → 卡片筛选生效
+  await page.goto(`${WEB}/ai-tool/assets`, { waitUntil: "load", timeout: 60_000 });
+  await page.waitForTimeout(2500);
+  await clickEl("main figure");
+  await page.waitForTimeout(1200);
+  await clickEl('input[placeholder="添加标签"]');
+  await typeText("D11测试标签");
+  await page.connection.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+  await page.connection.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
+  await page.waitForTimeout(1000);
+  const tagChip = await page.evaluate(() => document.body.innerText.includes("D11测试标签"));
+  if (!tagChip) throw new Error("详情标签 chip 未出现");
+  await shot("12-detail-tag");
+  await pressEscape();
+  await page.waitForTimeout(600);
+  // 筛选面板出现「标签」分组并勾选
+  await clickText("标签");
+  await page.waitForTimeout(700);
+  await clickText("D11测试标签");
+  await page.waitForTimeout(1200);
+  const filteredCount = await page.evaluate(() => document.querySelectorAll("main figure").length);
+  if (filteredCount !== 1) throw new Error("标签筛选未生效, figure count=" + filteredCount);
+  await shot("13-tag-filtered");
+
   console.log("\nPAGE ERRORS:", errors.length);
   if (errors.length) errors.forEach((e) => console.log("  -", e));
   console.log("ASSETS UI E2E PASS");

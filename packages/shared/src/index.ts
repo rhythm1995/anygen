@@ -307,7 +307,8 @@ export type AssetBatchInput = z.infer<typeof assetBatchSchema>;
 export const assetPatchSchema = z.object({
   favorited: z.boolean().optional(),
   published: z.boolean().optional(),
-}).refine((v) => v.favorited !== undefined || v.published !== undefined, { message: "empty patch" });
+  tags: z.array(z.string().trim().min(1).max(24)).max(20).optional(),
+}).refine((v) => v.favorited !== undefined || v.published !== undefined || v.tags !== undefined, { message: "empty patch" });
 export type AssetPatchInput = z.infer<typeof assetPatchSchema>;
 
 export const CREDIT_REASONS = ["signup_bonus", "generation_consume", "generation_refund", "topup"] as const;

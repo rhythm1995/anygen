@@ -449,15 +449,16 @@ export function VideoComposer({
               {!isSmartEdit && <span>{count}</span>}
             </Chip>
             <Menu open={menu === "spec"} onClose={() => setMenu(null)} width={330} align="right">
-              <p className="px-1.5 pb-1.5 pt-1 text-[11px] text-dm-text-4">选择比例</p>
-              <div className="mb-3 grid grid-cols-6 gap-1.5">
+              <p className="px-1 pb-1 pt-0.5 text-xs text-dm-text-4">选择比例</p>
+              {/* 原版实测（RECON 30-ratio-styles.json）：格 48×56、间距 2、无边框、选中亮底 pill */}
+              <div className="mb-2 grid grid-cols-6 gap-[2px]">
                 {VIDEO_RATIOS.map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setRatio(r)}
-                    className={`flex h-[52px] flex-col items-center justify-center gap-1 rounded-lg border text-[11px] transition-colors ${
-                      ratio === r ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                    className={`flex h-14 w-12 flex-col items-center justify-center gap-1 rounded-lg text-xs transition-colors ${
+                      ratio === r ? "bg-dm-surface-2 text-dm-text" : "text-dm-text-3 hover:text-dm-text-2"
                     }`}
                   >
                     <RatioGlyph ratio={r} active={ratio === r} />
@@ -465,15 +466,15 @@ export function VideoComposer({
                   </button>
                 ))}
               </div>
-              <p className="px-1.5 pb-1.5 text-[11px] text-dm-text-4">选择分辨率</p>
-              <div className="mb-3 grid grid-cols-3 gap-1.5">
+              <p className="px-1 pb-1 text-xs text-dm-text-4">选择分辨率</p>
+              <div className="mb-2 grid grid-cols-3 gap-[2px]">
                 {resOptions.map((r) => (
                   <button
                     key={r}
                     type="button"
                     onClick={() => setRes(r)}
-                    className={`flex h-10 items-center justify-center gap-1 rounded-lg border text-xs transition-colors ${
-                      res === r ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                    className={`flex h-9 items-center justify-center gap-1 rounded-lg text-xs transition-colors ${
+                      res === r ? "bg-dm-surface-2 text-dm-text" : "text-dm-text-3 hover:text-dm-text-2"
                     }`}
                   >
                     {r.replace("p", "P").toUpperCase()}
@@ -483,15 +484,15 @@ export function VideoComposer({
               </div>
               {!isSmartEdit && (
                 <>
-                  <p className="px-1.5 pb-1.5 text-[11px] text-dm-text-4">选择生成数量</p>
-                  <div className="grid grid-cols-4 gap-1.5">
+                  <p className="px-1 pb-1 text-xs text-dm-text-4">选择生成数量</p>
+                  <div className="grid grid-cols-4 gap-[2px]">
                     {[1, 2, 3, 4].map((n) => (
                       <button
                         key={n}
                         type="button"
                         onClick={() => setCount(n)}
-                        className={`h-10 rounded-lg border text-sm transition-colors ${
-                          count === n ? "border-dm-border-3 bg-dm-surface-2 text-dm-text" : "border-dm-border text-dm-text-3 hover:border-dm-border-3"
+                        className={`h-[34px] rounded-lg text-sm transition-colors ${
+                          count === n ? "bg-dm-surface-2 text-dm-text" : "text-dm-text-3 hover:text-dm-text-2"
                         }`}
                       >
                         {n}

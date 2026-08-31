@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeftRight, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Download,
-  Eraser, Expand, Film, ImagePlus, MoreHorizontal, Pencil, RefreshCcw, Repeat,
+  Eraser, Expand, Film, ImagePlus, MoreHorizontal, Pencil, Plus, RefreshCcw, Repeat,
   ScanFace, Sparkles, Star, Type, Wand2, X,
 } from "lucide-react";
 
@@ -24,6 +24,7 @@ export interface AssetDetailRow {
   width: number | null;
   height: number | null;
   favorited: boolean;
+  tags: string[];
   meta: { prompt?: string; taskId?: string } & Record<string, unknown>;
   createdAt: string;
 }
@@ -36,15 +37,18 @@ export function AssetDetailDialog({
   onActiveChange,
   onClose,
   onToggleFavorite,
+  onUpdateTags,
 }: {
   assets: AssetDetailRow[];
   activeId: string;
   onActiveChange: (id: string) => void;
   onClose: () => void;
   onToggleFavorite: (a: AssetDetailRow) => void;
+  onUpdateTags: (a: AssetDetailRow, tags: string[]) => void;
 }) {
   const router = useRouter();
   const [toast, setToast] = useState<string | null>(null);
+  const [tagInput, setTagInput] = useState("");
 
   const asset = assets.find((a) => a.id === activeId) ?? assets[0];
   const index = assets.findIndex((a) => a.id === asset?.id);
@@ -253,6 +257,49 @@ export function AssetDetailDialog({
             </p>
           </div>
         )}
+
+        {/* 标签（D11）：增删即保存 */}
+        <div className="mt-6">
+          <p className="text-xs text-dm-text-3">标签</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {asset.tags.map((t) => (
+              <span key={t} className="flex items-center gap-1 rounded-md bg-dm-surface-2 px-2 py-1 text-xs text-dm-text-2">
+                {t}
+                <button
+                  aria-label={`删除标签 ${t}`}
+                  onClick={() => onUpdateTags(asset, asset.tags.filter((x) => x !== t))}
+                  className="text-dm-text-4 hover:text-dm-text-2"
+                >
+                  <X size={11} />
+                </button>
+              </span>
+            ))}
+            <span className="flex items-center gap-1 rounded-md border border-dm-border px-2 py-1">
+              <Plus size={11} className="text-dm-text-4" />
+              <input
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  const t = tagInput.trim().slice(0, 24);
+                  if (!t || asset.tags.includes(t)) return;
+                  onUpdateTags(asset, [...asset.tags, t]);
+                  setTagInput("");
+                }}
+                onBlur={() => {
+                  const t = tagInput.trim().slice(0, 24);
+                  if (t && !asset.tags.includes(t)) {
+                    onUpdateTags(asset, [...asset.tags, t]);
+                  }
+                  setTagInput("");
+                }}
+                placeholder="添加标签"
+                maxLength={24}
+                className="w-20 bg-transparent text-xs text-dm-text outline-none placeholder:text-dm-text-4"
+              />
+            </span>
+          </div>
+        </div>
 
         <div className="mt-auto pt-8">
           <ActionCard>
