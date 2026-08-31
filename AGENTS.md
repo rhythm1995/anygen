@@ -15,6 +15,7 @@ apps/api      NestJS 11，全局前缀 /api，Zod 校验管道
 packages/shared  zod 契约（web/api 共用；原站真实 fixtures 驱动 TDD）
 supabase/     迁移 + seed（本地栈 `supabase start`）
 vendor/openmontage  上游 core 模块（AGPL，只读，同步制）
+vendor/infinite-canvas  上游无限画布全栈（tigerowo，AGPL，只读，同步制——移植手册 docs/CANVAS-RESEARCH.md）
 vendor-overlay/     我们的定制层（bridge/patches/seed）——vendor 的任何文件禁止手改
 dreamina-clone/     侦察证据库（RECON/ 快照与 fixtures，只读）
 docs/         设计文档；CONCLUSIONS.md 是权威决策表
@@ -31,6 +32,7 @@ pnpm test:e2e --filter @dreamina/api   # API e2e（需要 supabase 在跑）
 pnpm db:reset             # 重置 DB + seed
 node tools/e2e-ui.mjs     # 真实浏览器 UI 全流程（注册→feed→生成→画布）
 ./tools/sync-openmontage.sh   # 仅当用户说「同步 OpenMontage」时执行！
+./tools/sync-infinite-canvas.sh  # 仅当用户说「同步 infinite-canvas」时执行！
 ```
 
 ## 环境变量
@@ -65,4 +67,4 @@ node tools/e2e-ui.mjs     # 真实浏览器 UI 全流程（注册→feed→生�
 
 ## 里程碑指针
 
-见 docs/CONCLUSIONS.md §5。当前：M2（Admin + 美元计费）。动手前重读该节。
+见 docs/CONCLUSIONS.md §5。当前：M7（画布 v2，D12——vendor 化 tigerowo 对照重写）。动手前重读该节与 docs/CANVAS-RESEARCH.md。

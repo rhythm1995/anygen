@@ -208,3 +208,25 @@ chip：`🔧 技能`。点击弹层（宽 ~640px）：
 - models 表 seed 直接从 `RECON/jimeng-cn/*.json` 生成（不再手抄截图）：image 9 + video 11 + imitator N + music 1 + tts 1，含 badge/description/默认值/参数矩阵原样入库
 - creation_modes seed：7 类型（含 URL type 值）
 - agent_skills seed：4 官方技能（含 showcase 链接——注意签名过期，需转存本地图）
+
+## 7. 无限画布 v2 规格（D12，2026-09-01 新增）
+
+> 状态：**已定稿（依据 CONCLUSIONS D12），实施中（M7）**。蓝本 = vendor/infinite-canvas（tigerowo，AGPL，shadcn 化改写）；即梦侧事实 = RECON/auth/canvas-editor/；移植手册 = docs/CANVAS-RESEARCH.md。
+> 本节只列"对齐即梦"的增量要求；移植自 tigerowo 的交互细节以其源码+文档为准，不在此重复。
+
+### 7.1 路由与入口
+- 列表页 `/ai-tool/assets-canvas`（保持现有路由）：标题「今天想创作点什么？」；composer placeholder=「输入想法、剧本或上传参考，支持 "/"使用技能，添加主体，和Agent一起创作」；灵感模板 6 卡 CN 原文（中式茶饮品牌VI设计/IP潮玩人物设定及表情包/宇宙迷航短片分镜/香水产品系列海报/治愈系插画故事绘本/超现实梦境MV概念分镜）+「新建项目」「最近项目」
+- 列表页 composer 提交 = 新建画布项目并带入 prompt 预填（不再跳生成页）
+- 编辑器 `/ai-tool/assets-canvas/project/[id]`（保持现有路由）：顶栏=返回/项目名(可编辑)/保存态/「对话」开关/积分余额；空态 hero=「这次创作想从哪里开始？」+ 本地上传/选择资产 +「没有好创意？先和Agent聊聊，或者搜一搜站内灵感吧！」；左下缩放百分比；空画布右键=粘贴 ⌘V/居中视图 ⌘0（推测项：菜单具体项按 tigerowo context-menu 扩展）
+
+### 7.2 文案纪律
+- 即梦侧已实测文案照抄上文原文；未实测处（标注「推测」）采用 tigerowo 中文文案；全站 zh-Hans（D1）
+- 生成计费位=美元同位展示（D2），画布内价格显示必须等于实扣
+
+### 7.3 与 tigerowo 的差异（改造点，移植时必改）
+1. 生成调用 → `/api/generation/tasks`（提交+GET 轮询）；模型清单来自 admin models 表
+2. 图片/视频/音频上传 → 我们上传管线（MinIO/assets），节点存 assetId+url；storageKey/补水/引用清理体系删除
+3. LLM → `/api/agent/canvas/turn`（服务端 key）；其 AiConfig/本地渠道体系删除
+4. 会话持久化 → agent_sessions(project_id, 0012) + messages；chatSessions 不再内嵌 graph
+5. antd → shadcn/ui（映射表 CANVAS-RESEARCH 附录A）
+6. 未登录本地直连模式删除（内部平台）
