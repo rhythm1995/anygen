@@ -101,7 +101,7 @@ Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
 | M4 | Agent v1：技能模板执行器（agent_sessions/steps + 4 官方技能 plan_template + advance 执行器：预算预估/步骤计费/失败重试/按完成结算 + UI 步骤卡） | ✅ 974e486 |
 | M5 | Agent v2：自由 loop（OpenAI 兼容 tool calling，LLM_API_* 可配 GLM/Ark/OpenAI）+ SSE 流式事件 + 无 key 503 + UI 入口 | ✅ 974e486 |
 | M6+ | 审核管线（储备）、产品化剥离（AGPL）、兑换码 | 储备 |
-| M7 | **画布 v2（D12）**：vendor 化 tigerowo 对照重写——P0 落档/vendor 基建 → P-A 引擎替换（shadcn 化） → P-B 生成闭环（计费管线） → P-C 画布 Agent（canvas/turn + project 会话） → P-D 全景图/导演台/工作台/工作流 → P-E 即梦文案对齐打磨 | 🔄 进行中 |
+| M7 | **画布 v2（D12）**：vendor 化 tigerowo 对照重写——P0 ✅ → A 引擎替换 ✅ → B 生成闭环+节点编辑工具 ✅ → C 画布 Agent ✅ → D 摄像机/全景图/导演台 ✅（生图工作台+创作工作流待做） → E 即梦文案对齐 ✅ | 🔄 收尾（仅剩 D-3 工作台/工作流） |
 
 > M2.5/M4/M5 交付（2026-08-30，974e486）：turbo 6/6 绿（api 28 单元 + e2e 21 + shared 26 = 75 测试）。UI 实测：资产库页（六类筛选/上传/删除，资产↔画布入口分离）+ admin 四页（models/usage/users/audit）+ 资产/画布按钮重叠 bug 修复（各归各位）。
 
