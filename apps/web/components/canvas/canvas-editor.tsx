@@ -30,6 +30,9 @@ import { CanvasNodeContextMenu } from "./components/canvas-context-menu";
 import { ConfigNodePanel } from "./components/config-node-panel";
 import { CanvasAssistantPanel, type AssistantBridge } from "./components/canvas-assistant-panel";
 import { createAgentExecutor } from "./agent-executor";
+import { CanvasNodeHoverToolbar, CanvasNodeInfoModal } from "./components/canvas-node-hover-toolbar";
+import { CanvasNodeCropDialog, CanvasNodeSplitDialog, CanvasNodeUpscaleDialog, CanvasNodeAngleDialog } from "./components/canvas-node-dialogs";
+import { cropDataUrl, splitDataUrl, upscaleDataUrl, transformAngleDataUrl, dataUrlToFile, type ImageCropRect, type ImageSplitParams, type ImageUpscaleParams, type ImageAngleTransform } from "./utils/canvas-image-ops";
 import type { CanvasAssistantSession } from "./types";
 
 const MAX_HISTORY = 60;
@@ -126,6 +129,19 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     const [assistantOpen, setAssistantOpen] = useState(false);
     const [chatSessions, setChatSessions] = useState<CanvasAssistantSession[]>([]);
     const [activeChatId, setActiveChatId] = useState<string | null>(null);
+    // B 尾：hover 工具条 + 编辑弹窗 + 大图预览
+    const [toolbarNodeId, setToolbarNodeId] = useState<string | null>(null);
+    const toolbarKeepRef = useRef(false);
+    const [editDialog, setEditDialog] = useState<{ type: "crop" | "split" | "upscale" | "angle"; nodeId: string } | null>(null);
+    const [infoNode, setInfoNode] = useState<CanvasNodeData | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [replaceUploadNodeId, setReplaceUploadNodeId] = useState<string | null>(null);
+    const replaceInputRef = useRef<HTMLInputElement>(null);
+    const replaceUploadRef = useRef<string | null>(null);
+    useEffect(() => {
+        replaceUploadRef.current = replaceUploadNodeId;
+        if (replaceUploadNodeId) replaceInputRef.current?.click();
+    }, [replaceUploadNodeId]);
 
     // Agent 桥接 refs（跨模型步骤读取实时画布）
     const nodesRef = useRef<CanvasNodeData[]>([]);
@@ -610,6 +626,75 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         [projectId, name, nodes, connections, selectedIds, viewport, executeAction, creationConfig.data],
     );
 
+    // ---- B 尾：本地图像编辑（裁剪/切分/放大/多角度 → 上传 → 新节点+连线） ----
+    const toolbarNode = toolbarNodeId ? nodes.find((node) => node.id === toolbarNodeId) ?? null : hoveredId ? nodes.find((node) => node.id === hoveredId) ?? null : null;
+    const editDialogNode = editDialog ? nodes.find((node) => node.id === editDialog.nodeId) ?? null : null;
+
+    const addEditedImageNode = useCallback(async (sourceNode: CanvasNodeData, dataUrl: string, title: string) => {
+        try {
+            const file = await dataUrlToFile(dataUrl, `canvas-${Date.now()}`);
+            const uploaded = await uploadImageFile(file);
+            const meta = await import("@/lib/canvas-image-utils").then((m) => m.readImageMeta(dataUrl));
+            pushHistory();
+            const node = createCanvasNode(CanvasNodeType.Image, { x: sourceNode.position.x + sourceNode.width + 80, y: sourceNode.position.y }, title);
+            node.metadata = { content: uploaded.url, assetId: uploaded.assetId, status: "success", naturalWidth: meta.width, naturalHeight: meta.height, mimeType: meta.mimeType, bytes: file.size };
+            setNodes((current) => [...current, node]);
+            setConnections((current) => [...current, { id: uid("conn"), fromNodeId: sourceNode.id, toNodeId: node.id }]);
+            toast.success(`已生成新节点：${title}`);
+        } catch (error) {
+            toast.error(`处理失败：${error instanceof Error ? error.message : "未知错误"}`);
+        }
+    }, [pushHistory]);
+
+    const addSplitImageNodes = useCallback(async (sourceNode: CanvasNodeData, params: ImageSplitParams) => {
+        try {
+            const pieces = await splitDataUrl(sourceNode.metadata?.content ?? "", params);
+            if (!pieces.length) return;
+            pushHistory();
+            let index = 0;
+            for (const piece of pieces) {
+                const file = await dataUrlToFile(piece.dataUrl, `split-${piece.row}-${piece.column}`);
+                const uploaded = await uploadImageFile(file);
+                const meta = await import("@/lib/canvas-image-utils").then((m) => m.readImageMeta(piece.dataUrl));
+                const node = createCanvasNode(CanvasNodeType.Image, { x: sourceNode.position.x + sourceNode.width + 80, y: sourceNode.position.y + index * 280 }, `切片 ${piece.row + 1}-${piece.column + 1}`);
+                node.metadata = { content: uploaded.url, assetId: uploaded.assetId, status: "success", naturalWidth: meta.width, naturalHeight: meta.height, mimeType: meta.mimeType, bytes: file.size };
+                setNodes((current) => [...current, node]);
+                if (index === 0) setConnections((current) => [...current, { id: uid("conn"), fromNodeId: sourceNode.id, toNodeId: node.id }]);
+                index += 1;
+            }
+            toast.success(`已生成 ${pieces.length} 个切片节点`);
+        } catch (error) {
+            toast.error(`切分失败：${error instanceof Error ? error.message : "未知错误"}`);
+        }
+    }, [pushHistory]);
+
+    const downloadNodeMedia = useCallback((node: CanvasNodeData) => {
+        const url = node.metadata?.content;
+        if (!url) return;
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = node.title || "download";
+        a.target = "_blank";
+        a.click();
+    }, []);
+
+    const toggleFreeResize = useCallback((node: CanvasNodeData) => {
+        setNodes((current) => current.map((item) => (item.id === node.id ? { ...item, metadata: { ...item.metadata, freeResize: !item.metadata?.freeResize } } : item)));
+    }, []);
+
+    const adjustFontSize = useCallback((node: CanvasNodeData, delta: number) => {
+        setNodes((current) => current.map((item) => (item.id === node.id ? { ...item, metadata: { ...item.metadata, fontSize: Math.min(48, Math.max(10, (item.metadata?.fontSize ?? 14) + delta)) } } : item)));
+    }, []);
+
+    const textToConfigNode = useCallback((node: CanvasNodeData) => {
+        pushHistory();
+        const config = createCanvasNode(CanvasNodeType.Config, { x: node.position.x, y: node.position.y + node.height + 60 }, `生成配置 · ${node.title}`);
+        config.metadata = { generationMode: "image", composerContent: node.metadata?.content ?? "", status: "idle" };
+        setNodes((current) => [...current, config]);
+        setConnections((current) => [...current, { id: uid("conn"), fromNodeId: node.id, toNodeId: config.id }]);
+        setSelectedIds([config.id]);
+    }, [pushHistory]);
+
     // ---- 交互：节点拖拽 ----
     const handleNodeMouseDown = useCallback((event: React.MouseEvent, nodeId: string) => {
         if (event.button !== 0) return;
@@ -1043,6 +1128,114 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                         />
                     ) : null}
                 </InfiniteCanvas>
+
+                {/* B 尾：节点 hover 工具条 */}
+                <CanvasNodeHoverToolbar
+                    node={toolbarNode}
+                    viewport={viewport}
+                    onKeep={(nodeId) => {
+                        toolbarKeepRef.current = true;
+                        setToolbarNodeId(nodeId);
+                    }}
+                    onLeave={() => {
+                        toolbarKeepRef.current = false;
+                        setToolbarNodeId(null);
+                    }}
+                    onInfo={setInfoNode}
+                    onDecreaseFont={(node) => adjustFontSize(node, -2)}
+                    onIncreaseFont={(node) => adjustFontSize(node, 2)}
+                    onUpload={(node) => setReplaceUploadNodeId(node.id)}
+                    onDownload={downloadNodeMedia}
+                    onGenerateImage={textToConfigNode}
+                    onMaskEdit={() => toast.info("局部重绘（图生图）将在参考图管线开放后支持")}
+                    onCrop={(node) => setEditDialog({ type: "crop", nodeId: node.id })}
+                    onSplit={(node) => setEditDialog({ type: "split", nodeId: node.id })}
+                    onUpscale={(node) => setEditDialog({ type: "upscale", nodeId: node.id })}
+                    onAngle={(node) => setEditDialog({ type: "angle", nodeId: node.id })}
+                    onViewImage={(node) => setPreviewUrl(node.metadata?.content ?? null)}
+                    onRetry={(node) => {
+                        if (node.metadata?.imageTaskId || node.metadata?.videoTaskId) void handleGenerate(node.id);
+                    }}
+                    onToggleFreeResize={toggleFreeResize}
+                    onDelete={(node) => deleteNodes([node.id])}
+                />
+
+                {/* B 尾：编辑弹窗四件套 */}
+                {editDialog && editDialogNode?.metadata?.content ? (
+                    <>
+                        <CanvasNodeCropDialog
+                            dataUrl={editDialogNode.metadata.content}
+                            open={editDialog.type === "crop"}
+                            onClose={() => setEditDialog(null)}
+                            onConfirm={async (crop: ImageCropRect) => {
+                                const dataUrl = await cropDataUrl(editDialogNode.metadata!.content!, crop);
+                                await addEditedImageNode(editDialogNode, dataUrl, `${editDialogNode.title} 裁剪`);
+                                setEditDialog(null);
+                            }}
+                        />
+                        <CanvasNodeSplitDialog
+                            dataUrl={editDialogNode.metadata.content}
+                            open={editDialog.type === "split"}
+                            onClose={() => setEditDialog(null)}
+                            onConfirm={async (params: ImageSplitParams) => {
+                                setEditDialog(null);
+                                await addSplitImageNodes(editDialogNode, params);
+                            }}
+                        />
+                        <CanvasNodeUpscaleDialog
+                            dataUrl={editDialogNode.metadata.content}
+                            open={editDialog.type === "upscale"}
+                            onClose={() => setEditDialog(null)}
+                            onConfirm={async (params: ImageUpscaleParams) => {
+                                setEditDialog(null);
+                                const dataUrl = await upscaleDataUrl(editDialogNode.metadata!.content!, params);
+                                await addEditedImageNode(editDialogNode, dataUrl, `${editDialogNode.title} ${params.targetLongEdge}px`);
+                            }}
+                        />
+                        <CanvasNodeAngleDialog
+                            dataUrl={editDialogNode.metadata.content}
+                            open={editDialog.type === "angle"}
+                            onClose={() => setEditDialog(null)}
+                            onConfirm={async (params: ImageAngleTransform) => {
+                                setEditDialog(null);
+                                const dataUrl = await transformAngleDataUrl(editDialogNode.metadata!.content!, params);
+                                await addEditedImageNode(editDialogNode, dataUrl, `${editDialogNode.title} 多角度`);
+                            }}
+                        />
+                    </>
+                ) : null}
+
+                <CanvasNodeInfoModal node={infoNode} open={Boolean(infoNode)} onClose={() => setInfoNode(null)} />
+
+                {/* 大图预览 */}
+                {previewUrl ? (
+                    <div className="fixed inset-0 z-[110] grid place-items-center bg-black/80 p-8" onClick={() => setPreviewUrl(null)} data-canvas-no-zoom>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={previewUrl} alt="预览" className="max-h-full max-w-full rounded-xl object-contain shadow-2xl" />
+                    </div>
+                ) : null}
+
+                {/* 替换/上传媒体（hover 工具条触发，effect 里 click） */}
+                <input
+                    type="file"
+                    accept="image/*,video/mp4,video/quicktime,audio/mpeg,audio/wav"
+                    className="hidden"
+                    ref={replaceInputRef}
+                    onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        const targetId = replaceUploadRef.current;
+                        if (file && targetId) {
+                            const position = nodes.find((node) => node.id === targetId)?.position ?? getCanvasCenter();
+                            void appendUploadedFile(file, position).then(() => {
+                                // 上传成功后删除旧的空节点（替换语义）
+                                const target = nodesRef.current.find((node) => node.id === targetId);
+                                if (target && !target.metadata?.content) deleteNodes([targetId]);
+                            });
+                        }
+                        setReplaceUploadNodeId(null);
+                        event.target.value = "";
+                    }}
+                />
 
                 {/* 空态 hero（对齐即梦：这次创作想从哪里开始？） */}
                 {!nodes.length && !project.isLoading ? (
