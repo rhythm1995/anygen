@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/providers";
+import { DurationPicker } from "@/components/shared/duration-picker";
+import { VideoComposer } from "@/components/shared/video-composer";
+import { useCreationConfig } from "@/components/shared/use-creation-config";
 import { api, CREATION_TYPES, formatUsd, type CreationType, type CreationTypesConfig, type ModelEntry } from "@/lib/api";
 
 export interface SubmitPayload {
@@ -53,28 +56,31 @@ const REFERENCE_MODES = [
   { key: "long_video", label: "超长视频", badge: "Beta" },
 ];
 
-function useCreationConfig() {
-  return useQuery({
-    queryKey: ["creation-types"],
-    queryFn: () => api<CreationTypesConfig>("/config/creation-types"),
-    staleTime: 5 * 60_000,
-  });
-}
-
 function Popover({ open, onClose, children, width = 340, align = "left" }: { open: boolean; onClose: () => void; children: React.ReactNode; width?: number; align?: "left" | "right" }) {
   const ref = useRef<HTMLDivElement>(null);
+  // composer 停靠在视口底部时向上翻转（原站同款行为），否则弹层落到视口外
+  const [placement, setPlacement] = useState<"top" | "bottom">("bottom");
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
-    if (open) setTimeout(() => document.addEventListener("mousedown", handler));
+    if (open) {
+      setTimeout(() => {
+        document.addEventListener("mousedown", handler);
+        const anchor = ref.current?.parentElement;
+        if (anchor) {
+          const rect = anchor.getBoundingClientRect();
+          setPlacement(window.innerHeight - rect.bottom < 520 ? "top" : "bottom");
+        }
+      });
+    }
     return () => document.removeEventListener("mousedown", handler);
   }, [open, onClose]);
   if (!open) return null;
   return (
     <div
       ref={ref}
-      className={`absolute top-11 z-50 max-h-[560px] overflow-y-auto rounded-2xl border border-dm-border bg-dm-surface p-6 shadow-2xl ${align === "right" ? "right-0" : "left-0"}`}
+      className={`absolute ${placement === "top" ? "bottom-11" : "top-11"} ${align === "right" ? "right-0" : "left-0"} z-50 max-h-[480px] overflow-y-auto rounded-2xl border border-dm-border bg-dm-surface p-4 shadow-2xl`}
       style={{ width }}
     >
       {children}
@@ -194,6 +200,19 @@ export function CreationComposer({
       setCount(model.params.generate_count_options[0]);
     }
   }, [model]);
+
+  // 视频生成走原版大面板形态（CONCLUSIONS D9）；压缩态（历史流 overlay）维持小表单
+  if (type === "video" && !compact) {
+    return (
+      <VideoComposer
+        onSubmit={onSubmit}
+        busy={busy}
+        error={error}
+        prefill={prefill}
+        onTypeChange={setType}
+      />
+    );
+  }
 
   const params: Record<string, unknown> = {};
   let costCents = 0;
@@ -440,10 +459,12 @@ export function CreationComposer({
                   </div>
                 </Popover>
               </div>
-              <Chip ariaLabel="时长" onClick={() => setDurationSec(durationSec === 5 ? 10 : durationSec === 10 ? 4 : 5)}>
-                <Clock size={13} />
-                {durationSec}s
-              </Chip>
+              <DurationPicker
+                value={durationSec}
+                min={4}
+                max={15}
+                onChange={setDurationSec}
+              />
             </>
           )}
 

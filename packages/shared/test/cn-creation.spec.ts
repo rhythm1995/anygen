@@ -92,6 +92,12 @@ describe("定价计算器（美分）", () => {
     expect(pricing.costCents(videoModel, { resolution: "480p", duration_seconds: 10 })).toBe(84);
   });
 
+  it("视频：数量 N 按 N 条视频计费（原版生成数量 1-4）", () => {
+    expect(pricing.costCents(videoModel, { resolution: "720p", duration_seconds: 5, count: 2 })).toBe(140);
+    expect(pricing.costCents(videoModel, { resolution: "720p", duration_seconds: 5, count: 4 })).toBe(280);
+    expect(pricing.costCents(videoModel, { resolution: "480p", duration_seconds: 4, count: 3 })).toBe(101); // 14×0.6×4×3=100.8→101
+  });
+
   it("per_request 固定费", () => {
     expect(pricing.costCents(perReq, {})).toBe(8);
   });
@@ -114,6 +120,15 @@ describe("任务参数 schema（按类型）", () => {
     const p = taskParamsSchema("video");
     expect(p.parse({ resolution: "720p", duration_seconds: 5, ratio: "16:9" })).toBeTruthy();
     expect(p.safeParse({ resolution: "720p", duration_seconds: 60 }).success).toBe(false);
+  });
+
+  it("video 参数：count 1-4（原版生成数量）", () => {
+    const p = taskParamsSchema("video");
+    expect(p.parse({ resolution: "720p", duration_seconds: 5, count: 1 })).toBeTruthy();
+    expect(p.parse({ resolution: "720p", duration_seconds: 5, count: 4 }).count).toBe(4);
+    expect(p.parse({ resolution: "720p", duration_seconds: 5 }).count).toBe(1);
+    expect(p.safeParse({ resolution: "720p", duration_seconds: 5, count: 5 }).success).toBe(false);
+    expect(p.safeParse({ resolution: "720p", duration_seconds: 5, count: 0 }).success).toBe(false);
   });
 
   it("music/dubbing/digital_human/motion_mimic 各自参数", () => {

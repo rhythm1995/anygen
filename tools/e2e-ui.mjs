@@ -53,7 +53,7 @@ try {
   await shot(page, "home-anon");
 
   // 3. 真实 UI 注册登录
-  await clickEl('[aria-label="Sign in"]');
+  await clickEl('[aria-label="登录"]');
   await page.waitForTimeout(1000);
   await clickEl('[role="dialog"] input[type="email"]');
   await page.waitForTimeout(300);
@@ -113,6 +113,18 @@ try {
   await page.waitForTimeout(500);
   await clickChip("图片生成");
   await page.waitForTimeout(800);
+  // 本机只配 OPENROUTER_API_KEY（无 ARK）：选 Gemini 3.1 Flash 保证真实生成可跑通
+  await clickChip("图片 5.0 Pro");
+  await page.waitForTimeout(600);
+  // 模型列表超长（17 项），弹层内层列表滚到底再选
+  await page.evaluate(() => {
+    const pop = document.querySelector('[data-testid="creation-composer"] div.absolute.z-50');
+    const list = pop?.lastElementChild;
+    if (list) list.scrollTop = list.scrollHeight;
+  });
+  await page.waitForTimeout(300);
+  await clickChip("Gemini 3.1 Flash");
+  await page.waitForTimeout(600);
   await clickEl('[data-testid="creation-composer"] textarea');
   await typeText("一只霓虹雨夜的东京小巷，电影感镜头");
   await page.waitForTimeout(300);
@@ -121,8 +133,18 @@ try {
   await page.screenshot({ path: path.join(OUT, "image-params.png") });
   await clickChip("1:1 | 2K");
   await page.waitForTimeout(300);
-  await clickEl('[aria-label="生成"]');
-  await page.waitForTimeout(3500);
+  await clickEl('[data-testid="creation-composer"] [aria-label="生成"]');
+  // 等真实成图（OpenRouter 即时返回型模型）：核心验收点 = 成功后图片必须出现
+  let imageShown = false;
+  for (let i = 0; i < 120; i++) {
+    imageShown = await page.evaluate(() =>
+      Boolean(document.querySelector('[data-testid="task-group"][data-status="succeeded"] img')),
+    );
+    if (imageShown) break;
+    await page.waitForTimeout(1000);
+  }
+  if (!imageShown) throw new Error("generated image never appeared in feed");
+  await page.waitForTimeout(800);
   await shot(page, "generate-submit");
 
   // 6. 画布入口

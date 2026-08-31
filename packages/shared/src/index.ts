@@ -491,7 +491,10 @@ export const pricing = {
       case "per_second": {
         const secs = p.duration_seconds;
         if (!secs || secs <= 0) throw new Error("pricing: duration_seconds required");
-        return Math.ceil(model.price_cents * factor(p.resolution) * secs);
+        // count：一次任务生成 N 条视频，按 N 条计费（原版生成数量 1-4）
+        const count = p.count ?? 1;
+        if (count < 1) throw new Error("pricing: count must be >= 1");
+        return Math.ceil(model.price_cents * factor(p.resolution) * secs * count);
       }
       case "per_request":
         return model.price_cents;
@@ -533,6 +536,7 @@ export function taskParamsSchema(type: CreationType) {
           resolution: z.enum(["480p", "720p", "1080p"]),
           ratio: z.enum(VIDEO_RATIOS as [string, ...string[]]).optional().default("16:9"),
           duration_seconds: z.number().int().min(3).max(180),
+          count: z.number().int().min(1).max(4).optional().default(1),
           reference_mode: z
             .enum(["unified_edit", "first_end_frame", "smart_multi", "smart_edit", "long_video"])
             .optional(),

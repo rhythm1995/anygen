@@ -167,6 +167,8 @@ export interface ModelEntry {
     default_generate_count?: number;
     duration_ms?: { min_duration_ms: number; max_duration_ms: number };
     duration?: string;
+    /** 原版逐模型参考模式支持矩阵（迁移 0010，缺省=全支持） */
+    reference_modes?: string[];
     input_media_type?: { options: string[]; default: string };
     styles?: string[];
     voice_clone?: boolean;

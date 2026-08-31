@@ -4,11 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Dreamina design tokens — 证据: dreamina-clone/RECON/style-probe-3.json（真浏览器计算样式） */
+/* Dreamina design tokens — 证据: dreamina-clone/RECON/style-probe-3.json（真浏览器计算样式）
+   composer/操作按钮底色 — 证据: dreamina-clone/RECON/jimeng-cn/template-covers（原站截图逐像素采样 2026-08-31） */
 @theme {
   --color-dm-bg: #0f0f12;
   --color-dm-surface: #15161a;
   --color-dm-surface-2: #22252a;
+  --color-dm-composer: #1b1c21;
+  --color-dm-raised: #1e1f24;
   --color-dm-glass: rgb(32 33 39 / 72%);
   --color-dm-accent: #00cae0;
   --color-dm-accent-dim: rgb(0 202 224 / 12%);
@@ -120,4 +123,43 @@
   ::selection {
     background: rgb(0 202 224 / 30%);
   }
+}
+
+/* 生成中占位格：模糊渐变缓漂（对齐原站 "智能创意中" 卡片观感） */
+@keyframes dm-tile-drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.dm-tile-loading {
+  background-size: 220% 220%;
+  animation: dm-tile-drift 7s ease-in-out infinite;
+}
+
+/* 时长滑条（原版 lv-slider 实测：轨 12px 高 radius 4、白色滑块 20×16） */
+.dm-duration-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 16px;
+  border-radius: 5px;
+  background: #f5fbff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+.dm-duration-slider::-moz-range-thumb {
+  width: 20px;
+  height: 16px;
+  border-radius: 5px;
+  background: #f5fbff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
 }
