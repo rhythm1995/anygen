@@ -10,15 +10,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, MessageSquare, Upload, FolderOpen } from "lucide-react";
 
-import { api, type ProjectDetail } from "@/lib/api";
+import { api, type AssetRow, type CreationTypesConfig, type GenTask, type ProjectDetail } from "@/lib/api";
 import { normalizeLegacyGraphNode } from "@dreamina/shared";
 import { canvasThemes } from "@/lib/canvas-theme";
+import { defaultModelFor, modelsFor, pollCanvasTask, submitCanvasTask } from "@/lib/canvas/generation";
 import { useThemeStore } from "./theme-store";
 import { getNodeSpec } from "./constants";
-import { CanvasNodeType, type CanvasConnection, type CanvasNodeData, type ContextMenuState, type Position, type SelectionBox, type ViewportTransform } from "./types";
+import { CanvasNodeType, type CanvasConnection, type CanvasNodeData, type CanvasNodeMetadata, type ContextMenuState, type Position, type SelectionBox, type ViewportTransform } from "./types";
 import { findGroupDropTarget, snapNodesIntoGroup } from "./utils/canvas-group";
 import { isCanvasImageNodeType } from "./utils/canvas-panorama";
-import { uploadLocalImage, imageMetadata } from "./utils/canvas-image-data";
+import { uploadLocalImage, uploadImageFile, imageMetadata } from "./utils/canvas-image-data";
 import { InfiniteCanvas } from "./components/infinite-canvas";
 import { CanvasNode } from "./components/canvas-node";
 import { ConnectionPath, ActiveConnectionPath } from "./components/canvas-connections";
@@ -26,6 +27,7 @@ import { Minimap } from "./components/canvas-mini-map";
 import { CanvasZoomControls } from "./components/canvas-zoom-controls";
 import { CanvasToolbar } from "./components/canvas-toolbar";
 import { CanvasNodeContextMenu } from "./components/canvas-context-menu";
+import { ConfigNodePanel } from "./components/config-node-panel";
 
 const MAX_HISTORY = 60;
 
@@ -89,6 +91,13 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         queryFn: () => api<ProjectDetail>(`/projects/${projectId}`),
     });
 
+    // 模型清单（admin models 表驱动，D4：禁前端硬编码）
+    const creationConfig = useQuery({
+        queryKey: ["creation-config"],
+        queryFn: () => import("@/lib/canvas/generation").then((m) => m.fetchCreationConfig()),
+        staleTime: 5 * 60_000,
+    });
+
     // ---- 编辑器状态 ----
     const [name, setName] = useState("未命名项目");
     const [nameDirty, setNameDirty] = useState(false);
@@ -108,6 +117,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
     const [canvasMenu, setCanvasMenu] = useState<CanvasMenuState>(null);
     const [minimapOpen, setMinimapOpen] = useState(true);
     const [clipboard, setClipboard] = useState<CanvasNodeData[]>([]);
+    const [runningNodeTasks, setRunningNodeTasks] = useState<Record<string, string>>({});
     const [createMenuOpen, setCreateMenuOpen] = useState(false);
     const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
     const skipNextHistory = useRef(true);
@@ -333,6 +343,162 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
         return ids;
     }, [connections, selectedIds, focusedConnectionId]);
 
+    // ---- 生成闭环（Phase B：一律走 /generation/tasks 计费管线） ----
+    const upstreamInputsOf = useCallback((configNodeId: string) => {
+        const upstream = connections
+            .filter((connection) => connection.toNodeId === configNodeId)
+            .map((connection) => nodes.find((node) => node.id === connection.fromNodeId))
+            .filter((node): node is CanvasNodeData => Boolean(node));
+        const ordered = (() => {
+            const config = nodes.find((node) => node.id === configNodeId);
+            const order = config?.metadata?.inputOrder;
+            if (!order?.length) return upstream;
+            return [...upstream].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+        })();
+        return {
+            textNodes: ordered.filter((node) => node.type === CanvasNodeType.Text && (node.metadata?.content || node.metadata?.prompt)),
+            imageNodes: ordered.filter((node) => isCanvasImageNodeType(node.type) && node.metadata?.content),
+            videoNodes: ordered.filter((node) => node.type === CanvasNodeType.Video && node.metadata?.content),
+            audioNodes: ordered.filter((node) => node.type === CanvasNodeType.Audio && node.metadata?.content),
+        };
+    }, [connections, nodes]);
+
+    const handleConfigNodeChange = useCallback((nodeId: string, patch: Partial<CanvasNodeMetadata>) => {
+        setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, ...patch } } : node)));
+    }, []);
+
+    const markNodeError = useCallback((nodeId: string, message: string) => {
+        setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: "error", errorDetails: message } } : node)));
+        setRunningNodeTasks((current) => {
+            if (!(nodeId in current)) return current;
+            const next = { ...current };
+            delete next[nodeId];
+            return next;
+        });
+    }, []);
+
+    const finalizeTask = useCallback(async (nodeId: string, task: GenTask) => {
+        const configNode = nodes.find((node) => node.id === nodeId);
+        if (!configNode) return;
+        let urls: string[] = [];
+        let assets: AssetRow[] = [];
+        if (task.outputs?.length) {
+            assets = await api<AssetRow[]>("/assets").catch(() => []);
+            urls = task.outputs.map((id) => assets.find((row) => row.id === id)?.url).filter((url): url is string => Boolean(url));
+        }
+        if (!urls.length) {
+            markNodeError(nodeId, "生成完成但未返回产物");
+            return;
+        }
+        const mode = configNode.metadata?.generationMode === "video" ? "video" : "image";
+        pushHistory();
+        const baseX = configNode.position.x + configNode.width + 80;
+        const created: CanvasNodeData[] = [];
+        if (mode === "video") {
+            const node = createCanvasNode(CanvasNodeType.Video, { x: baseX, y: configNode.position.y }, "生成视频");
+            node.metadata = { content: urls[0], status: "success", videoTaskId: task.id, mimeType: assets[0]?.mime ?? "video/mp4" };
+            created.push(node);
+        } else if (urls.length === 1) {
+            const node = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: configNode.position.y }, "生成图片");
+            const asset = assets.find((row) => row.url === urls[0]);
+            node.metadata = { content: urls[0], status: "success", imageTaskId: task.id, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png", bytes: undefined };
+            created.push(node);
+        } else {
+            const root = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: configNode.position.y }, `图片组 ${urls.length}`);
+            root.metadata = { content: urls[0], status: "success", isBatchRoot: true, batchChildIds: [], primaryImageId: "", imageTaskId: task.id };
+            const children = urls.map((url, index) => {
+                const asset = assets.find((row) => row.url === url);
+                const child = createCanvasNode(CanvasNodeType.Image, { x: baseX, y: configNode.position.y + (index + 1) * (root.height + 40) }, `图片 ${index + 1}`);
+                child.metadata = { content: url, status: "success", batchRootId: root.id, naturalWidth: asset?.width ?? undefined, naturalHeight: asset?.height ?? undefined, mimeType: asset?.mime ?? "image/png" };
+                return child;
+            });
+            root.metadata.batchChildIds = children.map((child) => child.id);
+            root.metadata.primaryImageId = children[0]?.id ?? "";
+            created.push(root, ...children);
+        }
+        setNodes((current) => [
+            ...current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: "idle" as const, progress: undefined } } : node)),
+            ...created,
+        ]);
+        setConnections((current) => [...current, ...created.slice(0, 1).map((node) => ({ id: uid("conn"), fromNodeId: nodeId, toNodeId: node.id }))]);
+        setRunningNodeTasks((current) => {
+            if (!(nodeId in current)) return current;
+            const next = { ...current };
+            delete next[nodeId];
+            return next;
+        });
+        toast.success(`生成完成：${created.length} 个节点已插入画布`);
+    }, [nodes, pushHistory, markNodeError]);
+
+    const handleGenerate = useCallback(async (nodeId: string) => {
+        const configNode = nodes.find((node) => node.id === nodeId);
+        if (!configNode) return;
+        const mode = configNode.metadata?.generationMode === "video" ? "video" : "image";
+        const models = modelsFor(creationConfig.data, mode);
+        const model = models.find((item) => item.code === configNode.metadata?.model) ?? defaultModelFor(models);
+        if (!model) {
+            markNodeError(nodeId, "无可用模型：请联系 admin 在后台配置启用的模型");
+            return;
+        }
+        const inputs = upstreamInputsOf(nodeId);
+        const promptParts = [
+            ...inputs.textNodes.map((node) => (node.metadata?.content || node.metadata?.prompt || "").trim()),
+            (configNode.metadata?.composerContent ?? configNode.metadata?.prompt ?? "").trim(),
+        ].filter(Boolean);
+        if (!promptParts.length) {
+            toast.error("请先输入描述或连接文本节点");
+            return;
+        }
+        const resolutionOptions = Object.keys(model.params.resolutions ?? {});
+        const resolution = mode === "image" ? configNode.metadata?.quality : configNode.metadata?.vquality;
+        const finalResolution = resolutionOptions.includes(resolution ?? "") ? resolution : resolutionOptions[0];
+        const ratioOptions = model.params.aspect_ratio?.options ?? [];
+        const ratio = [configNode.metadata?.size, model.params.aspect_ratio?.default, ratioOptions[0], "1:1"].find((value): value is string => Boolean(value && ratioOptions.includes(value))) ?? "1:1";
+        if (!finalResolution) {
+            markNodeError(nodeId, "该模型未配置分辨率选项：请联系 admin 检查 models 表参数");
+            return;
+        }
+        try {
+            const task = await submitCanvasTask(
+                mode === "image"
+                    ? { type: "image", prompt: promptParts.join("\n"), model_code: model.code, params: { resolution: finalResolution, ratio, count: configNode.metadata?.count ?? model.params.default_generate_count ?? 1 } }
+                    : { type: "video", prompt: promptParts.join("\n"), model_code: model.code, params: { resolution: finalResolution, ratio, duration_seconds: Number(configNode.metadata?.seconds) || 5 } },
+            );
+            setNodes((current) => current.map((node) => (node.id === nodeId ? { ...node, metadata: { ...node.metadata, status: "loading", startedAt: Date.now(), progress: 0, errorDetails: undefined, imageTaskId: mode === "image" ? task.id : undefined, videoTaskId: mode === "video" ? task.id : undefined } } : node)));
+            setRunningNodeTasks((current) => ({ ...current, [nodeId]: task.id }));
+        } catch (error) {
+            // 402 余额不足 / 503 未配置 Key / 404 模型——如实展示在节点 error 态（禁 mock）
+            markNodeError(nodeId, error instanceof Error ? error.message : "提交失败");
+            toast.error(error instanceof Error ? error.message : "提交失败");
+        }
+    }, [nodes, creationConfig.data, upstreamInputsOf, markNodeError]);
+
+    // 轮询运行中任务（GET 即触发服务端向 provider 轮询）
+    useEffect(() => {
+        const entries = Object.entries(runningNodeTasks);
+        if (!entries.length) return;
+        let cancelled = false;
+        const tick = async () => {
+            for (const [nodeId, taskId] of entries) {
+                if (cancelled) return;
+                try {
+                    const task = await pollCanvasTask(taskId);
+                    if (cancelled) return;
+                    if (task.status === "succeeded") await finalizeTask(nodeId, task);
+                    else if (task.status === "failed") markNodeError(nodeId, task.error || "生成失败");
+                } catch (error) {
+                    markNodeError(nodeId, error instanceof Error ? error.message : "轮询失败");
+                }
+            }
+        };
+        const timer = setInterval(() => void tick(), 2500);
+        void tick();
+        return () => {
+            cancelled = true;
+            clearInterval(timer);
+        };
+    }, [runningNodeTasks, finalizeTask, markNodeError]);
+
     // ---- 交互：节点拖拽 ----
     const handleNodeMouseDown = useCallback((event: React.MouseEvent, nodeId: string) => {
         if (event.button !== 0) return;
@@ -504,8 +670,15 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                 node.height = node.width * (image.height / image.width || 0.75);
                 node.metadata = imageMetadata(image);
                 setNodes((current) => [...current, node]);
+            } else if (file.type.startsWith("video/") || file.type.startsWith("audio/")) {
+                const uploaded = await uploadImageFile(file);
+                pushHistory();
+                const type = file.type.startsWith("video/") ? CanvasNodeType.Video : CanvasNodeType.Audio;
+                const node = createCanvasNode(type, position, file.name.replace(/\.[^.]+$/, ""));
+                node.metadata = { content: uploaded.url, assetId: uploaded.assetId, status: "success", mimeType: uploaded.mimeType, bytes: uploaded.bytes };
+                setNodes((current) => [...current, node]);
             } else {
-                toast.info("视频/音频上传节点将于 Phase B 开放");
+                toast.info("暂不支持该文件类型");
             }
         } catch (error) {
             toast.error(`上传失败：${error instanceof Error ? error.message : "未知错误"}`);
@@ -707,6 +880,21 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                             showPanel={false}
                             showImageInfo={showImageInfo}
                             mentionReferences={[]}
+                            renderNodeContent={node.type === CanvasNodeType.Config ? (target) => {
+                                const inputs = upstreamInputsOf(target.id);
+                                const mode = target.metadata?.generationMode === "video" ? "video" : "image";
+                                return (
+                                    <ConfigNodePanel
+                                        node={target}
+                                        isRunning={Boolean(runningNodeTasks[target.id])}
+                                        imageModels={modelsFor(creationConfig.data, "image")}
+                                        videoModels={modelsFor(creationConfig.data, "video")}
+                                        inputSummary={{ textCount: inputs.textNodes.length, imageCount: inputs.imageNodes.length, videoCount: inputs.videoNodes.length, audioCount: inputs.audioNodes.length }}
+                                        onConfigChange={handleConfigNodeChange}
+                                        onGenerate={(id) => void handleGenerate(id)}
+                                    />
+                                );
+                            } : undefined}
                             onMouseDown={handleNodeMouseDown}
                             onHoverStart={setHoveredId}
                             onHoverEnd={() => setHoveredId(null)}
@@ -721,6 +909,9 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                                 setNodes((current) => current.map((item) => (item.id === nodeId ? { ...item, title } : item)));
                             }}
                             onToggleBatch={undefined}
+                            onRetry={(target) => {
+                                if (target.metadata?.imageTaskId || target.metadata?.videoTaskId) void handleGenerate(target.id);
+                            }}
                             onContextMenu={handleNodeContextMenu}
                         />
                     ))}
@@ -824,7 +1015,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,video/mp4,video/quicktime,audio/mpeg,audio/wav"
                     className="hidden"
                     onChange={(event) => {
                         const file = event.target.files?.[0];

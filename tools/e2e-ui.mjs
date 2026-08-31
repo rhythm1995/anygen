@@ -193,6 +193,137 @@ try {
   const persisted = await page.evaluate(() => document.querySelectorAll("[data-node-id]").length);
   if (persisted < 1) throw new Error("canvas node did not persist after reload");
   console.log("canvas persisted nodes:", persisted);
+
+  // 8. 画布内生成闭环（真实 /generation/tasks 计费管线）
+  await page.connection.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+  await page.connection.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+  await page.waitForTimeout(400);
+  const dbgDbl = await page.evaluate(() => {
+    const host = document.querySelector("[data-node-id]")?.parentElement?.parentElement || document.body;
+    const r = host.getBoundingClientRect();
+    // 找一个绝对空白的点：避开所有节点与 UI 停靠区
+    const candidates = [
+      { x: r.x + r.width * 0.85, y: r.y + r.height * 0.2 },
+      { x: r.x + r.width * 0.1, y: r.y + r.height * 0.2 },
+      { x: r.x + r.width * 0.85, y: r.y + r.height * 0.5 },
+      { x: r.x + r.width * 0.5, y: r.y + r.height * 0.85 },
+    ];
+    for (const spot of candidates) {
+      const target = document.elementFromPoint(spot.x, spot.y);
+      if (!target?.closest?.("[data-node-id],[data-connection-id],button,input,textarea,[data-canvas-no-zoom]")) {
+        target.dispatchEvent(new MouseEvent("dblclick", { bubbles: true, cancelable: true, clientX: spot.x, clientY: spot.y }));
+        return { ok: true, x: Math.round(spot.x), y: Math.round(spot.y), tag: target.tagName };
+      }
+    }
+    return { ok: false };
+  });
+  console.log("dblclick dbg:", JSON.stringify(dbgDbl));
+  if (!dbgDbl.ok) throw new Error("no empty canvas spot found for dblclick");
+  await page.waitForTimeout(700);
+  const menuOk = await page.evaluate(() => {
+    const item = [...document.querySelectorAll("button")].find((b) => b.textContent?.trim() === "生成配置");
+    item?.click();
+    return Boolean(item);
+  });
+  if (!menuOk) throw new Error("node create menu did not open (dblclick hit an existing node?)");
+  await page.waitForTimeout(1500);
+  const panelOk = await page.evaluate(() => Boolean([...document.querySelectorAll("textarea")].find((t) => (t.placeholder || "").includes("组装提示词"))));
+  if (!panelOk) throw new Error("config node panel did not render");
+  await page.evaluate(() => {
+    const el = [...document.querySelectorAll("textarea")].find((t) => (t.placeholder || "").includes("组装提示词"));
+    el.focus();
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
+    setter.call(el, "一只橘猫在窗台上看雨，水墨风格");
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.waitForTimeout(800);
+  // 8a. 无 key 路径：默认 Ark 模型 → 503 文案显示在节点 error 横幅（D12：禁 mock，如实展示）
+  const firstClick = await page.evaluate(() => {
+    const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("开始生成"));
+    if (!btn || btn.disabled) return false;
+    btn.click();
+    return true;
+  });
+  if (!firstClick) throw new Error("开始生成 (default model) missing or disabled");
+  const errShown = await (async () => {
+    const start = Date.now();
+    while (Date.now() - start < 20_000) {
+      await page.waitForTimeout(1500);
+      const hit = await page.evaluate(() => {
+        const banner = [...document.querySelectorAll("[data-node-id]")].find((n) => n.textContent?.includes("Provider config missing") || n.textContent?.includes("ARK_API_KEY") || n.textContent?.includes("generation provider unavailable"));
+        return Boolean(banner);
+      });
+      if (hit) return true;
+    }
+    return false;
+  })();
+  if (!errShown) throw new Error("503 provider-missing error not shown on config node");
+  console.log("canvas 503 path verified (honest error shown)");
+
+  // 8b. 完整闭环：切到 OpenRouter 可用模型（本环境 Gemini）→ 真实计费生成 → 图片节点落画布
+  await page.evaluate(() => {
+    const trigger = [...document.querySelectorAll("[data-node-id] button[role='combobox']")][0];
+    trigger?.click();
+  });
+  await page.waitForTimeout(600);
+  await page.evaluate(() => {
+    const options = [...document.querySelectorAll("[role='option']")];
+    const gemini = options.find((o) => /gemini/i.test(o.textContent ?? ""));
+    (gemini ?? options[options.length - 1])?.click();
+  });
+  await page.waitForTimeout(500);
+  const genClicked = await page.evaluate(() => {
+    const of = window.fetch;
+    window.__genLog = [];
+    window.fetch = async (...args) => {
+      const res = await of(...args);
+      const url = String(args[0]);
+      if (url.includes("/generation/tasks")) {
+        res.clone().text().then((t) => window.__genLog.push({ url: url.slice(0, 80), method: String(args[1]?.method ?? "GET"), status: res.status, body: t.slice(0, 800) })).catch(() => {});
+      }
+      return res;
+    };
+    const btn = [...document.querySelectorAll("button")].find((b) => b.textContent?.includes("开始生成"));
+    if (!btn) return "missing";
+    if (btn.disabled) return "disabled";
+    btn.click();
+    return true;
+  });
+  if (genClicked !== true) {
+    const dbg = await page.evaluate(() => [...document.querySelectorAll("[data-node-id]")].map((n) => n.textContent?.slice(0, 60)));
+    throw new Error(`开始生成 button ${genClicked}; nodes: ${JSON.stringify(dbg)}`);
+  }
+  const genStart = Date.now();
+  let genDone = false;
+  let genErr = null;
+  while (Date.now() - genStart < 150_000) {
+    await page.waitForTimeout(5000);
+    const state = await page.evaluate(() => {
+      const logs = window.__genLog ?? [];
+      const badPost = logs.find((l) => l.method === "POST" && l.status >= 400);
+      return {
+        imgNode: [...document.querySelectorAll("[data-node-id] img")].some((i) => (i.src || "").startsWith("http")),
+        retryBtn: [...document.querySelectorAll("[data-node-id]")].some((n) => n.textContent?.includes("重试")),
+        badPost: badPost ? { status: badPost.status, body: badPost.body } : null,
+      };
+    });
+    if (state.imgNode) { genDone = true; break; }
+    if (state.badPost) { genErr = JSON.stringify(state.badPost); break; }
+    if (state.retryBtn) { genErr = "node error state"; break; }
+  }
+  if (genErr) {
+    const errDetail = await page.evaluate(() => [...document.querySelectorAll("[data-node-id]")].map((n) => n.textContent?.slice(0, 80)));
+    throw new Error(`canvas generation errored: ${genErr}; nodes: ${JSON.stringify(errDetail)}`);
+  }
+  if (!genDone) {
+    const nodesDump = await page.evaluate(() => [...document.querySelectorAll("[data-node-id]")].map((n) => n.textContent?.slice(0, 80)));
+    const genLog = await page.evaluate(() => window.__genLog ?? []);
+    const saveText = await page.evaluate(() => document.body.innerText.match(/已保存|保存中|未保存/)?.[0]);
+    throw new Error(`canvas generation did not complete in 150s (save=${saveText}); fetchLog: ${JSON.stringify(genLog).slice(0, 800)}; nodes: ${JSON.stringify(nodesDump)}`);
+  }
+  console.log("canvas generation done in", Math.round((Date.now() - genStart) / 1000), "s");
+  await page.waitForTimeout(3000); // 等自动保存落库
+  await shot(page, "canvas-generation");
   await page.evaluate(() => {
     const host = document.querySelector("[data-node-id]")?.parentElement?.parentElement || document.body;
     const r = host.getBoundingClientRect();
