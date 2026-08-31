@@ -7,7 +7,7 @@
 
 | 层 | 文档 | 性质 | 权威范围 |
 |---|---|---|---|
-| 决策层 | **CONCLUSIONS.md** | **唯一权威** | 全部决策（D1-D7）、事实速查、里程碑现状 |
+| 决策层 | **CONCLUSIONS.md** | **唯一权威** | 全部决策（D1-D10）、事实速查、里程碑现状 |
 | 契约层 | ADMIN · UI-SPEC-CN · VENDOR-OPENMONTAGE · DATA-MODEL 增量节 | 已定稿规格 | 各自领域实现规格；与 CONCLUSIONS 冲突时以 CONCLUSIONS 为准 |
 | 过程层 | AGENT-RESEARCH · MODERATION（搁置储备） | 调研档案 | 仅作依据追溯，不含"现状" |
 | 历史层 | ARCHITECTURE · UI-SPEC · PLAN · TESTING（M1 部分） · dreamina-clone/NOTES | M1 快照 | 记录已交付状态，不描述未来 |
@@ -36,6 +36,7 @@
 | D7 | 生成后端 | 只接真模型（Ark 优先），无 mock；四新类型（音乐/配音/数字人/动作模仿）Provider 接口预留、未配置返回 503 | 08-29 | PLAN |
 | D8 | 资产库完整版 | 按 2026-08-31 CDP 侦察复刻 /ai-tool/asset：生成历史（主 tab：生成历史/主体/画布；子 tab：图片/视频/音频/文档 + 筛选/时间/排序 + 搜索 + 批量操作），**去掉「同步到剪映」**；资产卡点击开详情弹层（大图+提示词+同任务缩略图条+操作区）。筛选面板真实选项：操作=收藏；类型=超清；分辨率=1K/2K/4K/8K；比例=21:9/16:9/3:2/4:3/1:1/3:4/2:3/9:16；时间=自定义起止日期+全部/最近一周/最近一个月/最近三个月；排序=近→远(默认)/远→近。批量栏=已选择N项内容+删除/下载/发布/收藏/取消选择。API：GET /assets 扩展过滤参数（保持裸数组兼容）+ PATCH /assets/:id（收藏）+ POST /assets/batch（批量删除/收藏/发布）；assets 表加 favorited/published 列（迁移 0009）。主体 tab 空态（无主体库）；画布 tab 复用 projects 列表。详情不可用的高级编辑动作（智能超清/多角度/对口型等）原样展示、点击 toast「建设中」，可用动作真实跳转 | 08-31 | asset-recon |
 | D9 | 视频生成面板 | 按 2026-08-31 CDP 登录态侦察（RECON/auth/generate-video/）把 composer 的 video 模式重构为**原版大面板形态**：左侧参考素材叠卡（整体倾斜：单卡 -8°、首尾帧/智能编辑双卡 -8°/+8° 扇形、全能参考/超长视频的参考内容卡为**双层叠卡**背卡 +8° 右上露出；隐藏 file input 接受图/视频(mp4,mov)/音频(mp3,wav)）+ 右侧描述区（占位文案逐模式照抄原版）+ 底部工具条（类型 accent chip｜模型 chip 名称+✦（无徽标无 chevron）｜参考模式 chip｜**比例+分辨率+数量合并 chip**｜时长 chip｜价格位｜提交钮）。五个菜单/弹层全按原版：类型菜单（创作类型头部+原版 SVG 图标+选中 accent✓）、参考模式菜单（原版图标+Beta 徽标+选中高亮✓）、模型菜单（「选择模型：X」头部+图标块+✦+New 徽标+描述+✓；**不渲染 "by seed" 来源后缀**——公共 API 有意不暴露 provider）、比例弹层（选择比例 6 格+选择分辨率 3 格✦+选择生成数量 4 格）、时长组件=**滑条弹层**（非菜单；400×96 弹层 bg rgb(28,30,34)/radius 16/p-4，标题「选择视频生成时长」12px/500，滑条轨道 254×12 rail rgba(204,221,255,0.08)+fill rgba(224,245,255,0.2)+白色滑块 20×16，下方刻度按钮普通 0/5/10/15、超长 0/30/…/180 可点击，右侧数值输入框 90×36 bg rgba(204,221,255,0.08)/radius 8 带 s 后缀、placeholder 显示范围 4-15/30-180；滑条域 0→max、低于下限吸附 min）。模式切换自动匹配支持该模式的模型 + toast「已为您匹配至最佳模型」（智能多帧→1.0 Fast 档/智能编辑·超长·首尾帧→2.5 档；支持矩阵见迁移 0010 `reference_modes`）。上传/引用管线未接入前点击上传 toast 如实提示；**价格位保留美元计价**（D2 优先于原版积分展示，智能多帧空态不仿原版显 0s/0 价——后端按时长计费，显示必须等于实扣）；菜单图标用抓包提取的原版 SVG（禁 emoji 近似）；video 数量 N 按 N 条计费（pricing per_second × count，TDD 见 cn-creation.spec） | 08-31 | video-panel-recon |
+| D10 | 用户洞察 | **admin 即超级管理员**（不另设 super_admin 角色）；新增只读 360° 用户洞察页 `/admin/user-insights`（主从布局：左用户列表+搜索，右身份/余额/用量统计/最近生成/最近账变/最近 Agent 会话）；入口=主站侧栏**退出按钮上方**「用户」钮（role=admin 可见；原「管理」入口位置不变）；API：`GET /api/admin/insights/users`（列表+RPC 聚合+auth.users 邮箱）、`GET /api/admin/insights/users/:id`（详情），复用 AdminGuard（非 admin 404）；聚合走 RPC `admin_user_stats(p_user)`（security definer，revoke anon/authenticated，仅 service_role 可调）；余额调整不在此页（留在 /admin/users） | 08-31 | 用户指令 |
 
 ## 3. 关键事实速查（侦察实证，实现时直接引用）
 
@@ -94,6 +95,7 @@ Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
 | M2 | Admin 核心（AdminGuard/models 管理 API+审计+美分账本 RPC/初始赠金 $5）| ✅ 本轮 |
 | M3 | **即梦 CN 创作面板**：7 类型工具条 + 图片模式（9 模型/分辨率矩阵/数量）+ 视频模式（11 模型/参考模式/时长）+ zh-Hans + 实时计价 | ✅ 本轮 |
 | M2.5 | Admin 二级页完整版：/admin layout + 模型(改价/启停/毛利) + 用量(按日/按模型/净收入) + 用户(余额调整) + 审计 + 侧栏「管理」入口(admin 可见) | ✅ 974e486 |
+| M2.6 | 用户洞察页（D10）：/admin/user-insights 360° 视图 + 侧栏「用户」入口 + insights API + admin_user_stats RPC | ✅ 本轮 |
 | M4 | Agent v1：技能模板执行器（agent_sessions/steps + 4 官方技能 plan_template + advance 执行器：预算预估/步骤计费/失败重试/按完成结算 + UI 步骤卡） | ✅ 974e486 |
 | M5 | Agent v2：自由 loop（OpenAI 兼容 tool calling，LLM_API_* 可配 GLM/Ark/OpenAI）+ SSE 流式事件 + 无 key 503 + UI 入口 | ✅ 974e486 |
 | M6+ | 审核管线（储备）、产品化剥离（AGPL）、兑换码 | 储备 |

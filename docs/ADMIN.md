@@ -11,7 +11,7 @@
 - 路由：`/admin`（Next.js 同 app 内，独立 layout：左侧二级导航，不复用主站 Composer）
 - `profiles` 加 `role text not null default 'user'`；首个 admin 用 SQL 手工提（`update profiles set role='admin' where id=...`），不做注册即管理员
 
-## 2. 信息架构（8 个二级页）
+## 2. 信息架构（9 个二级页）
 
 | 页面 | 路径 | 职责 |
 |---|---|---|
@@ -23,6 +23,7 @@
 | 内容审核 | /admin/moderation | 待复审队列（见 MODERATION.md）、通过/驳回/封禁 |
 | 用户管理 | /admin/users | 搜索、余额调整（走 ledger）、封禁、提权（双向，留审计） |
 | 审计日志 | /admin/audit | admin_audit_log 全量可查（谁在何时改了什么，含 diff 摘要） |
+| 用户洞察 | /admin/user-insights | 只读 360° 视图（D10）：身份/邮箱/余额/用量统计（RPC `admin_user_stats`）+ 最近生成/账变/Agent 会话；入口=主站侧栏退出按钮上方「用户」钮（admin 可见）；余额调整仍在「用户管理」页 |
 
 ## 3. 数据模型（新表）
 
