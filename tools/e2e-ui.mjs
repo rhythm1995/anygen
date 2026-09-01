@@ -169,6 +169,17 @@ try {
   const loadMore = await page.evaluate(() => document.body.innerText.match(/已展示 (\d+)/)?.[1] ?? "0");
   if (Number(loadMore) <= 24) throw new Error(`prompts infinite scroll did not load more (visible=${loadMore})`);
   console.log("prompts infinite scroll ok, visible:", loadMore);
+  // 全屏预览（复用资产详情骨架）：点卡片 → role=dialog 全屏 + 翻页器
+  await page.evaluate(() => [...document.querySelectorAll("main button")].find((b) => b.querySelector("img"))?.click());
+  await page.waitForTimeout(1200);
+  const previewDbg = await page.evaluate(() => {
+    const overlay = document.querySelector('[role="dialog"][aria-label="提示词详情"]');
+    const r = overlay?.getBoundingClientRect();
+    return { fullscreen: Boolean(overlay && r && r.width === window.innerWidth && r.height === window.innerHeight), pager: overlay?.textContent?.includes("/") ?? false, closeBtn: Boolean(overlay?.parentElement?.querySelector('button[aria-label="关闭"]')) };
+  });
+  if (!previewDbg.fullscreen || !previewDbg.pager) throw new Error(`prompts fullscreen preview broken: ${JSON.stringify(previewDbg)}`);
+  await page.evaluate(() => document.querySelector('button[aria-label="关闭"]')?.click());
+  await page.waitForTimeout(500);
   await shot(page, "prompts-page");
 
   // 6. 画布入口

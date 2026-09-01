@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Copy, Lightbulb, Search, WandSparkles } from "lucide-react";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FullscreenPreview } from "@/components/shared/fullscreen-preview";
 
 type Prompt = {
   id: string;
@@ -40,7 +40,7 @@ export default function PromptsPage() {
   const [keyword, setKeyword] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selected, setSelected] = useState<Prompt | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
 
   const library = useQuery({
@@ -85,6 +85,8 @@ export default function PromptsPage() {
   }, [library.data, keyword, selectedCategory, selectedTags]);
 
   const visible = filtered.slice(0, page * PAGE_SIZE);
+  const selectedIndex = filtered.findIndex((item) => item.id === selectedId);
+  const selected = selectedIndex >= 0 ? filtered[selectedIndex] : null;
   const copy = (text: string) => {
     void navigator.clipboard.writeText(text).then(() => toast.success("提示词已复制"));
   };
@@ -179,7 +181,7 @@ export default function PromptsPage() {
             <div className="mx-auto grid max-w-7xl gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {visible.map((item) => (
                 <div key={item.id} className="overflow-hidden rounded-2xl border border-dm-border bg-dm-surface transition hover:border-dm-text-4">
-                  <button type="button" className="block w-full text-left" onClick={() => setSelected(item)}>
+                  <button type="button" className="block w-full text-left" onClick={() => setSelectedId(item.id)}>
                     {item.coverUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={item.coverUrl} alt={item.title} loading="lazy" className="aspect-[4/3] w-full object-cover" />
@@ -189,7 +191,7 @@ export default function PromptsPage() {
                       </div>
                     )}
                   </button>
-                  <button type="button" className="block w-full text-left" onClick={() => setSelected(item)}>
+                  <button type="button" className="block w-full text-left" onClick={() => setSelectedId(item.id)}>
                     <div className="p-4">
                       <h2 className="line-clamp-1 text-sm font-semibold text-dm-text">{item.title}</h2>
                       <p className="mt-2 line-clamp-3 text-xs leading-5 text-dm-text-3">{item.prompt}</p>
@@ -225,49 +227,57 @@ export default function PromptsPage() {
         ) : null}
       </main>
 
-      <Dialog open={Boolean(selected)} onOpenChange={(next) => (next ? undefined : setSelected(null))}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[860px]">
-          <DialogHeader>
-            <DialogTitle>{selected?.title}</DialogTitle>
-          </DialogHeader>
-          {selected ? (
-            <div className="grid gap-5 md:grid-cols-[300px_minmax(0,1fr)]">
-              <div className="space-y-3">
-                {selected.coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={selected.coverUrl} alt={selected.title} className="aspect-[4/3] w-full rounded-lg object-cover" />
-                ) : null}
-                {selected.githubUrl ? (
-                  <a href={selected.githubUrl} target="_blank" rel="noreferrer" className="block truncate text-xs text-dm-accent underline">
-                    来源：{selected.githubUrl}
-                  </a>
-                ) : null}
-              </div>
-              <div className="min-w-0">
-                <div className="flex flex-wrap gap-1.5">
-                  {(selected.tags ?? []).map((tag) => (
-                    <span key={tag} className="rounded-full bg-dm-surface-2 px-2 py-0.5 text-[11px] text-dm-text-2">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-dm-text-2">{selected.prompt}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[#2f80ff] px-4 text-sm font-medium text-white transition hover:opacity-90" onClick={() => copy(selected.prompt)}>
-                    <Copy className="size-4" /> 复制提示词
-                  </button>
-                  <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dm-border px-4 text-sm transition hover:bg-dm-surface-2" onClick={() => useInCanvas(selected)}>
-                    <WandSparkles className="size-4" /> 在画布中使用
-                  </button>
-                  <button type="button" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-dm-border px-4 text-sm transition hover:bg-dm-surface-2" onClick={() => useInGenerate(selected)}>
-                    去生成页使用
-                  </button>
-                </div>
-              </div>
+      <FullscreenPreview
+        open={Boolean(selected)}
+        onClose={() => setSelectedId(null)}
+        index={selectedIndex}
+        total={filtered.length}
+        onStep={(delta) => {
+          if (!filtered.length) return;
+          const next = (selectedIndex + delta + filtered.length) % filtered.length;
+          setSelectedId(filtered[next]!.id);
+        }}
+        ariaLabel="提示词详情"
+        media={
+          selected?.coverUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={selected.coverUrl} alt={selected.title} className="max-h-full max-w-full rounded-lg object-contain" />
+          ) : (
+            <div className="flex h-40 items-center text-sm text-dm-text-3">无预览图</div>
+          )
+        }
+      >
+        {selected ? (
+          <>
+            <h2 className="text-lg font-semibold leading-7 text-dm-text">{selected.title}</h2>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {(selected.tags ?? []).map((tag) => (
+                <span key={tag} className="rounded-full bg-dm-surface-2 px-2 py-0.5 text-[11px] text-dm-text-2">
+                  {tag}
+                </span>
+              ))}
             </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+            <div className="mt-5 text-xs font-medium text-dm-text-3">提示词</div>
+            <pre className="thin-scrollbar mt-2 max-h-[38vh] overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-dm-surface p-4 text-sm leading-6 text-dm-text-2">{selected.prompt}</pre>
+            {selected.githubUrl ? (
+              <a href={selected.githubUrl} target="_blank" rel="noreferrer" className="mt-4 block truncate text-xs text-dm-accent underline">
+                来源：{selected.githubUrl}
+              </a>
+            ) : null}
+            <div className="mt-6 flex flex-col gap-2">
+              <button type="button" className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#2f80ff] text-sm font-medium text-white transition hover:opacity-90" onClick={() => copy(selected.prompt)}>
+                <Copy className="size-4" /> 复制提示词
+              </button>
+              <button type="button" className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dm-border text-sm transition hover:bg-dm-surface" onClick={() => useInCanvas(selected)}>
+                <WandSparkles className="size-4" /> 在画布中使用
+              </button>
+              <button type="button" className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-dm-border text-sm transition hover:bg-dm-surface" onClick={() => useInGenerate(selected)}>
+                去生成页使用
+              </button>
+            </div>
+          </>
+        ) : null}
+      </FullscreenPreview>
     </div>
   );
 }
