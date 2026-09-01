@@ -245,8 +245,8 @@ chip：`🔧 技能`。点击弹层（宽 ~640px）：
 - 首尾帧槽位分别写入 `first_frame_url` / `last_frame_url`
 
 ### 8.2 四类细面板
-- 音乐：时长滑条（已有）+ 提交走 music 引擎
-- 配音：预置音色 + 「克隆新声音」上传参考音频（`params.reference_audio`）；无克隆 key → 503 文案
+- 音乐：时长滑条（已有）+ 提交走 `apps/api` ElevenLabs Music HTTP
+- 配音：预置音色 + 「克隆新声音」上传参考音频（`params.reference_audio`）；无克隆 key → 503 文案；实现在 `apps/api`（豆包 TTS / ElevenLabs clone），不进 vendor
 - 数字人：快速模式；上传形象；双段「说话内容 / 动作描述」
 - 动作模仿：模型下拉（大师/生动/快速）+ 风格 + 参考视频上传
 

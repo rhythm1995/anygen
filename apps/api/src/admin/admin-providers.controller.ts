@@ -12,6 +12,7 @@ import { decryptSecret, encryptSecret, secretHint } from "./secret-crypto";
 
 const providerSchema = z.object({
   name: z.string().min(1).max(60),
+  // openmontage-bridge 是历史协议名（曾 spawn Python）。D6 后仅分类标签，探测走 HTTP，不进 vendor。
   protocol: z.enum(["ark", "openai-compat", "openmontage-bridge"]),
   base_url: z.string().max(300).optional().default(""),
   enabled: z.boolean().optional().default(true),
@@ -171,12 +172,29 @@ export class AdminProvidersController {
     } catch {
       throw new HttpException("decrypt failed", 500);
     }
-    if (provider.protocol === "openmontage-bridge") {
-      const { runOpenMontageBridge } = await import("../generation/openmontage-bridge");
-      const out = await runOpenMontageBridge({ tool: "seedance_ark", action: "get_info" });
-      return { ok: out.ok, detail: out.ok ? "bridge reachable" : out.error };
-    }
     const base = String(provider.base_url || "").replace(/\/$/, "");
+    const name = String(provider.name || "");
+    if (provider.protocol === "openmontage-bridge") {
+      if (name === "elevenlabs" || base.includes("elevenlabs")) {
+        const url = `${base || "https://api.elevenlabs.io"}/v1/user`;
+        try {
+          const res = await fetch(url, { headers: { "xi-api-key": secret } });
+          return { ok: res.ok, status: res.status, detail: res.ok ? "reachable" : `HTTP ${res.status}` };
+        } catch (e) {
+          return { ok: false, detail: (e as Error).message };
+        }
+      }
+      if (name === "doubao-speech" || base.includes("openspeech") || base.includes("bytedance")) {
+        if (!base) return { ok: false, detail: "no base_url" };
+        try {
+          const res = await fetch(base, { method: "GET" });
+          return { ok: res.status < 500, status: res.status, detail: `HTTP ${res.status}` };
+        } catch (e) {
+          return { ok: false, detail: (e as Error).message };
+        }
+      }
+      return { ok: false, detail: "python bridge retired; use elevenlabs or doubao-speech" };
+    }
     if (!base) return { ok: false, detail: "no base_url" };
     try {
       const res = await fetch(`${base}/models`, { headers: { authorization: `Bearer ${secret}` } });

@@ -16,7 +16,7 @@
 1. 决策变更：**先改本文（含日期）**，再动规格文档，最后才写代码
 2. 每份文档首行必须携带状态横幅（已定稿/待实施/已搁置/历史快照），状态变化只改横幅
 3. 历史层文档**不更新内容**，只允许加横幅指向权威文档
-4. 端口/命令/价格等易变事实只允许出现在一个权威处：端口→AGENTS.md，价格→vendor 数据+CONCLUSIONS §3.2
+4. 端口/命令/价格等易变事实只允许出现在一个权威处：端口→AGENTS.md，价格→admin models seed + CONCLUSIONS §3.2（vendor 仅对照源）
 5. **纯参考不入库（2026-09-01）**：侦察证据库本地为 `.dreamina-clone/`（原 `dreamina-clone/`）；UI 验证截图本地为 `docs/.verify/`（原 `docs/verify/`）。均 `.gitignore`，不进 git / 不同步 GitHub。历史文档里的旧路径视为档案，以本文与 AGENTS.md 为准。
 
 ## 1. 项目定位
@@ -33,13 +33,13 @@
 | D3 | 审核 | **不做**（设计储备保留于 MODERATION.md，含 LLM 自研三层漏斗方案） | 08-30 | MODERATION 横幅 |
 | D4 | 模型管理 | admin 后台统一配置供应商/Key(pgcrypto 加密)/模型/单价，**面板由 models 表驱动**（admin 配什么面板显示什么） | 08-30 | ADMIN |
 | D5 | Agent 路线 | **技能模板执行器 v1 + 自由 agent v2**；引擎=纯 B（Vercel AI SDK loop + 自建 agent_steps 状态机），不用 eve/Temporal/pi | 08-30 | AGENT-RESEARCH §C/D |
-| D6 | OpenMontage | **vendor 为上游 core 模块**（`vendor/openmontage`，同步制），定制走 `vendor-overlay`，集成只走 JSON 桥；AGPL 内部使用合法，产品化前必须剥离 | 08-30 | VENDOR-OPENMONTAGE |
-| D7 | 生成后端 | 只接真模型（Ark 优先），无 mock；四新类型（音乐/配音/数字人/动作模仿）**已接通真引擎（D13）**：music→OpenMontage `music_gen`（ElevenLabs）；dubbing→`doubao_tts`（火山语音）；digital_human / motion_mimic→Ark Seedance 参考图/参考视频。未配对应 key 仍 503，禁 mock | 08-29 / 09-01 修订 | PLAN + D13 |
+| D6 | Vendor 边界 | **vendor 只作只读蓝本，运行时零进入**（2026-09-01 用户修订）。`vendor/openmontage`、`vendor/infinite-canvas` 同步制对照源，禁止手改、禁止 import/spawn。音乐/配音/克隆在 `apps/api` 用 TS HTTP 直连 ElevenLabs / 豆包语音（契约对照 vendor 工具，不执行其代码）；画布已在 `apps/web` 改写（D12）。`vendor-overlay` 仅离线 seed/对照，不在请求路径。AGPL 内部使用合法，产品化前必须剥离 | 08-30 / **09-01 修订** | VENDOR-OPENMONTAGE |
+| D7 | 生成后端 | 只接真模型（Ark 优先），无 mock；四新类型（音乐/配音/数字人/动作模仿）**已接通真引擎（D13）**：music→`apps/api` ElevenLabs Music HTTP；dubbing→`apps/api` 豆包 TTS HTTP（有 `reference_audio` 时改 ElevenLabs clone+TTS）；digital_human / motion_mimic→Ark Seedance 参考图/参考视频。未配对应 key 仍 503，禁 mock | 08-29 / 09-01 修订 | PLAN + D13 |
 | D8 | 资产库完整版 | 按 2026-08-31 CDP 侦察复刻 /ai-tool/asset：生成历史（主 tab：生成历史/主体/画布；子 tab：图片/视频/音频/文档 + 筛选/时间/排序 + 搜索 + 批量操作），**去掉「同步到剪映」**；资产卡点击开详情弹层（大图+提示词+同任务缩略图条+操作区）。筛选面板真实选项：操作=收藏；类型=超清；分辨率=1K/2K/4K/8K；比例=21:9/16:9/3:2/4:3/1:1/3:4/2:3/9:16；时间=自定义起止日期+全部/最近一周/最近一个月/最近三个月；排序=近→远(默认)/远→近。批量栏=已选择N项内容+删除/下载/发布/收藏/取消选择。API：GET /assets 扩展过滤参数（保持裸数组兼容）+ PATCH /assets/:id（收藏）+ POST /assets/batch（批量删除/收藏/发布）；assets 表加 favorited/published 列（迁移 0009）。主体 tab 空态（无主体库）；画布 tab 复用 projects 列表。详情不可用的高级编辑动作（智能超清/多角度/对口型等）原样展示、点击 toast「建设中」，可用动作真实跳转 | 08-31 | asset-recon |
 | D9 | 视频生成面板 | 按 2026-08-31 CDP 登录态侦察（RECON/auth/generate-video/）把 composer 的 video 模式重构为**原版大面板形态**：左侧参考素材叠卡（整体倾斜：单卡 -8°、首尾帧/智能编辑双卡 -8°/+8° 扇形、全能参考/超长视频的参考内容卡为**双层叠卡**背卡 +8° 右上露出；隐藏 file input 接受图/视频(mp4,mov)/音频(mp3,wav)）+ 右侧描述区（占位文案逐模式照抄原版）+ 底部工具条（类型 accent chip｜模型 chip 名称+✦（无徽标无 chevron）｜参考模式 chip｜**比例+分辨率+数量合并 chip**｜时长 chip｜价格位｜提交钮）。五个菜单/弹层全按原版：类型菜单（创作类型头部+原版 SVG 图标+选中 accent✓）、参考模式菜单（原版图标+Beta 徽标+选中高亮✓）、模型菜单（「选择模型：X」头部+图标块+✦+New 徽标+描述+✓；**不渲染 "by seed" 来源后缀**——公共 API 有意不暴露 provider）、比例弹层（选择比例 6 格+选择分辨率 3 格✦+选择生成数量 4 格）、时长组件=**滑条弹层**（非菜单；400×96 弹层 bg rgb(28,30,34)/radius 16/p-4，标题「选择视频生成时长」12px/500，滑条轨道 254×12 rail rgba(204,221,255,0.08)+fill rgba(224,245,255,0.2)+白色滑块 20×16，下方刻度按钮普通 0/5/10/15、超长 0/30/…/180 可点击，右侧数值输入框 90×36 bg rgba(204,221,255,0.08)/radius 8 带 s 后缀、placeholder 显示范围 4-15/30-180；滑条域 0→max、低于下限吸附 min）。模式切换自动匹配支持该模式的模型 + toast「已为您匹配至最佳模型」（智能多帧→1.0 Fast 档/智能编辑·超长·首尾帧→2.5 档；支持矩阵见迁移 0010 `reference_modes`）。上传/引用管线未接入前点击上传 toast 如实提示；**价格位保留美元计价**（D2 优先于原版积分展示，智能多帧空态不仿原版显 0s/0 价——后端按时长计费，显示必须等于实扣）；菜单图标用抓包提取的原版 SVG（禁 emoji 近似）；video 数量 N 按 N 条计费（pricing per_second × count，TDD 见 cn-creation.spec） | 08-31 | video-panel-recon |
 | D10 | 用户洞察 | **admin 即超级管理员**（不另设 super_admin 角色）；新增只读 360° 用户洞察页 `/admin/user-insights`（主从布局：左用户列表+搜索，右身份/余额/用量统计/最近生成/最近账变/最近 Agent 会话）；入口=主站侧栏**退出按钮上方**「用户」钮（role=admin 可见；原「管理」入口位置不变）；API：`GET /api/admin/insights/users`（列表+RPC 聚合+auth.users 邮箱）、`GET /api/admin/insights/users/:id`（详情），复用 AdminGuard（非 admin 404）；聚合走 RPC `admin_user_stats(p_user)`（security definer，revoke anon/authenticated，仅 service_role 可调）；余额调整不在此页（留在 /admin/users） | 08-31 | 用户指令 |
 | D11 | 资产标签 + 能力卡联动 | ①资产自定义标签：assets 加 `tags text[] default '{}'`（GIN 索引，0011）；PATCH /assets/:id 可改 tags；GET /assets?tag=x 过滤（contains 任一命中）；GET /assets/tags 返回用户全量去重标签；详情弹层可增删标签，筛选面板新增「标签」分组（多选，OR 语义）。②首页能力卡只留 AI 视频/AI 图片（黏土渲染、智能编辑隐藏），点击走 pending-prefill 通道跳生成页并预选对应创作类型。③比例弹层按原版实测收敛尺寸（RECON 30-ratio-styles.json：比例格 48×56 gap2 无边框、选中亮底 pill；分辨率格高 36、数量格高 34；弹层宽 330） | 08-31 | 用户指令 |
-| D13 | 剩余缺口收口 | **一次做完** M2/M3/M7 留下的产品缺口（用户 2026-09-01）：①四类真引擎见 D7 修订；②D9 素材上传/引用管线接通（既有 `/assets/presign` 直传），视频第六参考模式 **视频续写 `extend`**；③Agent「生成偏好」写入 `profiles.preferences`（PATCH /me/preferences）；自定义技能 CRUD（官方只读，「用 Agent 创建技能」走 LLM 起草 plan_template，无 key 时改手动表单）；④Admin 供应商 `/admin/providers` + Key `/admin/providers/:id/keys` + 定价 `/admin/pricing`（AES-256-GCM，`ENCRYPTION_KEY`；明文不回传；生成密钥 **env 回退**）。审核页仍 M6+；⑤NestJS spawn `vendor-overlay/bridge/run.py`（仅音乐/配音走桥；图/视频仍 Ark/OpenRouter，参考素材按 Ark 官方 content 角色挂载，不在 TS 重写 vendor 工具）；⑥画布会话拆表见 D12⑤ v2；⑦M7 stub 拆除：导演台按钮创建节点并打开覆盖层；助手「我的素材」打开资产选择器；画布 `generate_audio` 走 music/dubbing 计费管线；⑧资产详情高级动作真实跳转（用作参考图=`input_images` 预填；智能超清/超清=4K 图生图；智能改图/细节修复/局部重绘/扩图/消除笔=带参考图进生成页或画布蒙版；多角度=画布项目预填；对口型=数字人预填）。主体库仍空态（D8） | 09-01 | 用户指令 |
+| D13 | 剩余缺口收口 | **一次做完** M2/M3/M7 留下的产品缺口（用户 2026-09-01）：①四类真引擎见 D7 修订；②D9 素材上传/引用管线接通（既有 `/assets/presign` 直传），视频第六参考模式 **视频续写 `extend`**；③Agent「生成偏好」写入 `profiles.preferences`（PATCH /me/preferences）；自定义技能 CRUD（官方只读，「用 Agent 创建技能」走 LLM 起草 plan_template，无 key 时改手动表单）；④Admin 供应商 `/admin/providers` + Key `/admin/providers/:id/keys` + 定价 `/admin/pricing`（AES-256-GCM，`ENCRYPTION_KEY`；明文不回传；生成密钥 **env 回退**）。审核页仍 M6+；⑤音乐/配音在 `apps/api` TS HTTP 适配器直连上游（对照 vendor 工具契约；**不 spawn Python、不 import vendor**；图/视频仍 Ark/OpenRouter，参考素材按 Ark 官方 content 角色挂载）；⑥画布会话拆表见 D12⑤ v2；⑦M7 stub 拆除：导演台按钮创建节点并打开覆盖层；助手「我的素材」打开资产选择器；画布 `generate_audio` 走 music/dubbing 计费管线；⑧资产详情高级动作真实跳转（用作参考图=`input_images` 预填；智能超清/超清=4K 图生图；智能改图/细节修复/局部重绘/扩图/消除笔=带参考图进生成页或画布蒙版；多角度=画布项目预填；对口型=数字人预填）。主体库仍空态（D8） | 09-01 | 用户指令 |
 | D14 | M8 余量收口 | 用户 2026-09-01：缺口里**能做的全做**，有依赖的落档 §7。①图/视频生成 **请求时** 读 admin `api_keys`（env 回退；`withCredentials`，禁启动时钉死 env）。②资产详情 ⋯ 菜单=复制提示词/复制链接/发布/删除（不再 toast 建设中）。③配音克隆：有参考音频时走 overlay `elevenlabs_voice_clone` → `elevenlabs_tts`（需 `ELEVENLABS_API_KEY`）；无参考仍走 `doubao_tts`。④智能编辑「高级编辑」=本地视频矩形标注，区域写入 prompt（非原站框选编辑器）。依赖项见 §7 | 09-01 | 用户指令 |
 | D12 | 无限画布 v2 | **vendor 化 tigerowo/infinite-canvas（AGPL-3.0，同步制 `tools/sync-infinite-canvas.sh`，产品化前必须剥离；D6 同款纪律）对照重写**：①范围=全量（画布引擎/生成闭环/画布 Agent/全景图/导演台/生图工作台/创作工作流/摄像机参数）；②组件 **shadcn/ui 化改写**（不引 antd，映射表见 CANVAS-RESEARCH 附录A，同步上游按表重放）；③移植物文件头标注来源+AGPL+剥离标记；④**画布内一切生成走既有 POST /generation/tasks 计费管线**（零新扣费点，tryDebit/refund 幂等复用；无 ARK key 时节点 error 态显示 503 明确文案，禁 mock）；⑤画布 Agent LLM 走 `POST /api/agent/canvas/turn`（服务端持 LLM_API_KEY）；会话持久化 **v2（2026-09-01 D13）=agent_sessions.project_id 拆表（kind=canvas）与 graph.chatSessions 双写**（tigerowo 同构保留内嵌，insights/列表走拆表）；⑥文档模型对齐 tigerowo CanvasProject；⑦模型清单 admin models 表驱动（D4）；⑧推测项按 tigerowo 设计并在代码标注「推测」；⑨xyflow 退役。⑩提示词中心 /ai-tool/prompts。侦察证据 RECON/auth/canvas-editor/；调研档案 docs/CANVAS-RESEARCH.md | 09-01 | canvas-recon + 用户指令 |
 
@@ -85,10 +85,9 @@ Seedance Ark（USD，5 秒）：standard 480p $0.32 / 720p **$0.69** / 1080p $1.
 Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
    │ Supabase Auth/JWT                      ├─ ledger(美分,幂等) ── admin 定价
    │ S3 预签名直传                           ├─ agent_sessions/steps ── 技能 plan_template
-   ▼                                        └─ JSON 桥 ── vendor/openmontage(121工具)
-用户/浏览器                                        │ 同步制(用户说同步→sync脚本)
-                                                  ▼
-                                          上游 OpenMontage (AGPL, 内部用)
+   ▼                                        └─ HTTP 适配器（均在 apps/api）
+用户/浏览器                                      Ark / OpenRouter / ElevenLabs / 豆包语音
+                                          vendor/* 只读蓝本，不在请求路径
 ```
 
 ## 5. 里程碑（当前有效）
@@ -107,6 +106,7 @@ Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
 | M7 | **画布 v2（D12）全量交付**：P0 落档/vendor → A 引擎替换（xyflow 退役）→ B 生成闭环+节点编辑五弹窗+参考图图生图/蒙版重绘（input_images 契约+OpenRouter 多模态）→ C 画布 Agent 对话（canvas/turn+26 动作执行器+会话内嵌）→ D 摄像机/全景图（球形+定制生成+2:1 识别）/3D 导演台（iframe+postMessage，截图视频回传）/生图工作台三 tab（生成记录+提示词库远程源+创作工作流公开/个人模板）→ E 即梦文案对齐 | ✅ 2026-09-01（e87d4b3→11512ef，12 commits；门 6/6 + api e2e 45 + UI e2e 全流程绿） |
 | M8 | **D13 缺口收口**：四类真引擎 + 素材上传/引用 + 视频续写 + Agent 偏好/自定义技能 + Admin 供应商/Key/定价 + OpenMontage 桥接入 + 画布会话拆表双写 + M7 stub 拆除 + 资产详情动作接通 | ✅ 2026-09-01（门 6/6 + api e2e 48） |
 | M8.1 | **D14 余量**：admin key 运行时注入 Ark/OpenRouter + 资产 ⋯ 菜单 + 配音 ElevenLabs 克隆 + 智能编辑本地标注 | ✅ 2026-09-01（门 6/6 + api e2e 49） |
+| M8.2 | **D6 修订**：运行时零 vendor。音乐/配音/克隆从 Python 桥迁入 `apps/api` TS HTTP；vendor 仅对照 | ✅ 2026-09-01（api 单元 43 + typecheck 绿；Nest 不再 spawn Python） |
 
 > M2.5/M4/M5 交付（2026-08-30，974e486）：turbo 6/6 绿（api 28 单元 + e2e 21 + shared 26 = 75 测试）。UI 实测：资产库页（六类筛选/上传/删除，资产↔画布入口分离）+ admin 四页（models/usage/users/audit）+ 资产/画布按钮重叠 bug 修复（各归各位）。
 
@@ -114,17 +114,17 @@ Next.js (zh-Hans 三页+7类型面板+admin) ←models 表驱动→ NestJS API
 
 | 风险 | 缓解 |
 |---|---|
-| AGPL 产品化传染 | 集成面收敛在 bridge；剥离预案见 VENDOR-OPENMONTAGE §5 |
+| AGPL 产品化传染 | 运行时不执行 vendor 代码（D6 修订）；画布已改写进 apps/web；剥离预案见 VENDOR-OPENMONTAGE §5 |
 | 即梦 cookie 失效影响后续侦察 | 已有资产足够 M2-M4；需要时再要新 curl |
-| 上游 OpenMontage 快速变化破坏桥 | 同步脚本含冒烟测试；接口消费点集中在 bridge/seed |
+| 上游 OpenMontage 快速变化 | 运行时不依赖其代码；同步仅刷新对照与 seed 数据 |
 | seed 图片版权 | 仅内部学习；商用前替换（NOTES 清单） |
 
 ## 7. 有依赖、本期不做（D14 登记）
 
 | 项 | 依赖 / 原因 | 现状 |
 |---|---|---|
-| 即梦 SeedMusic 官方音乐 | 无公开 Ark SeedMusic 合同/端点 | 音乐走 OpenMontage `music_gen`（ElevenLabs）；无 `ELEVENLABS_API_KEY` → 503 |
-| 豆包 TTS 原声克隆 | vendor `doubao_tts.supports.voice_cloning=false` | 无参考音频仍走豆包；有参考音频改 ElevenLabs Instant Voice Clone（需 `ELEVENLABS_API_KEY`，否则 503） |
+| 即梦 SeedMusic 官方音乐 | 无公开 Ark SeedMusic 合同/端点 | 音乐走 `apps/api` ElevenLabs Music HTTP；无 `ELEVENLABS_API_KEY` → 503 |
+| 豆包 TTS 原声克隆 | 豆包语音 API 不支持克隆（对照 vendor 工具 `supports.voice_cloning=false`） | 无参考音频仍走豆包；有参考音频改 ElevenLabs Instant Voice Clone（需 `ELEVENLABS_API_KEY`，否则 503） |
 | 即梦原版智能编辑框选器 | 无原站编辑器源码/标注 API | 本地矩形标注写入 prompt，提交仍走 Seedance 参考视频 |
 | 独立数字人 / 动作模仿供应商 | SadTalker 需本地 GPU；Kling avatar 需额外 key | 复用 Ark Seedance 参考图/参考视频 |
 | 主体库 | D8 明确空态 | 空态文案 |

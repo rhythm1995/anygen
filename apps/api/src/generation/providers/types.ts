@@ -2,7 +2,7 @@ import type { GenerationType } from "@dreamina/shared";
 
 export const GENERATION_PROVIDER = Symbol("GENERATION_PROVIDER");
 export const OPENROUTER_PROVIDER = Symbol("OPENROUTER_PROVIDER");
-export const OPENMONTAGE_PROVIDER = Symbol("OPENMONTAGE_PROVIDER");
+export const AUDIO_PROVIDER = Symbol("AUDIO_PROVIDER");
 
 export interface ProviderSubmitInput {
   type: GenerationType;

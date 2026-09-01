@@ -14,9 +14,9 @@ apps/web      Next.js 16 + React 19 + Tailwind v4 + shadcn/ui（全站 zh-Hans�
 apps/api      NestJS 11，全局前缀 /api，Zod 校验管道
 packages/shared  zod 契约（web/api 共用；原站真实 fixtures 驱动 TDD）
 supabase/     迁移 + seed（本地栈 `supabase start`）
-vendor/openmontage  上游 core 模块（AGPL，只读，同步制）
-vendor/infinite-canvas  上游无限画布全栈（tigerowo，AGPL，只读，同步制——移植手册 docs/CANVAS-RESEARCH.md）
-vendor-overlay/     我们的定制层（bridge/patches/seed）——vendor 的任何文件禁止手改
+vendor/openmontage  上游对照蓝本（AGPL，只读，同步制；**运行时禁止 import/spawn**）
+vendor/infinite-canvas  上游无限画布对照（tigerowo，AGPL，只读；已改写进 apps/web）
+vendor-overlay/     离线 seed/对照（历史 bridge 不在请求路径）——vendor 的任何文件禁止手改
 .dreamina-clone/    侦察证据库（本地隐藏、不入库；RECON/ 快照与 fixtures，只读）
 docs/         设计文档；CONCLUSIONS.md 是权威决策表
 docs/.verify/  UI e2e 截图（本地隐藏、不入库）
@@ -45,7 +45,7 @@ node tools/e2e-ui.mjs     # 真实浏览器 UI 全流程（注册→feed→生�
 1. **文档先行**：动代码前确认 docs/CONCLUSIONS.md 对应决策存在且最新；新决策先落 CONCLUSIONS.md 再实现。
 1.5 **文档分层**：改文档前先看 CONCLUSIONS.md §0 文档地图——决策只进 CONCLUSIONS，历史层文档只加横幅不改内容；每份文档首行必须带状态横幅。
 2. **TDD 核心功能**：计费/状态机/权限/契约类改动先写失败测试（现有 42 个测试的模式照抄：fixtures round-trip → 红 → 绿）。
-3. **不动 vendor/**：定制一律进 `vendor-overlay/`；对上游的调用只走 `vendor-overlay/bridge/run.py`（JSON stdin/stdout）。
+3. **运行时零 vendor**：禁止 `apps/*` import/spawn `vendor/` 或 `vendor-overlay/bridge`。对照实现写在 `apps/`。vendor 文件禁止手改；离线 seed 才进 `vendor-overlay/`。
 4. **UI 还原纪律**：颜色/字体/尺寸以 `.dreamina-clone/RECON/` 的计算值为准（token 已在 apps/web globals.css），禁止目测；面板数据一律来自 admin models 表，禁止前端硬编码模型清单。
 5. **计费铁律**：账本只存美分整数；扣退必须幂等（复用 RPC 模式）；任何新扣费点都要有并发测试。
 6. **提交规范**：conventional commits（feat/fix/docs/chore(vendor)…）；vendor 同步单独成 commit：`chore(vendor): sync openmontage @ <hash>`。

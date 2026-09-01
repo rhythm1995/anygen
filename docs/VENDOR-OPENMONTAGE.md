@@ -1,14 +1,16 @@
-# VENDOR-OPENMONTAGE — 上游 core 模块接入规范
+# VENDOR-OPENMONTAGE — 上游对照蓝本规范
 
-> 决策（用户 2026-08-30 拍板）：OpenMontage **直接作为 anygen 的上游 core 模块**，用户说「同步」时执行 `tools/sync-openmontage.sh` 拉最新。
+> 状态：**已定稿（CONCLUSIONS D6，2026-09-01 修订）**。vendor **只作只读对照蓝本，运行时零进入**。与 CONCLUSIONS 冲突时以 CONCLUSIONS 为准。
+>
+> 历史（2026-08-30）：曾把 OpenMontage 当运行时 core，NestJS spawn JSON 桥。用户 2026-09-01 否决：任何链路都不要进 vendor，实现写在 `apps/`。
 
 ## 1. 目录约定
 
 ```
-vendor/openmontage/     # 上游原样副本（同步覆盖，禁止手改）
+vendor/openmontage/     # 上游原样副本（同步覆盖，禁止手改；不在请求路径）
   UPSTREAM_COMMIT       # 当前同步的上游 commit
-vendor-overlay/         # 我们的定制层（同步不影响）
-  bridge/run.py         # JSON 桥：调用 vendor 工具的唯一入口
+vendor-overlay/         # 离线对照层（同步不影响）
+  bridge/               # 历史 JSON 桥，仅离线冒烟；apps 禁止 spawn
   patches/              # （如需）对上游的补丁，同步后人工重放
   seed/                 # 从 vendor 提取定价/参数 → admin models seed
 tools/sync-openmontage.sh
@@ -19,20 +21,21 @@ tools/sync-openmontage.sh
 2. 排除项：`.git/.venv/node_modules/projects//music_library//assets/*.mp4/sponsors/__pycache__`（170MB → ~33MB）
 3. diff 审查：`git diff --stat vendor/openmontage` 重点看 `tools/`（接口变化）、`schemas/`（契约变化）
 4. 重放 `vendor-overlay/patches/`（如有）
-5. 跑桥冒烟：`echo '{"tool":"seedance_ark","action":"estimate_cost","inputs":{"model_variant":"standard","resolution":"720p","duration_seconds":5}}' | <py-with-deps> vendor-overlay/bridge/run.py` 应返回 `cost_usd: 0.69` 量级
+5. （可选、离线）对照冒烟：读 `tools/audio/music_gen.py` / `doubao_tts.py` 是否改了 HTTP 契约；**不要**把它接回 apps
 6. commit：`chore(vendor): sync openmontage @ <short-hash>`
 
 ## 3. 运行环境
-- vendor 不带 venv；桥需要装有上游依赖的解释器（本机 `~/openmontage-study/.venv` 可用，或在 vendor 内自建）
-- 生产/CI：`python3 -m venv vendor/openmontage/.venv && pip install -r vendor/openmontage/requirements.txt`
+- **apps 进程不依赖 Python / vendor venv**。音乐、配音、克隆全部在 `apps/api` TS HTTP 适配器（`AudioProvider`）完成。
+- 不要为 API 安装 `vendor/openmontage/.venv`。
 
-## 4. 集成边界（M5 Agent 实施时落地；M8 音乐/配音已接通）
-- **NestJS ↔ Python 只走 JSON 桥**：spawn 子进程，stdin 请求 / stdout 响应；禁止在 TS 里重新实现供应商逻辑
-- 2026-09-01（D13）：音乐=`music_gen`、配音=`doubao_tts` 由 `apps/api` spawn 本桥；图/视频仍走既有 Ark/OpenRouter TS 适配器（参考素材按 Ark 官方 content 角色挂载，不重写 seedance_ark）
-- 2026-09-01（D14）：配音带 `reference_audio` 时先跑 overlay `elevenlabs_voice_clone`（`vendor-overlay/bridge/elevenlabs_clone.py`，不改 vendor），再 `elevenlabs_tts`；缺 `ELEVENLABS_API_KEY` → 503。豆包 TTS 本身不支持克隆（见 CONCLUSIONS §7）
-- admin 的模型能力矩阵（价格/上限/分辨率）**以 vendor 代码内嵌数据为准**，由 `vendor-overlay/seed/` 生成器提取——单一事实源，同步即刷新
-- Agent 技能模板（plan_template）的阶段划分对齐 vendor 的 pipeline_defs 语义
+## 4. 集成边界（D6 2026-09-01）
+- **禁止**：`apps/*` import `vendor/*`；NestJS spawn `vendor-overlay/bridge/run.py`；请求路径加载 OpenMontage 工具注册表
+- **允许**：对照 vendor 源码把公共 HTTP API 写进 `apps/api`（ElevenLabs Music / TTS / Voice Clone、豆包 Speech submit+query）
+- 图/视频仍走既有 Ark/OpenRouter TS 适配器（参考素材按 Ark 官方 content 角色挂载）
+- 配音带 `reference_audio` 时：`apps/api` 先调 ElevenLabs `/v1/voices/add`，再 `/v1/text-to-speech/{id}`；无参考仍豆包 TTS。缺 key → 503
+- admin 模型能力矩阵可由 `vendor-overlay/seed/` **离线**从 vendor 提取后写入 migrations；运行时只读 admin `models` 表（D4）
+- Agent 技能模板仍是本仓库 `plan_template`，不调用 vendor pipeline
 
 ## 5. AGPL 合规标注 ⚠️
-- 当前项目**内部使用**：AGPLv3 无触发条件，vendor 合法 ✅
-- **产品化红线**：一旦对外提供网络服务/分发，vendor 部分必须剥离或整体开源——届时用桥的接口形状自研替换（接口已隔离在 bridge，替换面收敛）
+- 当前项目**内部使用**：AGPLv3 无触发条件，vendor 树可留作对照 ✅
+- **产品化红线**：一旦对外提供网络服务/分发，vendor 树与任何 AGPL 衍生代码（含 apps/web 画布移植）必须剥离或整体开源。音乐/配音适配器是自研 HTTP 客户端，不是 AGPL 衍生。

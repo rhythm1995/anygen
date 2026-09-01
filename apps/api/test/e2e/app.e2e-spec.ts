@@ -472,7 +472,7 @@ describe("Dreamina API (e2e)", () => {
       });
       expect([402, 503, 502]).toContain(res.status);
       if (res.status === 503) {
-        expect(String((res.body as any).message)).toMatch(/unavailable|key|bridge|music|config/i);
+        expect(String((res.body as any).message)).toMatch(/unavailable|key|music|config|elevenlabs/i);
       }
     });
 

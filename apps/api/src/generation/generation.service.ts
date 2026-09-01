@@ -7,7 +7,7 @@ import { SupabaseClientFactory } from "../auth/supabase.client";
 import { CreditsService } from "../credits/credits.service";
 import { StorageService } from "../assets/storage.service";
 import { nextStatus } from "./state-machine";
-import { GENERATION_PROVIDER, OPENROUTER_PROVIDER, OPENMONTAGE_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
+import { GENERATION_PROVIDER, OPENROUTER_PROVIDER, AUDIO_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
 import { ProviderKeysService } from "../admin/provider-keys.service";
 
 @Injectable()
@@ -15,16 +15,16 @@ export class GenerationService {
   constructor(
     @Inject(GENERATION_PROVIDER) private readonly arkProvider: GenerationProvider,
     @Inject(OPENROUTER_PROVIDER) private readonly openRouterProvider: GenerationProvider,
-    @Inject(OPENMONTAGE_PROVIDER) private readonly openMontageProvider: GenerationProvider,
+    @Inject(AUDIO_PROVIDER) private readonly audioProvider: GenerationProvider,
     private readonly factory: SupabaseClientFactory,
     private readonly credits: CreditsService,
     private readonly storage: StorageService,
     private readonly keys: ProviderKeysService,
   ) {}
 
-  /** 按创作类型 + 模型供应商路由（D13：音乐/配音走桥，其余 Ark/OpenRouter） */
+  /** 按创作类型 + 模型供应商路由（D6：音乐/配音走 apps/api HTTP，其余 Ark/OpenRouter） */
   private providerFor(creationType: string, modelProvider: string): GenerationProvider {
-    if (creationType === "music" || creationType === "dubbing") return this.openMontageProvider;
+    if (creationType === "music" || creationType === "dubbing") return this.audioProvider;
     if (modelProvider === "openrouter") return this.openRouterProvider;
     return this.arkProvider;
   }
@@ -103,7 +103,7 @@ export class GenerationService {
       const submitted = await provider.submit({
         type: input.type as never,
         prompt,
-        params: { ...params, model_code: model.code, bridge_tool: (model.params as { bridge_tool?: string })?.bridge_tool },
+        params: { ...params, model_code: model.code },
       });
       if (submitted.immediateUrls?.length) {
         const updated = await this.completeTask(task, submitted.immediateUrls, input.type);
