@@ -17,8 +17,9 @@ supabase/     迁移 + seed（本地栈 `supabase start`）
 vendor/openmontage  上游 core 模块（AGPL，只读，同步制）
 vendor/infinite-canvas  上游无限画布全栈（tigerowo，AGPL，只读，同步制——移植手册 docs/CANVAS-RESEARCH.md）
 vendor-overlay/     我们的定制层（bridge/patches/seed）——vendor 的任何文件禁止手改
-dreamina-clone/     侦察证据库（RECON/ 快照与 fixtures，只读）
+.dreamina-clone/    侦察证据库（本地隐藏、不入库；RECON/ 快照与 fixtures，只读）
 docs/         设计文档；CONCLUSIONS.md 是权威决策表
+docs/.verify/  UI e2e 截图（本地隐藏、不入库）
 ```
 
 ## 常用命令
@@ -45,15 +46,16 @@ node tools/e2e-ui.mjs     # 真实浏览器 UI 全流程（注册→feed→生�
 1.5 **文档分层**：改文档前先看 CONCLUSIONS.md §0 文档地图——决策只进 CONCLUSIONS，历史层文档只加横幅不改内容；每份文档首行必须带状态横幅。
 2. **TDD 核心功能**：计费/状态机/权限/契约类改动先写失败测试（现有 42 个测试的模式照抄：fixtures round-trip → 红 → 绿）。
 3. **不动 vendor/**：定制一律进 `vendor-overlay/`；对上游的调用只走 `vendor-overlay/bridge/run.py`（JSON stdin/stdout）。
-4. **UI 还原纪律**：颜色/字体/尺寸以 `dreamina-clone/RECON/` 的计算值为准（token 已在 apps/web globals.css），禁止目测；面板数据一律来自 admin models 表，禁止前端硬编码模型清单。
+4. **UI 还原纪律**：颜色/字体/尺寸以 `.dreamina-clone/RECON/` 的计算值为准（token 已在 apps/web globals.css），禁止目测；面板数据一律来自 admin models 表，禁止前端硬编码模型清单。
 5. **计费铁律**：账本只存美分整数；扣退必须幂等（复用 RPC 模式）；任何新扣费点都要有并发测试。
 6. **提交规范**：conventional commits（feat/fix/docs/chore(vendor)…）；vendor 同步单独成 commit：`chore(vendor): sync openmontage @ <hash>`。
-7. **敏感信息**：cookie/key 永不入库（.gitignore 已防）；侦察 cookie 放 dreamina-clone/RECON/ 且 chmod 600。
+7. **敏感信息**：cookie/key 永不入库（.gitignore 已防）；侦察 cookie 放 `.dreamina-clone/RECON/` 且 chmod 600。
+8. **参考材料不入库**：侦察库 `.dreamina-clone/`、验证截图 `docs/.verify/` 仅本地；禁止 `git add`。
 
 ## 侦察与验证
 
 - 原站行为存疑时：用 web-clone skill 的 CDP 探针真实抓取，禁止凭记忆写"原站是这样"。
-- UI 改动必须过 `node tools/e2e-ui.mjs`（0 page error + 截图对照 docs/verify/）。
+- UI 改动必须过 `node tools/e2e-ui.mjs`（0 page error + 截图对照 docs/.verify/）。
 - 新 API 必须补 e2e（apps/api/test/e2e/ 模式：真实 supabase + 原生 fetch）。
 
 ## 已知坑（踩过的，别再踩）

@@ -1,5 +1,5 @@
 // 资产库 UI e2e（D8）：种真实资产 → 真实浏览器走 列表分组/三个下拉/详情弹层/批量操作。
-// 断言 0 page error，截图入 docs/verify/。
+// 断言 0 page error，截图入 docs/.verify/。
 import { systemChromium } from "/Users/bugzhang/.zcode/skills/web-clone/scripts/lib/system-browser.mjs";
 import fs from "node:fs";
 import path from "node:path";
@@ -7,7 +7,7 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const WEB = process.env.WEB_URL ?? "http://localhost:3100";
 const exe = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const OUT = path.join(ROOT, "docs", "verify");
+const OUT = path.join(ROOT, "docs", ".verify");
 fs.mkdirSync(OUT, { recursive: true });
 
 const envText = fs.readFileSync(path.join(ROOT, "apps/api/.env.local"), "utf8");

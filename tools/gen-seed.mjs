@@ -5,7 +5,7 @@ import { execSync } from "node:child_process";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const A = (p) => path.join(ROOT, p);
-const DC = path.join(ROOT, "dreamina-clone");
+const DC = path.join(ROOT, ".dreamina-clone");
 
 // 1. collect url -> localPath from both manifests
 const maps = ["RECON/asset-manifest.json", "RECON/auth-manifest.json"];
@@ -147,7 +147,7 @@ const modelRows = [...imageModels.map((m, i) => {
 
 const skillRows = skills.map((s) => `('${esc(s.id)}', '${esc(s.name)}', '${esc(s.default_title ?? s.title ?? "")}', '${esc(s.default_desc ?? s.description ?? "")}', true)`);
 
-const sql = `-- seed：来自原站捕获 fixtures（dreamina-clone/RECON），封面已本地化 /seed/feed/*
+const sql = `-- seed：来自原站捕获 fixtures（.dreamina-clone/RECON），封面已本地化 /seed/feed/*
 truncate public.feed_items;
 insert into public.feed_items (id, title, cover_url, width, height, author_name, author_avatar, model_req_key, generate_type) values
 ${rows.map((r) => `(${r})`).join(",\n")};

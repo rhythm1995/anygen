@@ -5,7 +5,7 @@ import path from "node:path";
 
 const ROOT = path.resolve(import.meta.dirname, "..");
 const A = (p) => path.join(ROOT, p);
-const CN = path.join(ROOT, "dreamina-clone/RECON/jimeng-cn");
+const CN = path.join(ROOT, ".dreamina-clone/RECON/jimeng-cn");
 
 const esc = (v) => String(v ?? "").replaceAll("'", "''");
 const J = (o) => `'${esc(JSON.stringify(o))}'::jsonb`;

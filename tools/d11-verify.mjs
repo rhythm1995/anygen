@@ -5,7 +5,7 @@ import path from "node:path";
 
 const ROOT = process.cwd();
 const WEB = "http://localhost:3100";
-const OUT = path.join(ROOT, "docs", "verify");
+const OUT = path.join(ROOT, "docs", ".verify");
 const exe = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const email = `d11-${Date.now()}@dreamina.local`;
 const password = "ui-password-123";

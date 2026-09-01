@@ -6,7 +6,7 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const WEB = process.env.WEB_URL ?? "http://localhost:3100";
 const exe = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const OUT = path.join(ROOT, "docs", "verify");
+const OUT = path.join(ROOT, "docs", ".verify");
 fs.mkdirSync(OUT, { recursive: true });
 
 const envText = fs.readFileSync(path.join(ROOT, "apps/api/.env.local"), "utf8");

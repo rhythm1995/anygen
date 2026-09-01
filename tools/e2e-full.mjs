@@ -10,7 +10,7 @@ const envText = fs.readFileSync(path.join(ROOT, "apps/api/.env.local"), "utf8");
 const g = (k) => envText.match(new RegExp(`^${k}="?(.*?)"?$`, "m"))?.[1];
 
 const results = [];
-const shot = (page, name) => page.screenshot({ path: path.join(ROOT, "docs/verify", `e2e-${name}.png`) });
+const shot = (page, name) => page.screenshot({ path: path.join(ROOT, "docs/.verify", `e2e-${name}.png`) });
 const record = (name, pass, detail = "") => {
   results.push({ name, pass, detail });
   console.log(`${pass ? "PASS" : "FAIL"} | ${name}${detail ? " | " + detail.slice(0, 120) : ""}`);
@@ -157,7 +157,7 @@ try {
     url: location.pathname,
   }));
   console.log("T4 DBG:", JSON.stringify(dbg4));
-  await page.screenshot({ path: "docs/verify/e2e-t4dbg.png" });
+  await page.screenshot({ path: "docs/.verify/e2e-t4dbg.png" });
   await clickChip(/图片 5\.0 Pro/);
   await page.waitForTimeout(500);
   const t4models = await page.evaluate(() => ({
@@ -176,7 +176,7 @@ try {
     count: document.body.innerText.includes("选择生成数量"),
     fourK: document.body.innerText.includes("超清 4K"),
   }));
-  await page.screenshot({ path: "docs/verify/e2e-params.png" });
+  await page.screenshot({ path: "docs/.verify/e2e-params.png" });
   record("T4b 图片参数弹层", t4params.ratios && t4params.res && t4params.count && t4params.fourK);
   // 选 4K 单张，验证计价 8¢×3.2=26¢
   await clickBtnText("超清 4K");
@@ -348,5 +348,5 @@ try {
 await browser.close();
 const pass = results.filter(r => r.pass).length;
 console.log(`\n===== 结果: ${pass}/${results.length} PASS =====`);
-fs.writeFileSync(path.join(ROOT, "docs/verify", "e2e-report.json"), JSON.stringify(results, null, 1));
+fs.writeFileSync(path.join(ROOT, "docs/.verify", "e2e-report.json"), JSON.stringify(results, null, 1));
 process.exit(pass === results.length ? 0 : 1);
