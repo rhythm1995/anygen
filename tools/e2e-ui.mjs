@@ -159,6 +159,16 @@ try {
   console.log("prompts dbg:", JSON.stringify(promptsDbg));
   if (!promptsDbg.heading || promptsDbg.cards < 4) throw new Error("prompts page did not render library cards");
   if (!promptsDbg.sidebar) throw new Error("sidebar 提示词 menu missing");
+  // 无限滚动：滚内部容器到底应触发加载（24 → 48）
+  await page.evaluate(() => {
+    const main = document.querySelector("main.overflow-y-auto");
+    if (!main) throw new Error("prompts scroll container missing");
+    main.scrollTop = main.scrollHeight;
+  });
+  await page.waitForTimeout(1200);
+  const loadMore = await page.evaluate(() => document.body.innerText.match(/已展示 (\d+)/)?.[1] ?? "0");
+  if (Number(loadMore) <= 24) throw new Error(`prompts infinite scroll did not load more (visible=${loadMore})`);
+  console.log("prompts infinite scroll ok, visible:", loadMore);
   await shot(page, "prompts-page");
 
   // 6. 画布入口

@@ -100,7 +100,7 @@ export default function PromptsPage() {
   const toggleTag = (tag: string) => setSelectedTags((items) => (items.includes(tag) ? items.filter((item) => item !== tag) : [...items, tag]));
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-screen flex-col overflow-hidden">
       <main
         className="thin-scrollbar min-h-0 flex-1 overflow-y-auto px-6 py-8"
         onScroll={(event) => {
@@ -215,7 +215,11 @@ export default function PromptsPage() {
             </div>
             {!filtered.length ? <div className="py-16 text-center text-sm text-dm-text-3">没有找到匹配的提示词</div> : null}
             <div className="mx-auto mt-6 max-w-7xl text-center text-xs text-dm-text-4">
-              {visible.length < filtered.length ? `已展示 ${visible.length} / ${filtered.length} 条，继续向下滚动加载更多` : filtered.length ? "已经到底了" : null}
+              {visible.length < filtered.length ? (
+                <button type="button" className="rounded-full border border-dm-border px-4 py-1.5 transition hover:bg-dm-surface" onClick={() => setPage((current) => current + 1)}>
+                  已展示 {visible.length} / {filtered.length} 条 · 加载更多
+                </button>
+              ) : filtered.length ? "已经到底了" : null}
             </div>
           </div>
         ) : null}
