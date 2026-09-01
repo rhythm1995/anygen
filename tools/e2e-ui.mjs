@@ -147,6 +147,20 @@ try {
   await page.waitForTimeout(800);
   await shot(page, "generate-submit");
 
+  // 5.5 提示词中心（独立菜单页）
+  await page.goto(`${WEB}/ai-tool/prompts`, { waitUntil: "load", timeout: 60_000 });
+  await page.waitForTimeout(2500);
+  const promptsDbg = await page.evaluate(() => ({
+    heading: document.body.innerText.includes("提示词中心"),
+    cards: document.querySelectorAll("main img, main svg").length,
+    categories: document.body.innerText.match(/GPT Image 2 Prompts/)?.[0] ?? null,
+    sidebar: [...document.querySelectorAll("nav a, aside a, a")].some((a) => a.textContent?.includes("提示词")),
+  }));
+  console.log("prompts dbg:", JSON.stringify(promptsDbg));
+  if (!promptsDbg.heading || promptsDbg.cards < 4) throw new Error("prompts page did not render library cards");
+  if (!promptsDbg.sidebar) throw new Error("sidebar 提示词 menu missing");
+  await shot(page, "prompts-page");
+
   // 6. 画布入口
   await page.goto(`${WEB}/ai-tool/assets-canvas`, { waitUntil: "load", timeout: 60_000 });
   await page.waitForTimeout(2000);

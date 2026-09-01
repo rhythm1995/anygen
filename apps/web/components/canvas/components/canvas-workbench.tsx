@@ -106,6 +106,17 @@ export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageMo
         staleTime: 60 * 60 * 1000,
         enabled: open && tab === "prompts",
     });
+    // 提示词中心导入库（public/data/prompt-library.json，1593 条；前 300 条进工作台检索）
+    const library = useQuery({
+        queryKey: ["prompt-library"],
+        queryFn: async () => {
+            const res = await fetch("/data/prompt-library.json");
+            if (!res.ok) throw new Error("提示词库加载失败");
+            return (await res.json()) as { prompts: Array<{ title: string; prompt: string; tags?: string[] }> };
+        },
+        staleTime: Infinity,
+        enabled: open && tab === "prompts",
+    });
 
     const tasks = useQuery({
         queryKey: ["canvas-workbench-tasks"],
@@ -138,7 +149,8 @@ export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageMo
         const keyword = search.trim().toLowerCase();
         const builtin = PROMPT_LIBRARY.flatMap((group) => group.items.map((item) => ({ ...item, tag: group.tag })));
         const remote = (remotePrompts.data ?? []).map((item: RemotePrompt) => ({ title: item.title, prompt: item.prompt, tag: `${item.tag} · 远程` }));
-        return [...builtin, ...remote].filter((item) => !keyword || `${item.title} ${item.prompt} ${item.tag}`.toLowerCase().includes(keyword));
+        const imported = (library.data?.prompts ?? []).slice(0, 300).map((item) => ({ title: item.title, prompt: item.prompt, tag: item.tags?.[0] ?? "导入库" }));
+        return [...imported, ...builtin, ...remote].filter((item) => !keyword || `${item.title} ${item.prompt} ${item.tag}`.toLowerCase().includes(keyword));
     }, [search, remotePrompts.data]);
 
     if (!open) return null;
@@ -258,7 +270,7 @@ export function CanvasWorkbench({ open, layout, onLayoutChange, onClose, imageMo
                             </button>
                         ))}
                         {!promptHits.length ? <div className="py-8 text-center text-xs opacity-50">无匹配提示词</div> : null}
-                        <div className="pt-1 text-center text-[10px] opacity-40">{remotePrompts.isFetching ? "远程源同步中…" : remotePrompts.data?.length ? `远程源 ${remotePrompts.data.length} 条已缓存（24h）` : "远程源不可用，展示内置精选集"}</div>
+                        <div className="pt-1 text-center text-[10px] opacity-40">{library.isFetching ? "提示词库加载中…" : library.data?.prompts?.length ? `导入库 ${library.data.prompts.length} 条（提示词中心全量）` : "导入库不可用，展示内置精选集"}</div>
                     </div>
                 </div>
             ) : null}

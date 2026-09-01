@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Plus } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import { CreationComposer } from "@/components/shared/creation-composer";
 import { useAuth } from "@/components/providers";
@@ -127,6 +128,7 @@ export default function CanvasEntryPage() {
   const { session, loading } = useAuth();
   const router = useRouter();
   const qc = useQueryClient();
+  const consumedPending = useRef(false);
   const create = useMutation({
     mutationFn: (name?: string) => api<Project>("/projects", { method: "POST", body: name ? { name } : {} }),
     onSuccess: (p) => {
@@ -134,6 +136,18 @@ export default function CanvasEntryPage() {
       return p;
     },
   });
+
+  // 提示词中心「在画布中使用」：带 prompt 落地即自动新建画布项目
+  useEffect(() => {
+    if (loading || !session || consumedPending.current) return;
+    const pendingPrompt = sessionStorage.getItem("pending-canvas-prompt");
+    if (!pendingPrompt) return;
+    consumedPending.current = true;
+    sessionStorage.removeItem("pending-canvas-prompt");
+    create.mutate(pendingPrompt.slice(0, 40), {
+      onSuccess: (p) => router.push(`/ai-tool/assets-canvas/project/${p.id}`),
+    });
+  }, [loading, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return <div className="flex flex-1 items-center justify-center text-sm text-dm-text-3">Loading…</div>;

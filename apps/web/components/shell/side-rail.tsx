@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Plus, FolderClosed, Shapes, Sparkles, LogOut, ShieldCheck, UserCog } from "lucide-react";
+import { Home, Plus, FolderClosed, Shapes, Sparkles, Lightbulb, LogOut, ShieldCheck, UserCog } from "lucide-react";
 
 import { useAuth } from "@/components/providers";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ export function SideRail() {
     { kind: "link", href: "/ai-tool/generate", label: "生成", icon: <Plus size={19} strokeWidth={1.6} /> },
     { kind: "link", href: "/ai-tool/assets", label: "资产", icon: <FolderClosed size={19} strokeWidth={1.6} /> },
     { kind: "link", href: "/ai-tool/assets-canvas", label: "画布", icon: <Shapes size={19} strokeWidth={1.6} /> },
+    { kind: "link", href: "/ai-tool/prompts", label: "提示词", icon: <Lightbulb size={19} strokeWidth={1.6} /> },
   ];
 
   const bottomItems: RailItem[] = session
