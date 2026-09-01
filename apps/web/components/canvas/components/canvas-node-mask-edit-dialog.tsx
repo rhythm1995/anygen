@@ -139,7 +139,7 @@ export function CanvasNodeMaskEditDialog({
 
     return (
         <Dialog open={open && Boolean(dataUrl)} onOpenChange={(next) => (next || !submitting ? onClose() : undefined)}>
-            <DialogContent className="max-w-[980px]">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[980px]">
                 <DialogHeader>
                     <DialogTitle>局部遮罩编辑</DialogTitle>
                 </DialogHeader>

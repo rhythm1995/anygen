@@ -22,7 +22,7 @@ export function CanvasAssetPickerModal({ open, onClose, onPick }: { open: boolea
 
     return (
         <Dialog open={open} onOpenChange={(next) => (next ? undefined : onClose())}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center justify-between gap-4 pr-8">
                         选择资产

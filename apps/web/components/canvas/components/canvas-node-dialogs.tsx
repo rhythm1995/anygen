@@ -115,7 +115,7 @@ export function CanvasNodeCropDialog({ dataUrl, open, onClose, onConfirm }: { da
 
     return (
         <Dialog open={open && Boolean(dataUrl)} onOpenChange={(next) => (next || !loading ? onClose() : undefined)}>
-            <DialogContent className="max-w-[780px]">
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[780px]">
                 <DialogHeader>
                     <DialogTitle>裁剪图片</DialogTitle>
                 </DialogHeader>
@@ -356,7 +356,7 @@ export function CanvasNodeSplitDialog({ dataUrl, open, onClose, onConfirm }: { d
 
     return (
         <Dialog open={open && Boolean(dataUrl)} onOpenChange={(next) => (next ? undefined : onClose())}>
-            <DialogContent className="max-w-[780px]">
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[780px]">
                 <DialogHeader>
                     <DialogTitle>切分图片</DialogTitle>
                 </DialogHeader>
@@ -521,7 +521,7 @@ export function CanvasNodeUpscaleDialog({ dataUrl, open, onClose, onConfirm }: {
 
     return (
         <Dialog open={open && Boolean(dataUrl)} onOpenChange={(next) => (next ? undefined : onClose())}>
-            <DialogContent className="max-w-[820px]">
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[820px]">
                 <DialogHeader>
                     <DialogTitle>图片放大</DialogTitle>
                 </DialogHeader>
@@ -603,7 +603,7 @@ export function CanvasNodeAngleDialog({ dataUrl, open, onClose, onConfirm }: { d
 
     return (
         <Dialog open={open && Boolean(dataUrl)} onOpenChange={(next) => (next ? undefined : onClose())}>
-            <DialogContent className="max-w-[860px]">
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[860px]">
                 <DialogHeader>
                     <DialogTitle>AI 多角度</DialogTitle>
                 </DialogHeader>

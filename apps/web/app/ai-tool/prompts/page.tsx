@@ -226,7 +226,7 @@ export default function PromptsPage() {
       </main>
 
       <Dialog open={Boolean(selected)} onOpenChange={(next) => (next ? undefined : setSelected(null))}>
-        <DialogContent className="max-w-[860px]">
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-[860px]">
           <DialogHeader>
             <DialogTitle>{selected?.title}</DialogTitle>
           </DialogHeader>

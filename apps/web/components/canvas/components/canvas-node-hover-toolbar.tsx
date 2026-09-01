@@ -169,7 +169,7 @@ export function CanvasNodeInfoModal({ node, open, onClose }: { node: CanvasNodeD
 
     return (
         <Dialog open={open && Boolean(node)} onOpenChange={(next) => (next ? undefined : onClose())}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle className="flex items-center justify-between gap-4 pr-8">
                         节点信息
