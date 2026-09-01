@@ -2,8 +2,7 @@
 /**
  * 画布助手面板（D12 Phase C，精简版）
  * 结构参照 vendor/infinite-canvas canvas-assistant-panel/composer（AGPL-3.0）；
- * 裁剪：技能弹层/生成设置弹层/Chat-Responses 切换（Phase D 提示词库接入时补）；
- * 会话持久化 = graph.chatSessions（tigerowo 原样），LLM = /api/agent/canvas/turn（服务端 key）。
+ * 会话持久化 = graph.chatSessions 双写 agent_sessions.project_id（D13）；LLM = /api/agent/canvas/turn。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp, FolderOpen, ImagePlus, Menu, MessageSquarePlus, Square, Trash2, Upload, X } from "lucide-react";
@@ -32,6 +31,7 @@ export type AssistantBridge = {
     onSessionsChange: (sessions: CanvasAssistantSession[], activeChatId: string | null) => void;
     onInsertAsset: (message: CanvasAssistantMessage) => void;
     onOpenUpload: () => void;
+    onOpenAssets?: () => void;
 };
 
 function uid(prefix: string) {
@@ -192,7 +192,7 @@ export function CanvasAssistantPanel({ bridge, open, onClose }: { bridge: Assist
                             <button type="button" title="上传文件" aria-label="上传文件" className="flex size-8 items-center justify-center rounded-full transition hover:opacity-75" style={{ color: theme.node.text }} onClick={bridge.onOpenUpload}>
                                 <Upload className="size-4" />
                             </button>
-                            <button type="button" title="我的素材（Phase D 开放）" aria-label="我的素材" className="flex size-8 items-center justify-center rounded-full opacity-50" style={{ color: theme.node.text }} onClick={() => setNotice("素材库选择器将在后续阶段开放")}>
+                            <button type="button" title="我的素材" aria-label="我的素材" className="flex size-8 items-center justify-center rounded-full transition hover:opacity-75" style={{ color: theme.node.text }} onClick={() => bridge.onOpenAssets?.()}>
                                 <FolderOpen className="size-4" />
                             </button>
                             <span className="text-[10px] opacity-40" style={{ color: theme.node.muted }}>

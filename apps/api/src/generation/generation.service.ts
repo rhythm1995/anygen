@@ -7,21 +7,38 @@ import { SupabaseClientFactory } from "../auth/supabase.client";
 import { CreditsService } from "../credits/credits.service";
 import { StorageService } from "../assets/storage.service";
 import { nextStatus } from "./state-machine";
-import { GENERATION_PROVIDER, OPENROUTER_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
+import { GENERATION_PROVIDER, OPENROUTER_PROVIDER, OPENMONTAGE_PROVIDER, MissingProviderConfig, type GenerationProvider } from "./providers/types";
+import { ProviderKeysService } from "../admin/provider-keys.service";
 
 @Injectable()
 export class GenerationService {
   constructor(
     @Inject(GENERATION_PROVIDER) private readonly arkProvider: GenerationProvider,
     @Inject(OPENROUTER_PROVIDER) private readonly openRouterProvider: GenerationProvider,
+    @Inject(OPENMONTAGE_PROVIDER) private readonly openMontageProvider: GenerationProvider,
     private readonly factory: SupabaseClientFactory,
     private readonly credits: CreditsService,
     private readonly storage: StorageService,
+    private readonly keys: ProviderKeysService,
   ) {}
 
-  /** 按模型所属供应商路由 Provider（未知供应商回退 ark） */
-  private providerFor(modelProvider: string): GenerationProvider {
-    return modelProvider === "openrouter" ? this.openRouterProvider : this.arkProvider;
+  /** 按创作类型 + 模型供应商路由（D13：音乐/配音走桥，其余 Ark/OpenRouter） */
+  private providerFor(creationType: string, modelProvider: string): GenerationProvider {
+    if (creationType === "music" || creationType === "dubbing") return this.openMontageProvider;
+    if (modelProvider === "openrouter") return this.openRouterProvider;
+    return this.arkProvider;
+  }
+
+  /** D14：图/视频请求时注入 admin/env 密钥 */
+  private async boundProvider(creationType: string, modelProvider: string): Promise<GenerationProvider> {
+    const provider = this.providerFor(creationType, modelProvider);
+    if (creationType === "music" || creationType === "dubbing") return provider;
+    const name = modelProvider === "openrouter" ? "openrouter" : "ark";
+    const cfg = await this.keys.resolveConfig(name);
+    if (provider.withCredentials) {
+      return provider.withCredentials({ apiKey: cfg.apiKey ?? "", baseUrl: cfg.baseUrl });
+    }
+    return provider;
   }
 
   private get db(): SupabaseClient {
@@ -79,22 +96,17 @@ export class GenerationService {
       throw new HttpException("insufficient balance", 402);
     }
 
-    // 音乐/配音/数字人/动作模仿：Provider 接口就绪但引擎未配置（CONCLUSIONS D7 无 mock）
-    if (input.type !== "image" && input.type !== "video") {
-      await this.credits.refund(userId, cost, taskId);
-      await this.db.from("generation_tasks").delete().eq("id", taskId);
-      throw new HttpException(`generation provider unavailable: no engine configured for ${input.type}`, 503);
-    }
-    const engineType: "image" | "video" = input.type;
+    const prompt = this.composePrompt(input.type, input.prompt, params);
 
     try {
-      const submitted = await this.providerFor(model.provider).submit({
-        type: engineType,
-        prompt: input.prompt,
-        params: { ...params, model_code: model.code },
+      const provider = await this.boundProvider(input.type, model.provider);
+      const submitted = await provider.submit({
+        type: input.type as never,
+        prompt,
+        params: { ...params, model_code: model.code, bridge_tool: (model.params as { bridge_tool?: string })?.bridge_tool },
       });
       if (submitted.immediateUrls?.length) {
-        const updated = await this.completeTask(task, submitted.immediateUrls, engineType);
+        const updated = await this.completeTask(task, submitted.immediateUrls, input.type);
         return this.serialize(updated);
       }
       const { data: updated, error: upErr } = await this.db
@@ -126,7 +138,7 @@ export class GenerationService {
     if (!task) throw new HttpException("task not found", 404);
     if (task.status !== "running") return this.serialize(task);
 
-    const poll = await this.providerFor(task.provider ?? "ark").poll(task.remote_id!);
+    const poll = await (await this.boundProvider(task.type, task.provider ?? "ark")).poll(task.remote_id!);
     if (poll.status === "succeeded") {
       const updated = await this.completeTask(task, poll.urls!, task.type);
       return this.serialize(updated);
@@ -142,17 +154,41 @@ export class GenerationService {
     return this.serialize(task);
   }
 
-  private async completeTask(task: any, urls: string[], type: "image" | "video") {
+  private composePrompt(type: string, prompt: string, params: Record<string, unknown>): string {
+    if (type === "digital_human") {
+      const speech = typeof params.speech === "string" ? params.speech : prompt;
+      const motion = typeof params.motion === "string" ? params.motion : "";
+      return [`说话内容：${speech}`, motion ? `动作描述：${motion}` : "", prompt !== speech ? prompt : ""]
+        .filter(Boolean)
+        .join("\n");
+    }
+    if (type === "motion_mimic") {
+      const style = typeof params.style === "string" ? params.style : "";
+      return [prompt, style ? `动作风格：${style}` : ""].filter(Boolean).join("\n");
+    }
+    return prompt;
+  }
+
+  private assetKindOf(type: string): { kind: "image" | "video" | "audio"; ext: string; mime: string } {
+    if (type === "image") return { kind: "image", ext: "jpg", mime: "image/jpeg" };
+    if (type === "music" || type === "dubbing") return { kind: "audio", ext: "mp3", mime: "audio/mpeg" };
+    return { kind: "video", ext: "mp4", mime: "video/mp4" };
+  }
+
+  private async completeTask(task: any, urls: string[], type: string) {
+    const spec = this.assetKindOf(type);
     const assetIds: string[] = [];
     for (const [i, url] of urls.entries()) {
-      const key = `${type}/${task.user_id}/${randomUUID()}.${type === "image" ? "jpg" : "mp4"}`;
+      const key = `${spec.kind}/${task.user_id}/${randomUUID()}.${spec.ext}`;
       try {
-        await this.storage.uploadFromUrl({ key, remoteUrl: url, contentType: type === "image" ? "image/jpeg" : "video/mp4" });
+        if (url.startsWith("http://") || url.startsWith("https://")) {
+          await this.storage.uploadFromUrl({ key, remoteUrl: url, contentType: spec.mime });
+        }
         const asset = await this.storage.register(this.db, {
           userId: task.user_id,
-          key,
-          kind: type,
-          mime: type === "image" ? "image/jpeg" : "video/mp4",
+          key: url.startsWith("http") ? key : key,
+          kind: spec.kind,
+          mime: spec.mime,
           meta: { taskId: task.id, prompt: task.prompt },
         });
         assetIds.push(asset.id);
@@ -161,7 +197,7 @@ export class GenerationService {
           .register(this.db, {
             userId: task.user_id,
             key: `failed/${task.id}/${i}`,
-            kind: type,
+            kind: spec.kind,
             mime: "application/octet-stream",
             meta: { sourceUrl: url, taskId: task.id },
           })

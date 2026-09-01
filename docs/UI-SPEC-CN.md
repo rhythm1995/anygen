@@ -1,7 +1,9 @@
 # UI-SPEC-CN — 即梦（国内版）创作模式面板规格
 
-> 状态：**已定稿，待实施（M3）**。UI 事实来源 = 用户提供的 8 张截图（2026-08-30）+ §6 实测侦察；数据来源 = **ADMIN.md 的 models/creation_modes 配置表**（admin 配什么，面板显示什么）。
+> 状态：**已定稿。M3 已交付；§7 画布 v2 已交付（M7）；§8 增量已交付（D13/M8 + D14）。**
+> UI 事实来源 = 用户提供的 8 张截图（2026-08-30）+ §6 实测侦察；数据来源 = **ADMIN.md 的 models/creation_modes 配置表**（admin 配什么，面板显示什么）。
 > 原则：全站文案切 zh-Hans；本规格只覆盖与创作模式相关的增量，三页既有布局（UI-SPEC.md）不变。
+> 与 CONCLUSIONS 冲突时以 CONCLUSIONS 为准。
 
 ## 1. 创作类型下拉（截图1）
 
@@ -211,7 +213,7 @@ chip：`🔧 技能`。点击弹层（宽 ~640px）：
 
 ## 7. 无限画布 v2 规格（D12，2026-09-01 新增）
 
-> 状态：**已定稿（依据 CONCLUSIONS D12），实施中（M7）**。蓝本 = vendor/infinite-canvas（tigerowo，AGPL，shadcn 化改写）；即梦侧事实 = RECON/auth/canvas-editor/；移植手册 = docs/CANVAS-RESEARCH.md。
+> 状态：**已定稿（依据 CONCLUSIONS D12），已交付（M7）；会话拆表见 D13/§8。** 蓝本 = vendor/infinite-canvas（tigerowo，AGPL，shadcn 化改写）；即梦侧事实 = RECON/auth/canvas-editor/；移植手册 = docs/CANVAS-RESEARCH.md。
 > 本节只列"对齐即梦"的增量要求；移植自 tigerowo 的交互细节以其源码+文档为准，不在此重复。
 
 ### 7.1 路由与入口
@@ -227,7 +229,35 @@ chip：`🔧 技能`。点击弹层（宽 ~640px）：
 1. 生成调用 → `/api/generation/tasks`（提交+GET 轮询）；模型清单来自 admin models 表
 2. 图片/视频/音频上传 → 我们上传管线（MinIO/assets），节点存 assetId+url；storageKey/补水/引用清理体系删除
 3. LLM → `/api/agent/canvas/turn`（服务端 key）；其 AiConfig/本地渠道体系删除
-4. 会话持久化 → agent_sessions(project_id, 0012) + messages；chatSessions 不再内嵌 graph
+4. 会话持久化 → **双写**：graph.chatSessions 内嵌（tigerowo 同构）+ `agent_sessions.project_id`（kind=canvas，0013）；列表/洞察走拆表。D12 v1 仅内嵌已被 D13 修订。
 5. antd → shadcn/ui（映射表 CANVAS-RESEARCH 附录A）
 6. 未登录本地直连模式删除（内部平台）
 7. 交付增量（2026-09-01 全量完成）：顶栏另有「工作台」入口（生图工作台：生成记录/提示词库/创作工作流三 tab，侧边/底部布局）；对话按钮可用（Agent 面板）；配置面板含摄像机入口与「全景 2:1」开关；hover 工具条含裁剪/切分/放大/多角度/蒙版重绘/预览；上游图片节点自动作为参考图（input_images，Gemini/Grok 系模型支持，其余模型服务端如实报错）
+
+## 8. D13 增量（2026-09-01）
+
+> 状态：**已定稿（依据 CONCLUSIONS D13），与 M8 同步落地。** 权威冲突以 CONCLUSIONS 为准。
+
+### 8.1 视频参考素材
+- 叠卡点击 = 真实 file input + `/assets/presign` 直传，不再 toast「即将上线」
+- `@` 引用 = 资产选择弹层，选中写入 `params.input_images|input_videos|input_audios`
+- 参考模式第六项：**视频续写** `extend`（续写视频槽位）；2.5 模型支持矩阵含 extend
+- 首尾帧槽位分别写入 `first_frame_url` / `last_frame_url`
+
+### 8.2 四类细面板
+- 音乐：时长滑条（已有）+ 提交走 music 引擎
+- 配音：预置音色 + 「克隆新声音」上传参考音频（`params.reference_audio`）；无克隆 key → 503 文案
+- 数字人：快速模式；上传形象；双段「说话内容 / 动作描述」
+- 动作模仿：模型下拉（大师/生动/快速）+ 风格 + 参考视频上传
+
+### 8.3 Agent
+- 「自动」chip = 生成偏好弹层（自动 toggle + 图片/视频 tab：比例/模型/分辨率），写入 `profiles.preferences`
+- 技能弹层底部：「用 Agent 创建技能」「管理技能」（自定义可删，官方只读）
+
+### 8.4 资产详情动作
+可用动作真实跳转，不再一律「建设中」（映射见 CONCLUSIONS D13⑧）。
+⋯ 菜单（D14）：复制提示词 / 复制链接 / 发布 / 删除。
+
+### 8.5 D14 增量
+- 智能编辑「高级编辑」：上传视频后打开本地矩形标注，区域写入 prompt（非原站编辑器）。
+- 配音克隆：参考音频 → ElevenLabs Instant Voice Clone（无 key 503）；无参考仍豆包 TTS。

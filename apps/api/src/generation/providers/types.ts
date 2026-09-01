@@ -2,6 +2,7 @@ import type { GenerationType } from "@dreamina/shared";
 
 export const GENERATION_PROVIDER = Symbol("GENERATION_PROVIDER");
 export const OPENROUTER_PROVIDER = Symbol("OPENROUTER_PROVIDER");
+export const OPENMONTAGE_PROVIDER = Symbol("OPENMONTAGE_PROVIDER");
 
 export interface ProviderSubmitInput {
   type: GenerationType;
@@ -22,12 +23,19 @@ export interface ProviderPollResult {
   error?: string;
 }
 
+export interface ProviderCredentials {
+  apiKey: string;
+  baseUrl?: string;
+}
+
 export interface GenerationProvider {
   readonly name: string;
   submit(input: ProviderSubmitInput): Promise<ProviderSubmitResult>;
   poll(remoteId: string): Promise<ProviderPollResult>;
   /** 同步型供应商（如 OpenRouter 图像）可另行实现 submitImage */
   submitImage?(model: string, prompt: string): Promise<ProviderSubmitResult>;
+  /** D14：请求时注入 admin/env 密钥，不钉死进程启动时的 env */
+  withCredentials?(creds: ProviderCredentials): GenerationProvider;
 }
 
 export class ProviderError extends Error {

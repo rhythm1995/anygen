@@ -38,4 +38,15 @@ export class MeService {
     if (profile.error) throw new Error(profile.error.message);
     return { profile: profile.data };
   }
+
+  async patchPreferences(userId: string, preferences: Record<string, unknown>) {
+    const { data, error } = await this.db
+      .from("profiles")
+      .update({ preferences })
+      .eq("id", userId)
+      .select("preferences")
+      .single();
+    if (error) throw new Error(error.message);
+    return { preferences: data.preferences ?? {} };
+  }
 }

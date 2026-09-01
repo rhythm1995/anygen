@@ -479,6 +479,11 @@ export default function AssetsPage() {
           onClose={() => setDetailId(null)}
           onToggleFavorite={(a) => patch.mutate({ id: a.id, body: { favorited: !a.favorited } })}
           onUpdateTags={(a, tags) => patch.mutate({ id: a.id, body: { tags } })}
+          onPublished={(a, published) => patch.mutate({ id: a.id, body: { published } })}
+          onDeleted={() => {
+            setDetailId(null);
+            qc.invalidateQueries({ queryKey: ["assets"] });
+          }}
         />
       )}
     </div>

@@ -198,7 +198,7 @@ export type ProjectListPage = z.infer<typeof projectListSchema>;
 export const generationTaskStatusSchema = z.enum(["queued", "running", "succeeded", "failed"]);
 export type GenerationTaskStatus = z.infer<typeof generationTaskStatusSchema>;
 
-export const generationTypeSchema = z.enum(["image", "video"]);
+export const generationTypeSchema = z.enum(["image", "video", "music", "dubbing", "digital_human", "motion_mimic"]);
 export type GenerationType = z.infer<typeof generationTypeSchema>;
 
 // ---- D12 画布 v2：节点模型对齐 vendor/infinite-canvas（tigerowo）CanvasNodeMetadata ----
@@ -309,7 +309,7 @@ const canvasGraphBase = z.object({
     .optional(),
   backgroundMode: canvasBackgroundModeSchema.optional(),
   showImageInfo: z.boolean().optional(),
-  /** 画布 Agent 会话（D12 Phase C：v1 内嵌 graph 持久化，宽松透传；v2 拆 agent_sessions.project_id） */
+  /** 画布 Agent 会话：graph 内嵌（tigerowo 同构）+ agent_sessions.project_id 双写（D12/D13） */
   chatSessions: z.array(z.unknown()).optional(),
   activeChatId: z.string().max(64).optional(),
 });
@@ -581,6 +581,27 @@ export const pricing = {
 const IMAGE_RATIOS = ["1:1", "21:9", "16:9", "3:2", "4:3", "3:4", "2:3", "9:16"];
 const VIDEO_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"];
 
+const publicUrl = z.string().url().max(2000);
+
+export const generationPreferenceSchema = z.object({
+  auto: z.boolean().optional().default(true),
+  image: z
+    .object({
+      ratio: z.string().max(16).optional(),
+      model_code: z.string().max(120).optional(),
+      resolution: z.string().max(16).optional(),
+    })
+    .optional(),
+  video: z
+    .object({
+      ratio: z.string().max(16).optional(),
+      model_code: z.string().max(120).optional(),
+      resolution: z.string().max(16).optional(),
+    })
+    .optional(),
+});
+export type GenerationPreference = z.infer<typeof generationPreferenceSchema>;
+
 export function taskParamsSchema(type: CreationType) {
   switch (type) {
     case "image":
@@ -592,8 +613,8 @@ export function taskParamsSchema(type: CreationType) {
           custom_size: z
             .object({ width: z.number().int().min(512).max(8192), height: z.number().int().min(512).max(8192) })
             .optional(),
-          /** 参考图（图生图/蒙版重绘）：公网可访问 URL，最多 4 张（D12 画布 v2） */
-          input_images: z.array(z.string().url()).max(4).optional(),
+          /** 参考图：公网 URL；面板上限对齐原站 30，契约先放宽到 30（D9/D13） */
+          input_images: z.array(publicUrl).max(30).optional(),
         })
         .passthrough();
     case "video":
@@ -604,11 +625,17 @@ export function taskParamsSchema(type: CreationType) {
           duration_seconds: z.number().int().min(3).max(180),
           count: z.number().int().min(1).max(4).optional().default(1),
           reference_mode: z
-            .enum(["unified_edit", "first_end_frame", "smart_multi", "smart_edit", "long_video"])
+            .enum(["unified_edit", "first_end_frame", "smart_multi", "smart_edit", "long_video", "extend"])
             .optional(),
+          input_images: z.array(publicUrl).max(30).optional(),
+          input_videos: z.array(publicUrl).max(10).optional(),
+          input_audios: z.array(publicUrl).max(10).optional(),
+          first_frame_url: publicUrl.optional(),
+          last_frame_url: publicUrl.optional(),
+          reference_video_url: publicUrl.optional(),
         })
         .superRefine((v, ctx) => {
-          // 普通模式 4-15s；超长视频（long_video）模式 30-180s（即梦 video_duration_display_range 实测）
+          // 普通/续写 4-15s；超长视频（long_video）模式 30-180s
           const max = v.reference_mode === "long_video" ? 180 : 15;
           const min = v.reference_mode === "long_video" ? 30 : 3;
           if (v.duration_seconds < min || v.duration_seconds > max) {
@@ -625,11 +652,35 @@ export function taskParamsSchema(type: CreationType) {
     case "music":
       return z.object({ duration_seconds: z.number().int().min(5).max(300).optional(), style: z.string().max(120).optional() }).passthrough();
     case "dubbing":
-      return z.object({ voice_id: z.string().max(120).optional(), text: z.string().min(1).max(5000) }).passthrough();
+      return z
+        .object({
+          voice_id: z.string().max(120).optional(),
+          voice: z.string().max(120).optional(),
+          text: z.string().max(5000).optional(),
+          reference_audio: publicUrl.optional(),
+          input_audios: z.array(publicUrl).max(4).optional(),
+        })
+        .passthrough();
     case "digital_human":
-      return z.object({ speech: z.string().min(1).max(5000), motion: z.string().max(2000).optional() }).passthrough();
+      return z
+        .object({
+          speech: z.string().max(5000).optional(),
+          motion: z.string().max(2000).optional(),
+          mode: z.string().max(40).optional(),
+          input_images: z.array(publicUrl).max(4).optional(),
+          input_audios: z.array(publicUrl).max(4).optional(),
+        })
+        .passthrough();
     case "motion_mimic":
-      return z.object({ style: z.string().max(60).optional(), reference_video: z.string().max(500).optional() }).passthrough();
+      return z
+        .object({
+          style: z.string().max(60).optional(),
+          reference_video: z.string().max(2000).optional(),
+          reference_video_url: publicUrl.optional(),
+          input_videos: z.array(publicUrl).max(4).optional(),
+          input_images: z.array(publicUrl).max(4).optional(),
+        })
+        .passthrough();
     case "agent":
       return z.object({ skill_id: z.string().max(80).optional() }).passthrough();
   }

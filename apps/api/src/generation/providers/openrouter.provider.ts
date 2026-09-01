@@ -30,6 +30,14 @@ export class OpenRouterProvider implements GenerationProvider {
     this.fetch = opts.fetchImpl ?? globalThis.fetch;
   }
 
+  withCredentials(creds: { apiKey: string; baseUrl?: string }): OpenRouterProvider {
+    return new OpenRouterProvider({
+      ...this.opts,
+      apiKey: creds.apiKey,
+      baseUrl: creds.baseUrl || this.opts.baseUrl,
+    });
+  }
+
   private assertConfigured(): void {
     if (!this.opts.apiKey) throw new MissingProviderConfig("OPENROUTER_API_KEY");
     if (!this.opts.baseUrl) throw new MissingProviderConfig("OPENROUTER_BASE_URL");

@@ -10,6 +10,8 @@ import { api, type MeInfo } from "@/lib/api";
 
 const NAV = [
   { href: "/admin/models", label: "模型" },
+  { href: "/admin/providers", label: "供应商" },
+  { href: "/admin/pricing", label: "定价" },
   { href: "/admin/usage", label: "用量" },
   { href: "/admin/users", label: "用户" },
   { href: "/admin/user-insights", label: "用户洞察" },

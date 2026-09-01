@@ -75,6 +75,35 @@ describe("ArkProvider.submit", () => {
     expect(JSON.stringify(requests[0]!.body.content)).toContain("--ratio 16:9");
   });
 
+  it("图生视频：首尾帧挂载官方 role", async () => {
+    responder = (_req, res) => json(res, 200, { id: "cgt-ref", status: "queued" });
+    await provider().submit({
+      type: "video",
+      prompt: "walk",
+      params: {
+        ratio: "16:9",
+        duration_seconds: 5,
+        reference_mode: "first_end_frame",
+        first_frame_url: "https://cdn.example.com/a.jpg",
+        last_frame_url: "https://cdn.example.com/b.jpg",
+      },
+    });
+    const content = requests[0]!.body.content as { role?: string; type: string }[];
+    expect(content.some((c) => c.role === "first_frame")).toBe(true);
+    expect(content.some((c) => c.role === "last_frame")).toBe(true);
+  });
+
+  it("视频续写：reference_video role", async () => {
+    responder = (_req, res) => json(res, 200, { id: "cgt-ext", status: "queued" });
+    await provider().submit({
+      type: "video",
+      prompt: "continue",
+      params: { reference_mode: "extend", reference_video_url: "https://cdn.example.com/v.mp4", duration_seconds: 5 },
+    });
+    const content = requests[0]!.body.content as { role?: string }[];
+    expect(content.some((c) => c.role === "reference_video")).toBe(true);
+  });
+
   it("文生图：同步接口立即返回产物 URL（submit 即完成）", async () => {
     responder = (_req, res) => json(res, 200, { data: [{ url: "https://img.example.com/out-0.jpg" }] });
 
@@ -95,6 +124,14 @@ describe("ArkProvider.submit", () => {
     const p = new ArkProvider({ baseUrl, apiKey: "", imageModel: "i", videoModel: "v" });
     await expect(p.submit({ type: "image", prompt: "x", params: {} })).rejects.toThrow(/config/i);
     expect(requests).toHaveLength(0);
+  });
+
+  it("withCredentials 用新 key 发请求（D14 运行时注入）", async () => {
+    responder = (_req, res) => json(res, 200, { data: [{ url: "https://img.example.com/out.jpg" }] });
+    const p = new ArkProvider({ baseUrl, apiKey: "", imageModel: "i", videoModel: "v" });
+    const bound = p.withCredentials({ apiKey: "admin-key" });
+    await bound.submit({ type: "image", prompt: "x", params: {} });
+    expect(requests[0]!.headers.authorization).toBe("Bearer admin-key");
   });
 });
 

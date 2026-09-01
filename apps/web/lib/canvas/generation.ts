@@ -7,7 +7,7 @@ import { pricing } from "@dreamina/shared";
 
 import { api, type CreationTypesConfig, type GenTask, type ModelEntry } from "@/lib/api";
 
-export type CanvasGenerationKind = "image" | "video";
+export type CanvasGenerationKind = "image" | "video" | "music" | "dubbing";
 
 export async function fetchCreationConfig(): Promise<CreationTypesConfig> {
   return api<CreationTypesConfig>("/config/creation-types");
@@ -53,9 +53,7 @@ export interface CanvasTaskInput {
   type: CanvasGenerationKind;
   prompt: string;
   model_code: string;
-  params:
-    | { resolution: string; ratio: string; count: number; input_images?: string[] }
-    | { resolution: string; ratio: string; duration_seconds: number };
+  params: Record<string, unknown>;
 }
 
 export async function submitCanvasTask(input: CanvasTaskInput): Promise<GenTask> {

@@ -122,6 +122,18 @@ describe("任务参数 schema（按类型）", () => {
     expect(p.safeParse({ resolution: "720p", duration_seconds: 60 }).success).toBe(false);
   });
 
+  it("video 参数：续写 extend + 参考素材 URL", () => {
+    const p = taskParamsSchema("video");
+    expect(p.parse({
+      resolution: "720p",
+      duration_seconds: 5,
+      reference_mode: "extend",
+      reference_video_url: "https://cdn.example.com/a.mp4",
+      input_images: ["https://cdn.example.com/a.png"],
+    }).reference_mode).toBe("extend");
+    expect(p.safeParse({ resolution: "720p", duration_seconds: 5, first_frame_url: "not-url" }).success).toBe(false);
+  });
+
   it("video 参数：count 1-4（原版生成数量）", () => {
     const p = taskParamsSchema("video");
     expect(p.parse({ resolution: "720p", duration_seconds: 5, count: 1 })).toBeTruthy();
@@ -134,7 +146,8 @@ describe("任务参数 schema（按类型）", () => {
   it("music/dubbing/digital_human/motion_mimic 各自参数", () => {
     expect(taskParamsSchema("music").parse({ duration_seconds: 30 })).toBeTruthy();
     expect(taskParamsSchema("dubbing").parse({ voice_id: "v1", text: "hello" })).toBeTruthy();
-    expect(taskParamsSchema("digital_human").parse({ speech: "内容", motion: "镜头推进" })).toBeTruthy();
-    expect(taskParamsSchema("motion_mimic").parse({ style: "生动" })).toBeTruthy();
+    expect(taskParamsSchema("dubbing").parse({ voice: "female_warm", reference_audio: "https://cdn.example.com/v.wav" })).toBeTruthy();
+    expect(taskParamsSchema("digital_human").parse({ speech: "内容", motion: "镜头推进", input_images: ["https://cdn.example.com/p.jpg"] })).toBeTruthy();
+    expect(taskParamsSchema("motion_mimic").parse({ style: "生动", reference_video_url: "https://cdn.example.com/m.mp4" })).toBeTruthy();
   });
 });

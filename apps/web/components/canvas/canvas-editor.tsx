@@ -208,6 +208,18 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
             config.metadata = { generationMode: "image", composerContent: pendingPrompt, status: "idle" };
             setNodes([...loaded.nodes, config]);
         }
+        const pendingAssetRaw = sessionStorage.getItem("pending-canvas-asset");
+        if (pendingAssetRaw) {
+            sessionStorage.removeItem("pending-canvas-asset");
+            try {
+                const pending = JSON.parse(pendingAssetRaw) as { url: string; kind: string; intent?: string };
+                const type = pending.kind === "video" ? CanvasNodeType.Video : pending.kind === "audio" ? CanvasNodeType.Audio : CanvasNodeType.Image;
+                const node = createCanvasNode(type, { x: 240, y: 180 }, "资产");
+                node.metadata = { content: pending.url, status: "success" };
+                setNodes((current) => [...current, node]);
+                if (pending.intent === "mask" || pending.intent === "angle") setToolbarNodeId(node.id);
+            } catch { /* ignore */ }
+        }
     }, [project.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -662,6 +674,7 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                 toast.success("已插入画布");
             },
             onOpenUpload: () => fileInputRef.current?.click(),
+            onOpenAssets: () => setAssetPickerOpen(true),
         }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [projectId, name, nodes, connections, selectedIds, viewport, executeAction, creationConfig.data],
@@ -1521,7 +1534,12 @@ export function CanvasEditor({ projectId }: { projectId: string }) {
                     onAddVideo={() => createNode(CanvasNodeType.Video, getCanvasCenter())}
                     onAddAudio={() => createNode(CanvasNodeType.Audio, getCanvasCenter())}
                     onAddPanorama={() => createNode(CanvasNodeType.Panorama, getCanvasCenter())}
-                    onAddDirector={() => toast.info("导演台将在 Phase D 开放")}
+                    onAddDirector={() => {
+                        const node = createCanvasNode(CanvasNodeType.Director, getCanvasCenter());
+                        pushHistory();
+                        setNodes((current) => [...current, node]);
+                        setDirectorNodeId(node.id);
+                    }}
                     onAddConfig={() => createNode(CanvasNodeType.Config, getCanvasCenter())}
                     onUndo={undoCanvas}
                     onRedo={redoCanvas}
@@ -1637,6 +1655,7 @@ function NodeCreateMenu({ menu, onClose, onCreate }: { menu: { x: number; y: num
         { type: CanvasNodeType.Audio, label: "音频" },
         { type: CanvasNodeType.Config, label: "生成配置" },
         { type: CanvasNodeType.Panorama, label: "全景图" },
+        { type: CanvasNodeType.Director, label: "导演台" },
     ];
     return (
         <div

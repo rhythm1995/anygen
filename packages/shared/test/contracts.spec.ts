@@ -201,10 +201,11 @@ describe("本项目的生成契约（不来自原站）", () => {
     expect(canvasGraphSchema.parse(graph)).toBeTruthy();
   });
 
-  it("image 任务参数：input_images 参考图（公网 URL，最多 4 张）", () => {
+  it("image 任务参数：input_images 参考图（公网 URL，最多 30 张）", () => {
     const schema = taskParamsSchema("image");
     expect(schema.safeParse({ resolution: "2k", input_images: ["https://a/1.png", "https://a/2.png"] }).success).toBe(true);
     expect(schema.safeParse({ resolution: "2k", input_images: ["not-a-url"] }).success).toBe(false);
-    expect(schema.safeParse({ resolution: "2k", input_images: ["https://a/1", "https://a/2", "https://a/3", "https://a/4", "https://a/5"] }).success).toBe(false);
+    const tooMany = Array.from({ length: 31 }, (_, i) => `https://a/${i}.png`);
+    expect(schema.safeParse({ resolution: "2k", input_images: tooMany }).success).toBe(false);
   });
 });

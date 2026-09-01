@@ -63,6 +63,11 @@ export interface MeInfo {
   avatarUrl: string;
   role: string;
   balance_cents: number;
+  preferences?: {
+    auto?: boolean;
+    image?: { ratio?: string; model_code?: string; resolution?: string };
+    video?: { ratio?: string; model_code?: string; resolution?: string };
+  };
 }
 export interface Project {
   id: string;

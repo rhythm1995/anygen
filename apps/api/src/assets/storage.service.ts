@@ -98,6 +98,14 @@ export class StorageService {
     return data;
   }
 
+  async uploadBuffer(input: { key: string; body: Buffer; contentType: string }): Promise<{ key: string; bytes: number }> {
+    this.assertConfigured();
+    await this.client!.send(
+      new PutObjectCommand({ Bucket: this.config.s3Bucket, Key: input.key, ContentType: input.contentType, Body: input.body }),
+    );
+    return { key: input.key, bytes: input.body.length };
+  }
+
   /** 生成产物转存：远端 URL → 拉取 → S3 上传（不经过前端） */
   async uploadFromUrl(input: { key: string; remoteUrl: string; contentType: string }): Promise<{ key: string; bytes: number }> {
     this.assertConfigured();

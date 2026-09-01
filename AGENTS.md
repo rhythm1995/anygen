@@ -67,4 +67,4 @@ node tools/e2e-ui.mjs     # 真实浏览器 UI 全流程（注册→feed→生�
 
 ## 里程碑指针
 
-见 docs/CONCLUSIONS.md §5。当前：M7（画布 v2，D12——vendor 化 tigerowo 对照重写）。动手前重读该节与 docs/CANVAS-RESEARCH.md。
+见 docs/CONCLUSIONS.md §5。当前：M8 已交付（D13 缺口收口）。下一档为 M6+ 储备（审核/AGPL 剥离/兑换码）。动手前重读 CONCLUSIONS。

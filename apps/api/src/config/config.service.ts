@@ -103,4 +103,16 @@ export class ConfigService {
   get initialGrantCents(): number {
     return Number(this.env.INITIAL_GRANT_CENTS ?? 500);
   }
+
+  get encryptionKey(): string | undefined {
+    return this.env.ENCRYPTION_KEY || undefined;
+  }
+
+  get elevenLabsApiKey(): string | undefined {
+    return this.env.ELEVENLABS_API_KEY || undefined;
+  }
+
+  get doubaoSpeechApiKey(): string | undefined {
+    return this.env.DOUBAO_SPEECH_API_KEY || undefined;
+  }
 }

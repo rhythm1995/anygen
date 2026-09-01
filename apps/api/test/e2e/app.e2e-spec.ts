@@ -463,5 +463,65 @@ describe("Dreamina API (e2e)", () => {
       const me = await authed.get("/api/me");
       expect((me.body as any).balance_cents).toBe(before + 100); // 未扣分
     });
+
+    it("音乐：未配引擎 → 503，不残留任务", async () => {
+      const res = await authed.post("/api/generation/tasks", {
+        type: "music",
+        prompt: "lofi beat",
+        params: { duration_seconds: 12 },
+      });
+      expect([402, 503, 502]).toContain(res.status);
+      if (res.status === 503) {
+        expect(String((res.body as any).message)).toMatch(/unavailable|key|bridge|music|config/i);
+      }
+    });
+
+    it("视频续写 params 契约：extend + 参考视频 URL 可过校验", async () => {
+      const res = await authed.post("/api/generation/tasks", {
+        type: "video",
+        prompt: "continue the shot",
+        params: {
+          resolution: "720p",
+          duration_seconds: 5,
+          reference_mode: "extend",
+          reference_video_url: "https://cdn.example.com/clip.mp4",
+        },
+      });
+      // 无 ARK key → 503；有 key 则进入 provider（可能 502）。禁止 400 契约失败。
+      expect(res.status).not.toBe(400);
+    });
+  });
+
+  describe("/api/me/preferences + agent skills（D13）", () => {
+    it("PATCH 生成偏好 round-trip", async () => {
+      const res = await authed.patch("/api/me/preferences", { auto: true, image: { ratio: "16:9", resolution: "2k" } });
+      expect(res.status).toBe(200);
+      expect((res.body as any).preferences.image.ratio).toBe("16:9");
+      const me = await authed.get("/api/me");
+      expect((me.body as any).preferences.image.ratio).toBe("16:9");
+    });
+
+    it("配音克隆无 ElevenLabs key → 503（D14）", async () => {
+      const res = await authed.post("/api/generation/tasks", {
+        type: "dubbing",
+        prompt: "你好，这是一段测试配音",
+        params: { reference_audio: "https://cdn.example.com/ref.wav" },
+      });
+      expect([402, 503, 502]).toContain(res.status);
+      if (res.status === 503) {
+        expect(String((res.body as any).message)).toMatch(/unavailable|key|clone|eleven|config/i);
+      }
+    });
+
+    it("自定义技能 CRUD", async () => {
+      const created = await authed.post("/api/agent/skills", { name: "测试技能", description: "e2e" });
+      expect([200, 201]).toContain(created.status);
+      const id = (created.body as any).id as string;
+      expect(id).toMatch(/^usr_/);
+      const list = await authed.get("/api/agent/skills");
+      expect((list.body as any[]).some((s) => s.id === id)).toBe(true);
+      const del = await fetch(`${base}/api/agent/skills/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      expect(del.status).toBe(200);
+    });
   });
 });

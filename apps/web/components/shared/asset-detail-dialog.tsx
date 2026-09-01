@@ -3,7 +3,7 @@
 /**
  * 资产详情弹层（D8，复刻 RECON/auth/asset/30-detail.png）：
  * 左大图（AI生成角标 / ‹ n/n › 翻页 / 右侧上下切换）+ 右栏（下载·收藏·⋯ / 同任务缩略图条 / 图片提示词 / 操作区）。
- * 可用动作真实跳转；未接入的高级编辑动作如实 toast「建设中」（composer 引用管线未接入）。
+ * ⋯ 菜单：复制提示词/复制链接/发布/删除（D14）。高级动作真实跳转生成页或画布。
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +24,7 @@ export interface AssetDetailRow {
   width: number | null;
   height: number | null;
   favorited: boolean;
+  published?: boolean;
   tags: string[];
   meta: { prompt?: string; taskId?: string } & Record<string, unknown>;
   createdAt: string;
@@ -38,6 +39,8 @@ export function AssetDetailDialog({
   onClose,
   onToggleFavorite,
   onUpdateTags,
+  onDeleted,
+  onPublished,
 }: {
   assets: AssetDetailRow[];
   activeId: string;
@@ -45,9 +48,12 @@ export function AssetDetailDialog({
   onClose: () => void;
   onToggleFavorite: (a: AssetDetailRow) => void;
   onUpdateTags: (a: AssetDetailRow, tags: string[]) => void;
+  onDeleted?: (id: string) => void;
+  onPublished?: (a: AssetDetailRow, published: boolean) => void;
 }) {
   const router = useRouter();
   const [toast, setToast] = useState<string | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [tagInput, setTagInput] = useState("");
 
   const asset = assets.find((a) => a.id === activeId) ?? assets[0];
@@ -118,31 +124,40 @@ export function AssetDetailDialog({
     router.push("/ai-tool/generate?auto=1");
   };
 
+  const goGenerate = (type: string, extra: Record<string, unknown> = {}, nextPrompt = prompt) => {
+    sessionStorage.setItem("pending-prefill", JSON.stringify({
+      type,
+      prompt: nextPrompt,
+      params: { input_images: asset.kind === "image" ? [asset.url] : undefined, ...extra },
+    }));
+    router.push("/ai-tool/generate?prefill=1");
+  };
+  const goCanvas = (intent?: string) => {
+    sessionStorage.setItem("pending-canvas-asset", JSON.stringify({ url: asset.url, kind: asset.kind, intent, prompt }));
+    router.push("/ai-tool/assets-canvas");
+  };
+
   const primaryActions: { label: string; icon: React.ReactNode; onClick: () => void; trailing?: string }[] = [
     {
       label: "生成视频", icon: <Film size={16} />,
-      onClick: () => {
-        if (!prompt) return setToast(ACTION_BUILDING);
-        sessionStorage.setItem("pending-prefill", JSON.stringify({ type: "video", prompt, params: {} }));
-        router.push("/ai-tool/generate?prefill=1");
-      },
+      onClick: () => goGenerate("video", asset.kind === "image" ? { first_frame_url: asset.url, reference_mode: "first_end_frame" } : { reference_video_url: asset.url, reference_mode: "extend" }),
     },
     {
       label: "去画布编辑", icon: <ArrowLeftRight size={16} />, trailing: "›",
-      onClick: () => router.push("/ai-tool/assets-canvas"),
+      onClick: () => goCanvas(),
     },
   ];
 
   const editActions = [
-    { label: "智能超清", icon: <Wand2 size={16} /> },
-    { label: "多角度", icon: <ScanFace size={16} />, badge: "New" },
-    { label: "超清", icon: <Sparkles size={16} /> },
-    { label: "智能改图", icon: <Pencil size={16} />, badge: "✦" },
-    { label: "细节修复", icon: <ImagePlus size={16} /> },
-    { label: "局部重绘", icon: <RefreshCcw size={16} /> },
-    { label: "扩图", icon: <Expand size={16} /> },
-    { label: "消除笔", icon: <Eraser size={16} /> },
-    { label: "对口型", icon: <Type size={16} /> },
+    { label: "智能超清", icon: <Wand2 size={16} />, onClick: () => goGenerate("image", { resolution: "4k", count: 1 }, prompt || "超清增强，保留主体与构图") },
+    { label: "多角度", icon: <ScanFace size={16} />, badge: "New", onClick: () => goCanvas("angle") },
+    { label: "超清", icon: <Sparkles size={16} />, onClick: () => goGenerate("image", { resolution: "4k", count: 1 }, prompt || "提高清晰度") },
+    { label: "智能改图", icon: <Pencil size={16} />, badge: "✦", onClick: () => goGenerate("image", { resolution: "2k", count: 1 }, prompt || "按提示改图") },
+    { label: "细节修复", icon: <ImagePlus size={16} />, onClick: () => goGenerate("image", { resolution: "2k", count: 1 }, "细节修复，保留原构图") },
+    { label: "局部重绘", icon: <RefreshCcw size={16} />, onClick: () => goCanvas("mask") },
+    { label: "扩图", icon: <Expand size={16} />, onClick: () => goGenerate("image", { resolution: "2k", count: 1 }, "向外扩图，延续场景") },
+    { label: "消除笔", icon: <Eraser size={16} />, onClick: () => goCanvas("mask") },
+    { label: "对口型", icon: <Type size={16} />, onClick: () => goGenerate("digital_human", { input_images: [asset.url], mode: "fast" }, prompt) },
   ];
 
   const bottomActions = [
@@ -223,9 +238,64 @@ export function AssetDetailDialog({
           >
             <Star size={18} fill={asset.favorited ? "currentColor" : "none"} />
           </button>
-          <button aria-label="更多" onClick={() => setToast(ACTION_BUILDING)} className="rounded-full p-2 text-white/85 hover:bg-white/10">
-            <MoreHorizontal size={18} />
-          </button>
+          <div className="relative">
+            <button aria-label="更多" onClick={() => setMoreOpen((v) => !v)} className="rounded-full p-2 text-white/85 hover:bg-white/10">
+              <MoreHorizontal size={18} />
+            </button>
+            {moreOpen && (
+              <div className="absolute right-0 top-10 z-20 w-40 overflow-hidden rounded-xl border border-white/10 bg-[#2a2b31] py-1 text-sm text-white shadow-xl">
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left hover:bg-white/10"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(prompt || "").then(() => setToast(prompt ? "提示词已复制" : "没有提示词"));
+                    setMoreOpen(false);
+                  }}
+                >
+                  复制提示词
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left hover:bg-white/10"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(asset.url).then(() => setToast("链接已复制"));
+                    setMoreOpen(false);
+                  }}
+                >
+                  复制链接
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left hover:bg-white/10"
+                  onClick={() => {
+                    const next = !asset.published;
+                    onPublished?.(asset, next);
+                    void api(`/assets/${asset.id}`, { method: "PATCH", body: { published: next } })
+                      .then(() => setToast(next ? "已发布" : "已取消发布"))
+                      .catch((e: Error) => setToast(e.message));
+                    setMoreOpen(false);
+                  }}
+                >
+                  {asset.published ? "取消发布" : "发布"}
+                </button>
+                <button
+                  type="button"
+                  className="block w-full px-3 py-2 text-left text-red-300 hover:bg-white/10"
+                  onClick={() => {
+                    void api(`/assets/${asset.id}`, { method: "DELETE" })
+                      .then(() => {
+                        onDeleted?.(asset.id);
+                        onClose();
+                      })
+                      .catch((e: Error) => setToast(e.message));
+                    setMoreOpen(false);
+                  }}
+                >
+                  删除
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {siblings.length > 1 && (
@@ -307,14 +377,14 @@ export function AssetDetailDialog({
               {primaryActions.map((a) => (
                 <ActionItem key={a.label} {...a} />
               ))}
-              <ActionItem label="用作参考图" icon={<ImagePlus size={16} />} onClick={() => setToast(ACTION_BUILDING)} />
+              <ActionItem label="用作参考图" icon={<ImagePlus size={16} />} onClick={() => goGenerate(asset.kind === "video" ? "video" : "image", { input_images: asset.kind === "image" ? [asset.url] : undefined, input_videos: asset.kind === "video" ? [asset.url] : undefined })} />
             </div>
           </ActionCard>
 
           <ActionCard className="mt-3">
             <div className="grid grid-cols-2 gap-y-4">
               {editActions.map((a) => (
-                <ActionItem key={a.label} label={a.label} icon={a.icon} badge={a.badge} onClick={() => setToast(ACTION_BUILDING)} />
+                <ActionItem key={a.label} label={a.label} icon={a.icon} badge={a.badge} onClick={a.onClick} />
               ))}
             </div>
           </ActionCard>

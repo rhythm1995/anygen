@@ -268,8 +268,32 @@ export function createAgentExecutor(deps: AgentExecutorDeps) {
                 const node = addNode(CanvasNodeType.Video, nextPlacement(), str("title") || "Agent 生成视频", { prompt, status: "idle" }, strArray("sourceNodeIds"));
                 return submitMedia(node, "video", prompt, strArray("sourceNodeIds"));
             }
-            case "generate_audio":
-                return { ok: false, code: "unsupported", message: "画布音频生成将在后续阶段开放（音乐/配音 provider 已预留）" };
+            case "generate_audio": {
+                const prompt = str("prompt") || str("text");
+                if (!prompt) return { ok: false, code: "bad_args", message: "prompt 不能为空" };
+                const node = addNode(CanvasNodeType.Audio, nextPlacement(), str("title") || "Agent 生成音频", { prompt, status: "idle" }, strArray("sourceNodeIds"));
+                const models = modelsFor(deps.creationConfigRef.current, "music");
+                const model = defaultModelFor(models);
+                if (!model) {
+                    deps.setNodes((current) => current.map((item) => (item.id === node.id ? { ...item, metadata: { ...item.metadata, status: "error", errorDetails: "无可用音乐模型" } } : item)));
+                    return { ok: false, code: "no_model", message: "无可用音乐模型" };
+                }
+                try {
+                    const task = await submitCanvasTask({
+                        type: "music",
+                        prompt,
+                        model_code: model.code,
+                        params: { duration_seconds: 30 },
+                    });
+                    deps.setNodes((current) => current.map((item) => (item.id === node.id ? { ...item, metadata: { ...item.metadata, status: "loading", audioTaskId: task.id, prompt } } : item)));
+                    deps.registerRunningTask(node.id, task.id);
+                    return { ok: true, nodeId: node.id, taskId: task.id, status: "loading" };
+                } catch (error) {
+                    const message = error instanceof Error ? error.message : "提交失败";
+                    deps.setNodes((current) => current.map((item) => (item.id === node.id ? { ...item, metadata: { ...item.metadata, status: "error", errorDetails: message } } : item)));
+                    return { ok: false, code: "submit_failed", message };
+                }
+            }
             default:
                 return { ok: false, code: "unknown_action", message: `未知动作 ${String((action as { name?: string }).name ?? "")}` };
         }

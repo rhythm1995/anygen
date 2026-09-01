@@ -141,11 +141,16 @@ export default function CanvasEntryPage() {
   useEffect(() => {
     if (loading || !session || consumedPending.current) return;
     const pendingPrompt = sessionStorage.getItem("pending-canvas-prompt");
-    if (!pendingPrompt) return;
+    const pendingAsset = sessionStorage.getItem("pending-canvas-asset");
+    if (!pendingPrompt && !pendingAsset) return;
     consumedPending.current = true;
-    sessionStorage.removeItem("pending-canvas-prompt");
-    create.mutate(pendingPrompt.slice(0, 40), {
-      onSuccess: (p) => router.push(`/ai-tool/assets-canvas/project/${p.id}`),
+    if (pendingPrompt) sessionStorage.removeItem("pending-canvas-prompt");
+    const name = pendingPrompt ? pendingPrompt.slice(0, 40) : "画布编辑";
+    create.mutate(name, {
+      onSuccess: (p) => {
+        if (pendingPrompt) sessionStorage.setItem("pending-canvas-prompt", pendingPrompt);
+        router.push(`/ai-tool/assets-canvas/project/${p.id}`);
+      },
     });
   }, [loading, session]); // eslint-disable-line react-hooks/exhaustive-deps
 

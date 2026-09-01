@@ -58,7 +58,38 @@ export class ProjectsService {
       .select()
       .single();
     if (error) throw new Error(error.message);
+    if (input.graph !== undefined) {
+      await this.syncCanvasSessions(userId, id, input.graph);
+    }
     return data;
+  }
+
+  /** D13：graph.chatSessions 双写到 agent_sessions(kind=canvas, project_id) */
+  private async syncCanvasSessions(userId: string, projectId: string, graph: unknown) {
+    const g = graph as { chatSessions?: unknown[]; activeChatId?: string };
+    const sessions = Array.isArray(g?.chatSessions) ? g.chatSessions : [];
+    const { data: existing } = await this.db
+      .from("agent_sessions")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("project_id", projectId)
+      .eq("kind", "canvas")
+      .maybeSingle();
+    const row = {
+      user_id: userId,
+      project_id: projectId,
+      kind: "canvas",
+      skill_id: "",
+      prompt: "canvas",
+      plan: { chatSessions: sessions, activeChatId: g.activeChatId ?? null },
+      status: "running",
+      updated_at: new Date().toISOString(),
+    };
+    if (existing?.id) {
+      await this.db.from("agent_sessions").update(row).eq("id", existing.id);
+    } else if (sessions.length) {
+      await this.db.from("agent_sessions").insert(row);
+    }
   }
 
   async remove(userId: string, id: string) {

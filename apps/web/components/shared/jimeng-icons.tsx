@@ -65,6 +65,14 @@ export function IconLongVideo(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconVideoExtend(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="1em" height="1em" aria-hidden {...props}>
+      <path fill="currentColor" d="M4 6.5A2.5 2.5 0 0 1 6.5 4h7A2.5 2.5 0 0 1 16 6.5v11A2.5 2.5 0 0 1 13.5 20h-7A2.5 2.5 0 0 1 4 17.5v-11Zm12.5 2.2 5.2 3.3a1 1 0 0 1 0 1.7l-5.2 3.3V8.7Z" />
+    </svg>
+  );
+}
+
 export function IconTypeImage(props: SVGProps<SVGSVGElement>) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="1em" height="1em" aria-hidden {...props}>

@@ -4,7 +4,7 @@
 // 结构：左侧参考素材叠卡（±8° 旋转，按参考模式变形）+ 右侧描述区 + 底部工具条
 //（类型 accent chip｜模型 chip｜参考模式 chip｜比例+分辨率+数量合并 chip｜时长 chip｜价格｜提交）。
 // 尺寸/色值取自抓包计算值：chip 12px/450、高 34-36、radius 8、边框 rgba(204,221,255,0.06)。
-import { ArrowLeftRight, ArrowUp, Check, ChevronDown, ChevronUp, Plus, Sparkle } from "lucide-react";
+import { ArrowLeftRight, ArrowUp, AtSign, Check, ChevronDown, ChevronUp, Sparkle } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 
@@ -14,6 +14,7 @@ import {
   IconOmniReference,
   IconSmartEdit,
   IconSmartMultiFrame,
+  IconVideoExtend,
   IconTypeAgent,
   IconTypeDigitalHuman,
   IconTypeDubbing,
@@ -24,6 +25,9 @@ import {
 } from "@/components/shared/jimeng-icons";
 import { DurationPicker } from "@/components/shared/duration-picker";
 import { useCreationConfig } from "@/components/shared/use-creation-config";
+import { AssetCitePopover } from "@/components/shared/asset-cite-popover";
+import { MediaRefTile, type MediaRef } from "@/components/shared/media-ref-tile";
+import { VideoMarkDialog, formatVideoMarks } from "@/components/shared/video-mark-dialog";
 import { formatUsd, type CreationType, type ModelEntry } from "@/lib/api";
 
 export interface VideoSubmitPayload {
@@ -46,6 +50,7 @@ const REFERENCE_MODES = [
   { key: "smart_multi", label: "智能多帧", Icon: IconSmartMultiFrame, beta: false },
   { key: "smart_edit", label: "智能编辑", Icon: IconSmartEdit, beta: true },
   { key: "long_video", label: "超长视频", Icon: IconLongVideo, beta: true },
+  { key: "extend", label: "视频续写", Icon: IconVideoExtend, beta: false },
 ] as const;
 
 const TYPES = [
@@ -69,6 +74,8 @@ function placeholderFor(mode: string): string {
       return "请添加智能多帧的镜头";
     case "smart_edit":
       return "描述你想修改的内容，例如：把角色A替换成角色B，或使用高级编辑功能对视频画面进行标记、框选";
+    case "extend":
+      return "上传要续写的视频，描述接下来发生的内容、运动方式与镜头变化。";
     default:
       return "上传最多50个参考素材、输入文字或 @ 引用内容，自由组合图、文、音、视频多元素，定义精彩互动。例如：@图片1 模仿 @视频1 的动作，音色参考 @音频1。";
   }
@@ -78,6 +85,7 @@ function placeholderFor(mode: string): string {
 const MODE_PREFERENCE: Record<string, string[]> = {
   first_end_frame: ["dreamina_seedance_45_pro"],
   long_video: ["dreamina_seedance_45_pro"],
+  extend: ["dreamina_seedance_45_pro"],
   smart_edit: ["dreamina_seedance_45_pro", "dreamina_seedance_40_mini"],
   smart_multi: ["dreamina_ic_generate_video_model_vgfm_3.0_fast", "dreamina_seedance_40_mini"],
   unified_edit: [],
@@ -163,32 +171,7 @@ function Chip({
   );
 }
 
-/** 参考素材叠卡（原版 reference-item ±8° 倾斜、内容随卡倾斜；stack=双层叠卡背卡露出右上；上传管线未接入，点击如实提示） */
-function RefTile({ label, kind, tilt = -8, stack = false }: { label: string; kind: "plus" | "upload"; tilt?: number; stack?: boolean }) {
-  return (
-    <button
-      type="button"
-      aria-label={`上传${label}`}
-      onClick={() => toast("素材上传即将上线")}
-      className="group relative h-[80px] w-16 shrink-0"
-    >
-      {stack && (
-        <span
-          aria-hidden
-          className="absolute inset-0 rounded-lg border border-dm-border-2 bg-dm-surface-2/50"
-          style={{ transform: "rotate(8deg) translate(3px,-2px)" }}
-        />
-      )}
-      <span
-        className="relative flex h-full w-full flex-col items-center justify-center gap-1.5 rounded-lg border border-dm-border-2 bg-dm-surface-2/70 text-dm-text-3 transition-colors group-hover:border-dm-border-3 group-hover:text-dm-text-2"
-        style={{ transform: `rotate(${tilt}deg)` }}
-      >
-        {kind === "plus" ? <Plus size={16} /> : <ArrowUp size={16} />}
-        <span className="text-[11px] leading-none">{label}</span>
-      </span>
-    </button>
-  );
-}
+
 
 export function VideoComposer({
   onSubmit,
@@ -218,6 +201,14 @@ export function VideoComposer({
   const [res, setRes] = useState("720p");
   const [count, setCount] = useState(1);
   const [durationSec, setDurationSec] = useState(5);
+  const [omniRefs, setOmniRefs] = useState<MediaRef[]>([]);
+  const [firstRef, setFirstRef] = useState<MediaRef[]>([]);
+  const [lastRef, setLastRef] = useState<MediaRef[]>([]);
+  const [editVideo, setEditVideo] = useState<MediaRef[]>([]);
+  const [editRefs, setEditRefs] = useState<MediaRef[]>([]);
+  const [extendRef, setExtendRef] = useState<MediaRef[]>([]);
+  const [citeOpen, setCiteOpen] = useState(false);
+  const [markOpen, setMarkOpen] = useState(false);
   const areaRef = useRef<HTMLTextAreaElement>(null);
 
   // 重新编辑回填（与 CreationComposer 同语义）
@@ -268,12 +259,22 @@ export function VideoComposer({
   const resOptions = model?.params.resolution?.options ?? ["480p", "720p", "1080p"];
   const isSmartEdit = refMode === "smart_edit";
 
+  const allImages = [...omniRefs, ...firstRef, ...lastRef, ...editRefs, ...extendRef].filter((r) => r.kind === "image");
+  const allVideos = [...omniRefs, ...editVideo, ...extendRef, ...editRefs].filter((r) => r.kind === "video");
+  const allAudios = [...omniRefs, ...editRefs].filter((r) => r.kind === "audio");
   const params: Record<string, unknown> = {
     resolution: res,
     ratio,
     duration_seconds: durationSec,
     count,
     reference_mode: refMode,
+    ...(allImages.length ? { input_images: allImages.map((r) => r.url) } : {}),
+    ...(allVideos.length ? { input_videos: allVideos.map((r) => r.url) } : {}),
+    ...(allAudios.length ? { input_audios: allAudios.map((r) => r.url) } : {}),
+    ...(firstRef[0] ? { first_frame_url: firstRef[0].url } : {}),
+    ...(lastRef[0] ? { last_frame_url: lastRef[0].url } : {}),
+    ...(extendRef[0] ? { reference_video_url: extendRef[0].url } : {}),
+    ...(editVideo[0] ? { reference_video_url: editVideo[0].url } : {}),
   };
   const factor = model?.params.resolution_factors?.[res] ?? 1;
   const costCents = model ? Math.ceil(model.price_cents * factor * durationSec * count) : 0;
@@ -292,20 +293,27 @@ export function VideoComposer({
         {/* 面板主体：参考素材叠卡 + 描述区 */}
         <div className="flex items-start gap-4 px-4 pb-1 pt-5">
           <div className="flex min-h-[96px] items-center gap-3 pl-2">
-            {(refMode === "unified_edit" || refMode === "long_video") && <RefTile label="参考内容" kind="plus" stack tilt={-8} />}
-            {refMode === "smart_multi" && <RefTile label="空帧" kind="plus" />}
+            {(refMode === "unified_edit" || refMode === "long_video") && (
+              <MediaRefTile label="参考内容" kind="plus" stack tilt={-8} value={omniRefs} onChange={setOmniRefs} />
+            )}
+            {refMode === "smart_multi" && (
+              <MediaRefTile label="空帧" kind="plus" accept="image/*" value={omniRefs} onChange={setOmniRefs} />
+            )}
             {refMode === "first_end_frame" && (
               <>
-                <RefTile label="首帧" kind="plus" tilt={-8} />
+                <MediaRefTile label="首帧" kind="plus" tilt={-8} accept="image/*" multiple={false} value={firstRef} onChange={setFirstRef} />
                 <ArrowLeftRight size={14} className="shrink-0 text-dm-text-3" />
-                <RefTile label="尾帧" kind="plus" tilt={8} />
+                <MediaRefTile label="尾帧" kind="plus" tilt={8} accept="image/*" multiple={false} value={lastRef} onChange={setLastRef} />
               </>
             )}
             {refMode === "smart_edit" && (
               <>
-                <RefTile label="编辑视频" kind="upload" tilt={-8} />
-                <RefTile label="参考内容" kind="plus" tilt={8} />
+                <MediaRefTile label="编辑视频" kind="upload" tilt={-8} accept="video/mp4,video/quicktime" multiple={false} value={editVideo} onChange={setEditVideo} />
+                <MediaRefTile label="参考内容" kind="plus" tilt={8} value={editRefs} onChange={setEditRefs} />
               </>
+            )}
+            {refMode === "extend" && (
+              <MediaRefTile label="续写视频" kind="upload" accept="video/mp4,video/quicktime" multiple={false} value={extendRef} onChange={setExtendRef} />
             )}
           </div>
           <textarea
@@ -427,12 +435,41 @@ export function VideoComposer({
             </Menu>
           </div>
 
-          {/* 智能编辑：高级编辑虚线 chip */}
+          {/* 智能编辑：高级编辑 = 标记参考后提交（走参考视频管线） */}
           {isSmartEdit && (
-            <Chip dashed onClick={() => toast("高级编辑建设中")}>
+            <Chip
+              dashed
+              onClick={() => {
+                if (!editVideo[0]) {
+                  toast("请先在左侧上传要编辑的视频");
+                  return;
+                }
+                setMarkOpen(true);
+              }}
+            >
               高级编辑
             </Chip>
           )}
+
+          <div className="relative">
+            <Chip ariaLabel="引用素材" onClick={() => setCiteOpen((v) => !v)}>
+              <AtSign size={14} />
+            </Chip>
+            <AssetCitePopover
+              open={citeOpen}
+              onClose={() => setCiteOpen(false)}
+              onPick={(ref) => {
+                if (refMode === "first_end_frame") {
+                  if (!firstRef.length) setFirstRef([ref]);
+                  else setLastRef([ref]);
+                } else if (refMode === "extend") setExtendRef([ref]);
+                else if (refMode === "smart_edit") {
+                  if (ref.kind === "video" && !editVideo.length) setEditVideo([ref]);
+                  else setEditRefs((cur) => [...cur, ref]);
+                } else setOmniRefs((cur) => [...cur, ref]);
+              }}
+            />
+          </div>
 
           {/* 比例 | 分辨率 | 数量 合并 chip（智能编辑显示「自动」） */}
           <div className="relative">
@@ -537,6 +574,18 @@ export function VideoComposer({
       {error && (
         <p className="px-1 pt-2 text-xs text-red-400" data-testid="composer-error">{error}</p>
       )}
+      {markOpen && editVideo[0] ? (
+        <VideoMarkDialog
+          src={editVideo[0].url}
+          onClose={() => setMarkOpen(false)}
+          onApply={(marks) => {
+            const note = formatVideoMarks(marks);
+            if (note) setText((cur) => (cur.trim() ? `${cur.trim()}\n${note}` : note));
+            setMarkOpen(false);
+            if (marks.length) toast.success(`已添加 ${marks.length} 个编辑区域`);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

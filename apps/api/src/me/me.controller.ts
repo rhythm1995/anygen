@@ -1,7 +1,9 @@
-import { Controller, Get, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Patch, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
+import { generationPreferenceSchema } from "@dreamina/shared";
 
 import { SupabaseJwtGuard } from "../auth/auth.guard";
+import { ZodBodyPipe } from "../common/zod.pipe";
 import { MeService } from "./me.service";
 
 @Controller("me")
@@ -20,6 +22,15 @@ export class MeController {
       description: profile.description,
       role: profile.role ?? "user",
       balance_cents: profile.balance_cents,
+      preferences: profile.preferences ?? {},
     };
+  }
+
+  @Patch("preferences")
+  async patchPreferences(
+    @Req() req: Request,
+    @Body(new ZodBodyPipe(generationPreferenceSchema)) body: Record<string, unknown>,
+  ) {
+    return this.me.patchPreferences(req.user!.id, body);
   }
 }

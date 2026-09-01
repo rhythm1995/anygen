@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowUp, AtSign, ChevronDown, Crop, Layers, Plus, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
@@ -9,7 +9,9 @@ import { useAuth } from "@/components/providers";
 import { DurationPicker } from "@/components/shared/duration-picker";
 import { VideoComposer } from "@/components/shared/video-composer";
 import { useCreationConfig } from "@/components/shared/use-creation-config";
-import { api, CREATION_TYPES, formatUsd, type CreationType, type CreationTypesConfig, type ModelEntry } from "@/lib/api";
+import { AssetCitePopover } from "@/components/shared/asset-cite-popover";
+import { MediaRefTile, uploadMediaFile, type MediaRef } from "@/components/shared/media-ref-tile";
+import { api, CREATION_TYPES, formatUsd, type CreationType, type CreationTypesConfig, type MeInfo, type ModelEntry } from "@/lib/api";
 
 export interface SubmitPayload {
   type: CreationType;
@@ -26,7 +28,7 @@ export interface ComposerPrefill {
   params?: Record<string, unknown>;
 }
 
-// 预置音色（平台自有配置；音色克隆管线未接入，见 D7/D11）
+// 预置音色；克隆新声音上传参考音频后走 ElevenLabs Instant Voice Clone（D14，需 ELEVENLABS_API_KEY）
 const VOICE_PRESETS = [
   { key: "female_warm", label: "温柔女声" },
   { key: "female_bright", label: "明亮女声" },
@@ -149,7 +151,13 @@ export function CreationComposer({
   prefill?: ComposerPrefill | null;
 }) {
   const { session } = useAuth();
+  const qc = useQueryClient();
   const config = useCreationConfig();
+  const meQuery = useQuery({
+    queryKey: ["me"],
+    queryFn: () => api<MeInfo>("/me"),
+    enabled: Boolean(session),
+  });
   const [type, setType] = useState<CreationType>(initialType);
   const [typeOpen, setTypeOpen] = useState(false);
   const [paramsOpen, setParamsOpen] = useState(false);
@@ -158,7 +166,7 @@ export function CreationComposer({
   const [skill, setSkill] = useState<{ id: string; name: string } | null>(null);
   const skillsQuery = useQuery({
     queryKey: ["agent-skills"],
-    queryFn: () => api<{ id: string; name: string; title: string; description: string; official: boolean; step_count: number }[]>("/agent/skills"),
+    queryFn: () => api<{ id: string; name: string; title: string; description: string; official: boolean; user_id: string | null; step_count: number }[]>("/agent/skills"),
     enabled: skillPicker && Boolean(session),
   });
   const areaRef = useRef<HTMLTextAreaElement>(null);
@@ -177,10 +185,25 @@ export function CreationComposer({
   const [count, setCount] = useState(2);
   const [durationSec, setDurationSec] = useState(5);
   const [refMode, setRefMode] = useState("first_end_frame");
-  // 音乐时长 / 配音音色（引擎未接入前为提交参数，见 D7/D11）
+  // 音乐时长 / 配音音色
   const [musicDur, setMusicDur] = useState(30);
   const [voice, setVoice] = useState<string | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  const [citeOpen, setCiteOpen] = useState(false);
+  const [cited, setCited] = useState<MediaRef[]>([]);
+  const [cloneAudio, setCloneAudio] = useState<MediaRef[]>([]);
+  const [portrait, setPortrait] = useState<MediaRef[]>([]);
+  const [dhAudio, setDhAudio] = useState<MediaRef[]>([]);
+  const [speech, setSpeech] = useState("");
+  const [motion, setMotion] = useState("");
+  const [mimicStyle, setMimicStyle] = useState("生动");
+  const [mimicVideo, setMimicVideo] = useState<MediaRef[]>([]);
+  const [prefOpen, setPrefOpen] = useState(false);
+  const [prefTab, setPrefTab] = useState<"image" | "video">("image");
+  const [manageOpen, setManageOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newSkillName, setNewSkillName] = useState("");
+  const [newSkillDesc, setNewSkillDesc] = useState("");
 
   // prefill 设置 type 时跳过一次 model 重置，否则刚回填的 model_code 会被清掉
   const prefilledTypeRef = useRef<CreationType | null>(null);
@@ -205,6 +228,12 @@ export function CreationComposer({
     if (typeof p.resolution === "string") (prefill.type === "video" ? setVidRes : setImgRes)(p.resolution);
     if (typeof p.count === "number") setCount(p.count);
     if (typeof p.duration_seconds === "number") setDurationSec(p.duration_seconds);
+    if (typeof p.speech === "string") setSpeech(p.speech);
+    if (typeof p.motion === "string") setMotion(p.motion);
+    if (Array.isArray(p.input_images)) {
+      setCited((p.input_images as string[]).map((url) => ({ url, assetId: url, kind: "image" as const, name: "ref" })));
+      if (prefill.type === "digital_human") setPortrait((p.input_images as string[]).map((url) => ({ url, assetId: url, kind: "image" as const, name: "ref" })));
+    }
   }, [prefill]);
   useEffect(() => {
     // 模型切换时钳制数量到该模型支持的范围（如 OpenRouter 模型仅支持 1）
@@ -244,24 +273,71 @@ export function CreationComposer({
       costCents = Math.ceil(model.price_cents * durationSec * factor);
     } else {
       costCents = model.price_cents;
-      if (type === "motion_mimic") params.style = "生动";
+      if (type === "motion_mimic") {
+        params.style = mimicStyle;
+        if (mimicVideo[0]) {
+          params.reference_video_url = mimicVideo[0].url;
+          params.input_videos = mimicVideo.map((r) => r.url);
+        }
+      }
       if (type === "music") params.duration_seconds = musicDur;
-      if (type === "dubbing" && voice) params.voice = voice;
+      if (type === "dubbing") {
+        if (voice) params.voice = voice;
+        if (cloneAudio[0]) params.reference_audio = cloneAudio[0].url;
+      }
+      if (type === "digital_human") {
+        params.speech = speech || text;
+        params.motion = motion;
+        params.mode = "fast";
+        if (portrait.length) params.input_images = portrait.map((r) => r.url);
+        if (dhAudio.length) params.input_audios = dhAudio.map((r) => r.url);
+      }
     }
   }
+  if (type === "image" && cited.length) params.input_images = cited.filter((r) => r.kind === "image").map((r) => r.url);
 
   const submit = () => {
-    if (!text.trim() || busy) return;
+    const promptText = type === "digital_human" ? (speech.trim() || text.trim()) : text.trim();
+    if (!promptText || busy) return;
     if (type === "agent") {
-      console.log("[composer] agent submit, skill =", JSON.stringify(skill));
-      onSubmit({ type, prompt: text.trim(), model_code: skill?.id ?? "", skill_id: skill?.id, params: { skill_id: skill?.id } });
+      onSubmit({ type, prompt: promptText, model_code: skill?.id ?? "", skill_id: skill?.id, params: { skill_id: skill?.id } });
       setText("");
       return;
     }
     if (!model) return;
-    onSubmit({ type, prompt: text.trim(), model_code: model.code, params });
+    onSubmit({ type, prompt: promptText, model_code: model.code, params });
     setText("");
   };
+
+  const prefs = (meQuery.data?.preferences ?? {}) as { auto?: boolean; image?: { ratio?: string; model_code?: string; resolution?: string }; video?: { ratio?: string; model_code?: string; resolution?: string } };
+  const savePrefs = useMutation({
+    mutationFn: (body: Record<string, unknown>) => api("/me/preferences", { method: "PATCH", body }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["me"] }),
+  });
+  const createSkill = useMutation({
+    mutationFn: async () => {
+      const draft = await api<{ name: string; title: string; description: string; plan_template: { steps: unknown[] } }>("/agent/skills/draft", {
+        method: "POST",
+        body: { name: newSkillName.trim() || undefined, description: newSkillDesc.trim() || newSkillName.trim() },
+      });
+      return api("/agent/skills", {
+        method: "POST",
+        body: { name: newSkillName.trim() || draft.name, title: draft.title, description: draft.description, plan_template: draft.plan_template },
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agent-skills"] });
+      setCreateOpen(false);
+      setNewSkillName("");
+      setNewSkillDesc("");
+      toast.success("技能已创建");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const deleteSkill = useMutation({
+    mutationFn: (id: string) => api(`/agent/skills/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["agent-skills"] }),
+  });
 
   const modes = (config.data?.modes ?? []).filter((m) => CREATION_TYPES.includes(m.key as CreationType));
 
@@ -269,17 +345,40 @@ export function CreationComposer({
     <div className="w-full" data-testid="creation-composer">
       <div className={`w-full rounded-2xl border border-dm-border transition-colors focus-within:border-dm-border-3 ${docked ? "bg-dm-composer" : "bg-dm-surface"}`}>
         <div className="px-5 pt-4">
-          <textarea
-            ref={areaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
-            }}
-            placeholder={placeholder}
-            rows={compact ? 2 : 3}
-            className="w-full resize-none bg-transparent text-[15px] text-dm-text outline-none placeholder:text-dm-text-3"
-          />
+          {type === "digital_human" ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-start gap-3">
+                <MediaRefTile label="形象" accept="image/*" multiple={false} value={portrait} onChange={setPortrait} />
+                <MediaRefTile label="上传音频" kind="upload" accept="audio/mpeg,audio/wav" multiple={false} value={dhAudio} onChange={setDhAudio} />
+              </div>
+              <textarea
+                value={speech}
+                onChange={(e) => setSpeech(e.target.value)}
+                placeholder="说话内容&#10;&#10;请输入你希望角色说出的内容"
+                rows={2}
+                className="w-full resize-none bg-transparent text-[15px] text-dm-text outline-none placeholder:text-dm-text-3"
+              />
+              <textarea
+                value={motion}
+                onChange={(e) => setMotion(e.target.value)}
+                placeholder="动作描述&#10;&#10;(可选) 添加动作描述和镜头语言，如：镜头推进，他摘下眼镜，对着镜头…"
+                rows={2}
+                className="w-full resize-none bg-transparent text-[15px] text-dm-text outline-none placeholder:text-dm-text-3"
+              />
+            </div>
+          ) : (
+            <textarea
+              ref={areaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
+              }}
+              placeholder={placeholder}
+              rows={compact ? 2 : 3}
+              className="w-full resize-none bg-transparent text-[15px] text-dm-text outline-none placeholder:text-dm-text-3"
+            />
+          )}
         </div>
         <div className="relative flex flex-wrap items-center gap-2 px-5 pb-4 pt-2">
           {/* 创作类型 */}
@@ -482,6 +581,47 @@ export function CreationComposer({
             </>
           )}
 
+          {skillPicker && type === "agent" && (
+            <div className="relative">
+              <Chip onClick={() => { setPrefOpen(!prefOpen); setSkillOpen(false); setTypeOpen(false); }}>
+                自动
+                <ChevronDown size={12} />
+              </Chip>
+              <Popover open={prefOpen} onClose={() => setPrefOpen(false)} width={340}>
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs text-dm-text-4">生成偏好</span>
+                  <button
+                    type="button"
+                    className={`rounded-full px-2 py-0.5 text-[11px] ${prefs.auto !== false ? "bg-dm-accent-dim text-dm-accent" : "bg-dm-surface-2 text-dm-text-3"}`}
+                    onClick={() => savePrefs.mutate({ ...prefs, auto: prefs.auto === false })}
+                  >
+                    自动
+                  </button>
+                </div>
+                <div className="mb-2 grid grid-cols-2 gap-1 rounded-lg bg-dm-raised p-0.5">
+                  {(["image", "video"] as const).map((tab) => (
+                    <button key={tab} type="button" onClick={() => setPrefTab(tab)} className={`h-7 rounded-md text-xs ${prefTab === tab ? "bg-dm-surface-2 text-dm-text" : "text-dm-text-3"}`}>
+                      {tab === "image" ? "图片" : "视频"}
+                    </button>
+                  ))}
+                </div>
+                <p className="mb-1 text-[11px] text-dm-text-4">选择比例</p>
+                <div className="mb-2 flex flex-wrap gap-1">
+                  {(prefTab === "image" ? IMAGE_RATIOS : VIDEO_RATIOS).map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => savePrefs.mutate({ ...prefs, [prefTab]: { ...(prefs[prefTab] ?? {}), ratio: r } })}
+                      className={`rounded-md px-2 py-1 text-[11px] ${(prefs[prefTab]?.ratio ?? (prefTab === "image" ? "1:1" : "16:9")) === r ? "bg-dm-surface-2 text-dm-text" : "text-dm-text-3"}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </Popover>
+            </div>
+          )}
+
           {/* 技能选择（Agent 模式） */}
           {skillPicker && type === "agent" && (
             <div className="relative">
@@ -492,7 +632,7 @@ export function CreationComposer({
               </Chip>
               <Popover open={skillOpen} onClose={() => setSkillOpen(false)} width={420}>
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs text-dm-text-4">官方技能</span>
+                  <span className="text-xs text-dm-text-4">技能</span>
                   {skill && (
                     <button className="text-[10px] text-dm-accent" onClick={() => setSkill(null)}>
                       清除
@@ -513,8 +653,23 @@ export function CreationComposer({
                     <span className="mt-0.5 block text-xs text-dm-text-3">{sk.description}</span>
                   </button>
                 ))}
+                <div className="mt-2 border-t border-dm-border pt-2">
+                  <button type="button" className="w-full rounded-lg px-2 py-2 text-left text-sm text-dm-text-2 hover:bg-dm-surface-2/60" onClick={() => { setSkillOpen(false); setCreateOpen(true); }}>
+                    ＋ 用 Agent 创建技能
+                  </button>
+                  <button type="button" className="w-full rounded-lg px-2 py-2 text-left text-sm text-dm-text-2 hover:bg-dm-surface-2/60" onClick={() => { setSkillOpen(false); setManageOpen(true); }}>
+                    ☰ 管理技能
+                  </button>
+                </div>
               </Popover>
             </div>
+          )}
+
+          {type === "motion_mimic" && (
+            <>
+              <MediaRefTile label="参考视频" kind="upload" accept="video/mp4,video/quicktime" multiple={false} value={mimicVideo} onChange={setMimicVideo} />
+              <Chip onClick={() => setMimicStyle(mimicStyle === "生动" ? "大师" : "生动")}>{mimicStyle}</Chip>
+            </>
           )}
 
           {/* 音乐：时长选择（DurationPicker 复用，提交 params.duration_seconds） */}
@@ -523,7 +678,7 @@ export function CreationComposer({
               <DurationPicker value={musicDur} min={10} max={300} onChange={setMusicDur} label="选择音乐生成时长" />
             </div>
           )}
-          {/* 配音：音色选择（预置音色真实入参；音色克隆管线未接入如实提示） */}
+          {/* 配音：预置音色；克隆新声音上传参考音频 */}
           {type === "dubbing" && (
             <div className="relative">
               <Chip onClick={() => setVoiceOpen(!voiceOpen)}>
@@ -546,21 +701,42 @@ export function CreationComposer({
                   </button>
                 ))}
                 <div className="my-1 h-px bg-dm-border" />
-                <button
-                  onClick={() => { setVoiceOpen(false); toast("音色克隆管线未接入，敬请期待"); }}
-                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-dm-text-2 hover:bg-dm-surface-2/60"
-                >
+                <label className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-dm-text-2 hover:bg-dm-surface-2/60">
                   <Plus size={13} />
                   克隆新声音
-                </button>
+                  <input
+                    type="file"
+                    accept="audio/mpeg,audio/wav"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      void uploadMediaFile(file)
+                        .then((ref) => {
+                          setCloneAudio([ref]);
+                          setVoice("cloned");
+                          setVoiceOpen(false);
+                          toast.success("已上传参考音色");
+                        })
+                        .catch((err: Error) => toast.error(err.message));
+                    }}
+                  />
+                </label>
               </Popover>
             </div>
           )}
 
-          {/* @ 引用素材（原站底栏同位；上传/引用管线未接入，先如实提示） */}
-          <Chip ariaLabel="引用素材" onClick={() => toast("素材引用即将上线")}>
-            <AtSign size={14} />
-          </Chip>
+          <div className="relative">
+            <Chip ariaLabel="引用素材" onClick={() => setCiteOpen((v) => !v)}>
+              <AtSign size={14} />
+              {cited.length ? <span className="text-[10px] text-dm-accent">{cited.length}</span> : null}
+            </Chip>
+            <AssetCitePopover
+              open={citeOpen}
+              onClose={() => setCiteOpen(false)}
+              onPick={(ref) => setCited((cur) => [...cur, ref])}
+            />
+          </div>
 
           <div className="flex-1" />
           {costCents > 0 && (
@@ -573,7 +749,7 @@ export function CreationComposer({
           <button
             aria-label="生成"
             onClick={submit}
-            disabled={!text.trim() || busy || (type !== "agent" && !model)}
+            disabled={(type === "digital_human" ? !speech.trim() : !text.trim()) || busy || (type !== "agent" && !model)}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-dm-text text-[#0f0f12] transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             <ArrowUp size={18} strokeWidth={2.2} />
@@ -585,6 +761,41 @@ export function CreationComposer({
         <p className="px-1 pt-2 text-xs text-red-400" data-testid="composer-error">{error}</p>
       )}
       {!session && <p className="px-1 pt-2 text-xs text-dm-text-4">在左侧登录后即可创作。</p>}
+      {createOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50" role="dialog" aria-label="创建技能">
+          <div className="w-[420px] rounded-2xl border border-dm-border bg-dm-surface p-5">
+            <p className="mb-3 text-sm text-dm-text">用 Agent 创建技能</p>
+            <input value={newSkillName} onChange={(e) => setNewSkillName(e.target.value)} placeholder="技能名称" className="mb-2 w-full rounded-lg bg-dm-raised px-3 py-2 text-sm text-dm-text outline-none" />
+            <textarea value={newSkillDesc} onChange={(e) => setNewSkillDesc(e.target.value)} placeholder="描述这个技能要完成什么（Agent 会拆成步骤模板）" rows={4} className="mb-3 w-full resize-none rounded-lg bg-dm-raised px-3 py-2 text-sm text-dm-text outline-none" />
+            <div className="flex justify-end gap-2">
+              <button type="button" className="text-xs text-dm-text-4" onClick={() => setCreateOpen(false)}>取消</button>
+              <button type="button" disabled={!newSkillDesc.trim() && !newSkillName.trim() || createSkill.isPending} onClick={() => createSkill.mutate()} className="rounded-lg bg-dm-accent px-3 py-1.5 text-xs text-[#04252a]">
+                {createSkill.isPending ? "创建中…" : "创建"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {manageOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50" role="dialog" aria-label="管理技能">
+          <div className="w-[420px] rounded-2xl border border-dm-border bg-dm-surface p-5">
+            <p className="mb-3 text-sm text-dm-text">管理技能</p>
+            <div className="max-h-72 overflow-y-auto">
+              {(skillsQuery.data ?? []).map((sk) => (
+                <div key={sk.id} className="mb-2 flex items-center justify-between rounded-lg px-2 py-2 hover:bg-dm-surface-2/60">
+                  <span className="text-sm text-dm-text">{sk.name}{sk.official ? <span className="ml-2 text-[10px] text-dm-text-4">官方</span> : null}</span>
+                  {!sk.official && sk.user_id ? (
+                    <button type="button" className="text-[11px] text-red-400" onClick={() => deleteSkill.mutate(sk.id)}>删除</button>
+                  ) : <span className="text-[10px] text-dm-text-4">只读</span>}
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-right">
+              <button type="button" className="text-xs text-dm-text-4" onClick={() => setManageOpen(false)}>关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
